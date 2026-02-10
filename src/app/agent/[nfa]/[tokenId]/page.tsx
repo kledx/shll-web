@@ -10,6 +10,22 @@ import { Clock, ShieldCheck, User } from "lucide-react";
 import { useAgent } from "@/hooks/useAgent";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TransactionHistory } from "@/components/console/transaction-history";
+import { VaultPanel } from "@/components/console/vault-panel";
+import { useAgentAccount } from "@/hooks/useAgentAccount";
+import { Button } from "@/components/ui/button";
+import { Copy } from "lucide-react";
+
+function CopyButton({ text }: { text: string }) {
+    const handleCopy = () => {
+        navigator.clipboard.writeText(text);
+        // Toast would go here
+    };
+    return (
+        <button onClick={handleCopy} className="hover:text-[var(--color-burgundy)] transition-colors">
+            <Copy className="w-3 h-3 ml-1" />
+        </button>
+    );
+}
 
 export default function AgentDetailPage() {
     const params = useParams();
@@ -18,6 +34,7 @@ export default function AgentDetailPage() {
     const { address } = useAccount();
 
     const { data: agent, isLoading } = useAgent(nfaAddress, tokenId);
+    const { account: agentAccount } = useAgentAccount(tokenId);
 
     if (isLoading) {
         return (
@@ -83,7 +100,9 @@ export default function AgentDetailPage() {
 
                                 <div className="flex flex-wrap gap-4 text-sm font-mono text-muted-foreground pt-2">
                                     <div className="flex items-center gap-1">
-                                        <User className="w-4 h-4" /> Owner: {agent.owner}
+                                        <User className="w-4 h-4" />
+                                        <span>Owner: {agent.owner.slice(0, 6)}...{agent.owner.slice(-4)}</span>
+                                        <CopyButton text={agent.owner} />
                                     </div>
                                     <div className="flex items-center gap-1">
                                         <Clock className="w-4 h-4" /> Min Lease: {agent.minDays} days
@@ -93,6 +112,13 @@ export default function AgentDetailPage() {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Vault Summary in Overview */}
+                            <VaultPanel
+                                agentAccount={agentAccount}
+                                isRenter={isRenter}
+                                isOwner={isOwner}
+                            />
 
                             <PolicySummary rules={agent.policy} />
                         </TabsContent>
@@ -112,6 +138,8 @@ export default function AgentDetailPage() {
                             isActive={agent.status === 'active'}
                             isOwner={isOwner}
                             isRenter={isRenter}
+                            pricePerDay={agent.pricePerDay.split(' ')[0]} // Strip " BNB"
+                            minDays={agent.minDays}
                         />
                     </div>
                 </div>

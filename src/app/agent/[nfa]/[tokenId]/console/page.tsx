@@ -5,6 +5,7 @@ import { ActionBuilder, Action } from "@/components/console/action-builder";
 import { useAgentAccount } from "@/hooks/useAgentAccount";
 import { useExecute } from "@/hooks/useExecute";
 import { TransactionHistory } from "@/components/console/transaction-history";
+import { VaultPanel } from "@/components/console/vault-panel";
 import { useSimulate } from "@/hooks/useSimulate"; // We need to adjust this hook usage
 import { useParams } from "next/navigation";
 import { useState } from "react";
@@ -77,6 +78,12 @@ export default function ConsolePage() {
                     isExecuting={isExecuting}
                     simulationResult={simulationResult}
                     agentAccount={agentAccount}
+                />
+
+                <VaultPanel
+                    agentAccount={agentAccount}
+                    isRenter={true} // TODO: Check actual renter status from context/props
+                    isOwner={true} // TODO: Check actual owner status
                 />
 
                 <TransactionHistory tokenId={tokenId} />

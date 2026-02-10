@@ -5,13 +5,24 @@ import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { RentalItem } from "@/hooks/useMyRentals";
 import Link from "next/link";
-import { Clock, ExternalLink } from "lucide-react";
+import { Clock, ExternalLink, ArrowDownToLine } from "lucide-react";
+import { useAgentAccount } from "@/hooks/useAgentAccount";
 
 interface RentalCardProps {
     rental: RentalItem;
 }
 
 export function RentalCard({ rental }: RentalCardProps) {
+    const { account: agentAccount } = useAgentAccount(rental.tokenId.toString());
+
+    const handleCopyAccount = (e: React.MouseEvent) => {
+        e.preventDefault(); // Prevent Link navigation if nested
+        if (agentAccount) {
+            navigator.clipboard.writeText(agentAccount);
+            // In a real app, show toast
+        }
+    };
+
     const isExpired = !rental.isActive;
     const daysLeft = Math.ceil((Number(rental.expires) - Date.now() / 1000) / 86400);
 
@@ -47,10 +58,18 @@ export function RentalCard({ rental }: RentalCardProps) {
                     <div className={`h-full ${isExpired ? 'bg-gray-300' : 'bg-[var(--color-burgundy)]'} w-3/4`} />
                 </div>
             </CardContent>
-            <CardFooter>
-                <Link href={`/agent/${rental.nfa}/${rental.tokenId}/console`} className="w-full">
+            <CardFooter className="gap-2">
+                <Button
+                    variant="outline"
+                    className="flex-1 gap-2 border-[var(--color-burgundy)]/20 hover:bg-[var(--color-burgundy)]/5 text-[var(--color-burgundy)]"
+                    onClick={handleCopyAccount}
+                >
+                    <ArrowDownToLine className="w-4 h-4" /> Deposit
+                </Button>
+
+                <Link href={`/agent/${rental.nfa}/${rental.tokenId}/console`} className="flex-1">
                     <Button variant={isExpired ? "outline" : "default"} className="w-full group">
-                        Manage Console
+                        Manage
                         <ExternalLink className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                     </Button>
                 </Link>

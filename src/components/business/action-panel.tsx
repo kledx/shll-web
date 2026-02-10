@@ -17,15 +17,17 @@ interface ActionPanelProps {
     isActive: boolean;
     isOwner: boolean;
     isRenter: boolean;
+    pricePerDay: string;
+    minDays: number;
 }
 
-export function ActionPanel({ nfaAddress, tokenId, isActive, isOwner, isRenter }: ActionPanelProps) {
+export function ActionPanel({ nfaAddress, tokenId, isActive, isOwner, isRenter, pricePerDay, minDays }: ActionPanelProps) {
     const { rentAgent, isLoading: isRenting } = useRent();
 
     const handleRent = async (days: number) => {
         // 0x1 is a mock listing ID for now
         const mockListingId = pad("0x01", { size: 32 });
-        await rentAgent(mockListingId, days, "0.05");
+        await rentAgent(mockListingId, days, pricePerDay);
     };
 
     return (
@@ -39,9 +41,9 @@ export function ActionPanel({ nfaAddress, tokenId, isActive, isOwner, isRenter }
 
             <TabsContent value="rent">
                 <RentForm
-                    pricePerDay="0.05"
-                    minDays={3}
-                    paymentToken="USDT"
+                    pricePerDay={pricePerDay}
+                    minDays={minDays}
+                    paymentToken="BNB"
                     onRent={handleRent}
                     isRenting={isRenting}
                 />

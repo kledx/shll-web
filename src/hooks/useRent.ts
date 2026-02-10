@@ -18,7 +18,9 @@ export function useRent() {
     const rentAgent = async (listingId: Hex, days: number, pricePerDay: string) => {
         // Calculate total value
         // Note: In real implementation, this needs to handle token vs native payment logic
-        const totalValue = parseEther(pricePerDay) * BigInt(days);
+        // Calculate total value
+        // Note: In real implementation, this needs to handle token vs native payment logic
+        const totalValue = parseEther((parseFloat(pricePerDay) * days).toString());
 
         writeContract({
             address: CONTRACTS.ListingManager.address,

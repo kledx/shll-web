@@ -80,7 +80,7 @@ export function RentForm({ pricePerDay, minDays, paymentToken, onRent, isRenting
                 <div className="space-y-2 pt-2">
                     {!isConnected ? (
                         <Button disabled className="w-full">Connect Wallet to Rent</Button>
-                    ) : !isApproved ? (
+                    ) : (paymentToken !== 'BNB' && !isApproved) ? (
                         <Button
                             className="w-full"
                             onClick={handleApprove}

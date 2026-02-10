@@ -27,13 +27,14 @@ const ROUTER_ABI = [
 ] as const;
 
 // Mock Addresses (replace with real config later)
+// BSC Testnet Addresses
 const TOKENS = {
-    "USDT": "0x55d398326f99059fF775485246999027B3197955",
-    "WBNB": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
-    "DAI": "0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3"
+    "USDT": "0x66E972502A34A625828C544a1914E8D8cc2A9dE5",
+    "WBNB": "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd",
+    "DAI": "0xEC5dCb5Dbf4B114C9d0F65BcCAb49EC54F9a0F92"
 };
 
-const ROUTER_ADDRESS = "0x10ED43C718714eb63d5aA57B78B54704E256024E"; // PancakeRouter V2
+const ROUTER_ADDRESS = "0xD99D1c33F9fC3444f8101754aBC46c52416550D1"; // PancakeRouter V2 Testnet
 
 interface SwapTemplateProps {
     onActionGenerated: (action: Action) => void;
