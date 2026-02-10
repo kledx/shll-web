@@ -1,4 +1,3 @@
-"use client";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -6,8 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Play, Terminal } from "lucide-react";
+import { Loader2, Play, Terminal, ArrowRightLeft, Banknote } from "lucide-react";
 import { Address, Hex, isAddress, isHex } from "viem";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SwapTemplate } from "./swap-template";
+import { RepayTemplate } from "./repay-template";
 
 export interface Action {
     target: Address;
@@ -39,6 +41,12 @@ export function ActionBuilder({
 
     const isValid = isAddress(target) && isHex(data);
 
+    const handleActionGenerated = (action: Action) => {
+        setTarget(action.target);
+        setValue(action.value.toString());
+        setData(action.data);
+    };
+
     const handleSimulate = () => {
         if (!isValid) return;
         onSimulate({
@@ -65,41 +73,73 @@ export function ActionBuilder({
                         <Terminal className="w-5 h-5" /> Transaction Builder
                     </CardTitle>
                     <CardDescription>
-                        Construct a raw transaction to be executed by the Agent Account: <span className="font-mono text-xs bg-muted px-1 rounded">{agentAccount || "Loading..."}</span>
+                        Construct a raw transaction using templates or manually.
+                        <br />
+                        Agent Account: <span className="font-mono text-xs bg-muted px-1 rounded">{agentAccount || "Loading..."}</span>
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-6">
 
-                    <div className="space-y-2">
-                        <Label>Target Address</Label>
-                        <Input
-                            placeholder="0x..."
-                            value={target}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTarget(e.target.value)}
-                            className="font-mono"
-                        />
-                    </div>
+                    <Tabs defaultValue="swap" className="w-full">
+                        <TabsList className="grid w-full grid-cols-3 mb-4">
+                            <TabsTrigger value="swap" className="gap-2"><ArrowRightLeft className="w-4 h-4" /> Swap</TabsTrigger>
+                            <TabsTrigger value="repay" className="gap-2"><Banknote className="w-4 h-4" /> Repay</TabsTrigger>
+                            <TabsTrigger value="raw" className="gap-2"><Terminal className="w-4 h-4" /> Raw</TabsTrigger>
+                        </TabsList>
 
-                    <div className="grid grid-cols-2 gap-4">
+                        <TabsContent value="swap">
+                            <SwapTemplate onActionGenerated={handleActionGenerated} agentAccount={agentAccount} />
+                        </TabsContent>
+
+                        <TabsContent value="repay">
+                            {/* TODO: Pass real renter address */}
+                            <RepayTemplate onActionGenerated={handleActionGenerated} renterAddress="0xYourAddress" />
+                        </TabsContent>
+
+                        <TabsContent value="raw">
+                            <div className="p-4 border rounded-lg bg-[var(--color-paper)]/50 text-sm text-muted-foreground text-center">
+                                Manual input mode active. Edit fields below directly.
+                            </div>
+                        </TabsContent>
+                    </Tabs>
+
+                    <div className="space-y-4 border-t pt-4">
+                        <div className="flex items-center justify-between">
+                            <Label className="text-muted-foreground">Preview Transaction</Label>
+                            {isValid ? <span className="text-xs text-green-600">Valid</span> : <span className="text-xs text-red-600">Invalid</span>}
+                        </div>
+
                         <div className="space-y-2">
-                            <Label>Value (Wei)</Label>
+                            <Label>Target Address</Label>
                             <Input
-                                type="number"
-                                value={value}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setValue(e.target.value)}
-                                className="font-mono"
+                                placeholder="0x..."
+                                value={target}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTarget(e.target.value)}
+                                className="font-mono text-sm"
                             />
                         </div>
-                    </div>
 
-                    <div className="space-y-2">
-                        <Label>Calldata (Hex)</Label>
-                        <Textarea
-                            placeholder="0x..."
-                            value={data}
-                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setData(e.target.value)}
-                            className="font-mono h-24"
-                        />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Value (Wei)</Label>
+                                <Input
+                                    type="number"
+                                    value={value}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setValue(e.target.value)}
+                                    className="font-mono text-sm"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Calldata (Hex)</Label>
+                            <Textarea
+                                placeholder="0x..."
+                                value={data}
+                                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setData(e.target.value)}
+                                className="font-mono text-xs h-24"
+                            />
+                        </div>
                     </div>
 
                     <div className="flex gap-4 pt-2">
@@ -110,7 +150,7 @@ export function ActionBuilder({
                             className="flex-1"
                         >
                             {isSimulating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Play className="w-4 h-4 mr-2" />}
-                            Simulate
+                            Simulate Call
                         </Button>
 
                         <Button
@@ -118,7 +158,7 @@ export function ActionBuilder({
                             disabled={!isValid || isSimulating || isExecuting || !simulationResult?.success}
                             className="flex-1 bg-[var(--color-burgundy)] hover:bg-[var(--color-burgundy)]/90"
                         >
-                            {isExecuting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Execute"}
+                            {isExecuting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Execute On-Chain"}
                         </Button>
                     </div>
 

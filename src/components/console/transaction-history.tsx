@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePublicClient } from "wagmi";
 import { CONTRACTS } from "@/config/contracts";
-import { Address, parseAbiItem } from "viem";
+import { Address, parseAbiItem, zeroAddress } from "viem";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 
 interface TransactionRecord {
@@ -23,8 +23,18 @@ export function TransactionHistory({ tokenId }: { tokenId: string }) {
     useEffect(() => {
         if (!publicClient) return;
 
+        // Skip fetching if address is not set (mock/dev environment)
+        if (CONTRACTS.AgentNFA.address === zeroAddress) {
+            setIsLoading(false);
+            return;
+        }
+
         const fetchLogs = async () => {
             try {
+                const blockNumber = await publicClient.getBlockNumber();
+                // Fetch last 5000 blocks to avoid RPC limits on public nodes
+                const fromBlock = blockNumber - BigInt(5000) > BigInt(0) ? blockNumber - BigInt(5000) : BigInt(0);
+
                 const events = await publicClient.getLogs({
                     address: CONTRACTS.AgentNFA.address,
                     event: parseAbiItem(
@@ -33,7 +43,7 @@ export function TransactionHistory({ tokenId }: { tokenId: string }) {
                     args: {
                         tokenId: BigInt(tokenId),
                     },
-                    fromBlock: 'earliest'
+                    fromBlock: fromBlock
                 });
 
                 const records = events.map(log => ({

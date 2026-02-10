@@ -63,6 +63,26 @@ const MOCK_AGENTS: Record<string, AgentData> = {
             allowedTokens: ["0xUSDT", "0xBTC"],
             allowedSpenders: ["0xVenus"]
         }
+    },
+    "103": {
+        tokenId: "103",
+        nfaAddress: "0xMockNFA",
+        owner: "0x9876543210fedcba9876543210fedcba98765432",
+        name: "Liquidation Shield",
+        description: "Emergency repayment agent for AAVE V3 positions.",
+        pricePerDay: "0.02 BNB",
+        minDays: 1,
+        status: "active",
+        renter: "0x0000000000000000000000000000000000000000",
+        policy: {
+            maxDeadlineWindow: 600,
+            maxPathLength: 1,
+            maxSwapAmountIn: "0 USDT",
+            maxApproveAmount: "10000 USDT",
+            maxRepayAmount: "10000 USDT",
+            allowedTokens: ["0xUSDT", "0xDAI"],
+            allowedSpenders: ["0xAavePool"]
+        }
     }
 };
 
