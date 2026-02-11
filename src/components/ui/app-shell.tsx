@@ -1,8 +1,8 @@
 "use client";
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { Ticket } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image"; // Added Import
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -22,8 +22,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <div className="container mx-auto flex h-16 items-center justify-between px-4">
                     <div className="flex items-center gap-6">
                         <Link href="/" className="flex items-center gap-2 font-serif text-xl font-bold tracking-tight text-[var(--color-burgundy)]">
-                            <Ticket className="h-6 w-6 rotate-[-10deg]" />
-                            <span>shll</span>
+                            <Image src="/logo.svg" alt="SHLL Logo" width={32} height={32} className="w-8 h-8" />
+                            <span>SHLL</span>
                         </Link>
 
                         <nav className="flex items-center gap-1">
