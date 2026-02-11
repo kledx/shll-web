@@ -33,7 +33,7 @@ export default function AgentDetailPage() {
     const tokenId = params.tokenId as string;
     const { address } = useAccount();
 
-    const { data: agent, isLoading } = useAgent(nfaAddress, tokenId);
+    const { data: agent, isLoading } = useAgent(tokenId);
     const { account: agentAccount } = useAgentAccount(tokenId);
 
     if (isLoading) {

@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
-import { Address } from "viem";
+import { useReadContracts } from "wagmi";
+import { Address, formatEther, keccak256, toBytes } from "viem";
+import { CONTRACTS } from "../config/contracts";
 
 export interface AgentData {
     tokenId: string;
@@ -9,8 +10,11 @@ export interface AgentData {
     description: string;
     pricePerDay: string;
     minDays: number;
-    status: "active" | "rented";
+    status: "active" | "rented" | "paused" | "terminated";
     renter: string;
+    expires: number;
+    listingId: string;
+    isListed: boolean;
     policy: {
         maxDeadlineWindow: number;
         maxPathLength: number;
@@ -20,86 +24,209 @@ export interface AgentData {
         allowedTokens: string[];
         allowedSpenders: string[];
     };
+    metadata: {
+        persona: string;
+        experience: string;
+        voiceHash: string;
+        animationURI: string;
+        vaultURI: string;
+        vaultHash: string;
+    };
+    state: {
+        balance: string;
+        status: number;
+        logicAddress: string;
+        lastActionTimestamp: number;
+    }
 }
 
-// Mock data store
-const MOCK_AGENTS: Record<string, AgentData> = {
-    "101": {
-        tokenId: "101",
-        nfaAddress: "0xMockNFA",
-        owner: "0x1234567890abcdef1234567890abcdef12345678",
-        name: "Swap Master Alpha",
-        description: "High-frequency swap agent optimized for PancakeSwap V3.",
-        pricePerDay: "0.01 BNB",
-        minDays: 3,
-        status: "active",
-        renter: "0x0000000000000000000000000000000000000000",
-        policy: {
-            maxDeadlineWindow: 1200,
-            maxPathLength: 3,
-            maxSwapAmountIn: "1000 USDT",
-            maxApproveAmount: "500 USDT",
-            maxRepayAmount: "500 USDT",
-            allowedTokens: ["0xUSDT", "0xWBNB"],
-            allowedSpenders: ["0xRouter"]
+// Policy Keys
+const KEY_MAX_DEADLINE = keccak256(toBytes("MAX_DEADLINE_WINDOW"));
+const KEY_MAX_PATH = keccak256(toBytes("MAX_PATH_LENGTH"));
+const KEY_MAX_SWAP = keccak256(toBytes("MAX_SWAP_AMOUNT_IN"));
+const KEY_MAX_APPROVE = keccak256(toBytes("MAX_APPROVE_AMOUNT"));
+const KEY_MAX_REPAY = keccak256(toBytes("MAX_REPAY_AMOUNT"));
+
+export function useAgent(tokenId: string) {
+    const tokenIdBigInt = BigInt(tokenId || "0");
+    const nfaAddress = CONTRACTS.AgentNFA.address;
+    const listingManagerAddress = CONTRACTS.ListingManager.address;
+    const policyGuardAddress = CONTRACTS.PolicyGuard.address;
+
+    const { data: reads, isLoading, error } = useReadContracts({
+        contracts: [
+            // 0: Owner
+            {
+                address: nfaAddress,
+                abi: CONTRACTS.AgentNFA.abi,
+                functionName: "ownerOf",
+                args: [tokenIdBigInt],
+            },
+            // 1: User (Renter)
+            {
+                address: nfaAddress,
+                abi: CONTRACTS.AgentNFA.abi,
+                functionName: "userOf",
+                args: [tokenIdBigInt],
+            },
+            // 2: User Expires
+            {
+                address: nfaAddress,
+                abi: CONTRACTS.AgentNFA.abi,
+                functionName: "userExpires",
+                args: [tokenIdBigInt],
+            },
+            // 3: Metadata (BAP-578)
+            {
+                address: nfaAddress,
+                abi: CONTRACTS.AgentNFA.abi,
+                functionName: "getAgentMetadata",
+                args: [tokenIdBigInt],
+            },
+            // 4: State (BAP-578)
+            {
+                address: nfaAddress,
+                abi: CONTRACTS.AgentNFA.abi,
+                functionName: "getState",
+                args: [tokenIdBigInt],
+            },
+            // 5: Get Listing ID
+            {
+                address: listingManagerAddress,
+                abi: CONTRACTS.ListingManager.abi,
+                functionName: "getListingId",
+                args: [nfaAddress, tokenIdBigInt],
+            },
+            // 6: Policy: Max Deadline
+            {
+                address: policyGuardAddress,
+                abi: CONTRACTS.PolicyGuard.abi,
+                functionName: "limits",
+                args: [KEY_MAX_DEADLINE],
+            },
+            // 7: Policy: Max Path
+            {
+                address: policyGuardAddress,
+                abi: CONTRACTS.PolicyGuard.abi,
+                functionName: "limits",
+                args: [KEY_MAX_PATH],
+            },
+            // 8: Policy: Max Swap
+            {
+                address: policyGuardAddress,
+                abi: CONTRACTS.PolicyGuard.abi,
+                functionName: "limits",
+                args: [KEY_MAX_SWAP],
+            },
+            // 9: Policy: Max Approve
+            {
+                address: policyGuardAddress,
+                abi: CONTRACTS.PolicyGuard.abi,
+                functionName: "limits",
+                args: [KEY_MAX_APPROVE],
+            },
+            // 10: Policy: Max Repay
+            {
+                address: policyGuardAddress,
+                abi: CONTRACTS.PolicyGuard.abi,
+                functionName: "limits",
+                args: [KEY_MAX_REPAY],
+            },
+        ],
+    });
+
+    // Special handling for Listing (need listingId first)
+    const listingId = reads?.[5]?.result as `0x${string}`;
+    const { data: listingData } = useReadContracts({
+        contracts: [{
+            address: listingManagerAddress,
+            abi: CONTRACTS.ListingManager.abi,
+            functionName: "listings",
+            args: [listingId || "0x0000000000000000000000000000000000000000000000000000000000000000"],
+        }],
+        query: {
+            enabled: !!listingId && listingId !== "0x0000000000000000000000000000000000000000000000000000000000000000"
         }
-    },
-    "102": {
-        tokenId: "102",
-        nfaAddress: "0xMockNFA",
-        owner: "0xabcdef1234567890abcdef1234567890abcdef12",
-        name: "DeFi Saver Pro",
-        description: "Automated repayment agent for Venus Protocol.",
-        pricePerDay: "0.01 BNB",
-        minDays: 7,
-        status: "active",
-        renter: "0x0000000000000000000000000000000000000000",
-        policy: {
-            maxDeadlineWindow: 3600,
-            maxPathLength: 2,
-            maxSwapAmountIn: "5000 USDT",
-            maxApproveAmount: "2000 USDT",
-            maxRepayAmount: "2000 USDT",
-            allowedTokens: ["0xUSDT", "0xBTC"],
-            allowedSpenders: ["0xVenus"]
-        }
-    },
-    "103": {
-        tokenId: "103",
-        nfaAddress: "0xMockNFA",
-        owner: "0x9876543210fedcba9876543210fedcba98765432",
-        name: "Liquidation Shield",
-        description: "Emergency repayment agent for AAVE V3 positions.",
-        pricePerDay: "0.002 BNB",
-        minDays: 1,
-        status: "active",
-        renter: "0x0000000000000000000000000000000000000000",
-        policy: {
-            maxDeadlineWindow: 600,
-            maxPathLength: 1,
-            maxSwapAmountIn: "0 USDT",
-            maxApproveAmount: "10000 USDT",
-            maxRepayAmount: "10000 USDT",
-            allowedTokens: ["0xUSDT", "0xDAI"],
-            allowedSpenders: ["0xAavePool"]
-        }
+    });
+
+    if (isLoading || !reads) {
+        return { data: null, isLoading: true };
     }
-};
 
-export function useAgent(nfa: string, tokenId: string) {
-    // TODO: Replace with real contract reads using wagmi/viem
-    // const { data } = useReadContract(...)
+    const owner = reads[0].result as Address;
+    const user = reads[1].result as Address;
+    const userExpires = reads[2].result as bigint;
+    const metadata = reads[3].result as any; // Struct
+    const state = reads[4].result as any; // Struct
 
-    const [data, setData] = useState<AgentData | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    // Listing Read
+    const listing = listingData?.[0]?.result as any;
 
-    useEffect(() => {
-        // Simulate network delay
-        setTimeout(() => {
-            setData(MOCK_AGENTS[tokenId] || null);
-            setIsLoading(false);
-        }, 500);
-    }, [tokenId]);
+    // Policy Limits
+    const maxDeadline = reads[6].result as bigint;
+    const maxPath = reads[7].result as bigint;
+    const maxSwap = reads[8].result as bigint;
+    const maxApprove = reads[9].result as bigint;
+    const maxRepay = reads[10].result as bigint;
 
-    return { data, isLoading };
+    // Parse Metadata JSON
+    let parsedPersona = { name: "Unknown", description: "No metadata", role: "Agent" };
+    try {
+        if (metadata && metadata.persona) {
+            parsedPersona = JSON.parse(metadata.persona);
+        }
+    } catch (e) {
+        console.warn("Failed to parse persona JSON", e);
+    }
+
+    // Determine status
+    // BAP-578 Status: 0=Active, 1=Paused, 2=Terminated
+    const bapStatus = state?.status || 0;
+    let uiStatus: AgentData["status"] = "active";
+    if (bapStatus === 1) uiStatus = "paused";
+    if (bapStatus === 2) uiStatus = "terminated";
+    if (uiStatus === "active" && user && user !== "0x0000000000000000000000000000000000000000") {
+        uiStatus = "rented";
+    }
+
+    // Format Data
+    const agentData: AgentData = {
+        tokenId,
+        nfaAddress,
+        owner: owner || "",
+        name: parsedPersona.name,
+        description: parsedPersona.description,
+        pricePerDay: listing?.active ? formatEther(listing.pricePerDay) + " BNB" : "Not Listed",
+        minDays: listing?.active ? Number(listing.minDays) : 0,
+        status: uiStatus,
+        renter: user || "0x0000000000000000000000000000000000000000",
+        expires: Number(userExpires || 0),
+        listingId: listingId || "",
+        isListed: listing?.active || false,
+        policy: {
+            maxDeadlineWindow: Number(maxDeadline || 0),
+            maxPathLength: Number(maxPath || 0),
+            maxSwapAmountIn: maxSwap ? formatEther(maxSwap) + " tokens" : "Unlimited",
+            maxApproveAmount: maxApprove ? formatEther(maxApprove) + " tokens" : "Unlimited",
+            maxRepayAmount: maxRepay ? formatEther(maxRepay) + " tokens" : "Unlimited",
+            allowedTokens: [], // Global
+            allowedSpenders: [] // Global
+        },
+        metadata: {
+            persona: metadata?.persona || "",
+            experience: metadata?.experience || "",
+            voiceHash: metadata?.voiceHash || "",
+            animationURI: metadata?.animationURI || "",
+            vaultURI: metadata?.vaultURI || "",
+            vaultHash: metadata?.vaultHash || "",
+        },
+        state: {
+            balance: state?.balance ? formatEther(state.balance) : "0",
+            status: Number(state?.status || 0),
+            logicAddress: state?.logicAddress || "",
+            lastActionTimestamp: Number(state?.lastActionTimestamp || 0)
+        }
+    };
+
+    return { data: agentData, isLoading: false, error };
 }
