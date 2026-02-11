@@ -26,6 +26,9 @@ export function useListings() {
 
     const { data: listingIdReads, isLoading: isPhase1Loading } = useReadContracts({
         contracts: phase1Contracts,
+        query: {
+            staleTime: 30_000, // Cache for 30s to reduce RPC calls
+        }
     });
 
     // Phase 2: For each valid listing ID, batch read listing + metadata + userOf
@@ -68,7 +71,8 @@ export function useListings() {
     const { data: phase2Reads, isLoading: isPhase2Loading } = useReadContracts({
         contracts: phase2Contracts,
         query: {
-            enabled: phase2Contracts.length > 0
+            enabled: phase2Contracts.length > 0,
+            staleTime: 30_000,
         }
     });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useAccount, useSwitchChain } from "wagmi";
+import { useConnection, useSwitchChain } from "wagmi";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -11,7 +11,7 @@ import {
 import { ChevronDown, Network } from "lucide-react";
 
 export function ChainBar() {
-    const { chain } = useAccount();
+    const { chain } = useConnection();
     const { chains, switchChain } = useSwitchChain();
 
     if (!chain) return null;

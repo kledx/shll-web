@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useAccount, useReadContracts } from "wagmi";
+import { useConnection, useReadContracts } from "wagmi";
 import { CONTRACTS } from "../config/contracts";
 import { Address } from "viem";
 
@@ -15,7 +15,7 @@ export interface RentalItem {
 }
 
 export function useMyRentals() {
-    const { address } = useAccount();
+    const { address } = useConnection();
     const nfaAddress = CONTRACTS.AgentNFA.address;
 
     // Token IDs to check
@@ -49,7 +49,8 @@ export function useMyRentals() {
     const { data: reads, isLoading } = useReadContracts({
         contracts,
         query: {
-            enabled: !!address
+            enabled: !!address,
+            staleTime: 15_000, // Cache for 15s
         }
     });
 

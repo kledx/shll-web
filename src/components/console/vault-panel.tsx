@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useWithdraw } from "@/hooks/useWithdraw";
-import { useAccount } from "wagmi";
+import { useConnection } from "wagmi";
 
 interface VaultPanelProps {
     agentAccount?: Address;
@@ -27,7 +27,7 @@ export function VaultPanel({ agentAccount, isRenter, isOwner }: VaultPanelProps)
 
     // Withdraw State
     const { withdrawNative, withdrawToken, isLoading: isWithdrawing, isSuccess: isWithdrawSuccess } = useWithdraw();
-    const { address: userAddress } = useAccount();
+    const { address: userAddress } = useConnection();
     const [selectedAsset, setSelectedAsset] = useState<string>("Native Token");
     const [withdrawAmount, setWithdrawAmount] = useState<string>("");
     const [withdrawAddress, setWithdrawAddress] = useState<string>(userAddress || "");

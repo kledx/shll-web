@@ -1,9 +1,9 @@
-import { useWriteContract, useWaitForTransactionReceipt, usePublicClient, useAccount } from "wagmi";
+import { useWriteContract, useWaitForTransactionReceipt, usePublicClient, useConnection } from "wagmi";
 import { CONTRACTS } from "@/config/contracts";
 import { parseEther, Hex } from "viem";
 
 export function useRent() {
-    const { address } = useAccount();
+    const { address } = useConnection();
     const publicClient = usePublicClient();
     const {
         data: hash,
