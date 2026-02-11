@@ -2,9 +2,9 @@ import { Address } from 'viem';
 
 export const CONTRACTS = {
   AgentNFA: {
-    // TODO: Update with deployed contract address
-    address: "0xb65ca34b1526c926c75129ef934c3ba9fe6f29f6" as Address,
-    deployBlock: BigInt(89749166),
+    // BSC Testnet — deployed 2026-02-12
+    address: "0x3a4f53ce6b3493a20a445baffe7bc43accebfaf6" as Address,
+    deployBlock: BigInt(89798900),
     abi: [
       {
         "type": "constructor",
@@ -1407,8 +1407,8 @@ export const CONTRACTS = {
     ] as const,
   },
   ListingManager: {
-    address: "0x71597c159007E9FF35bcF47822913cA78B182156" as Address,
-    deployBlock: BigInt(89749166),
+    address: "0x43e4c56548bf43917516ec55bc6ec5ba4faadd1b" as Address,
+    deployBlock: BigInt(89798900),
     abi: [
       {
         "type": "constructor",
@@ -1853,11 +1853,62 @@ export const CONTRACTS = {
         "type": "error",
         "name": "Unauthorized",
         "inputs": []
+      },
+      {
+        "type": "function",
+        "name": "getListingCount",
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ],
+        "stateMutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "getListingByIndex",
+        "inputs": [
+          {
+            "name": "index",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          }
+        ],
+        "stateMutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "allListingIds",
+        "inputs": [
+          {
+            "name": "",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          }
+        ],
+        "stateMutability": "view"
       }
     ] as const,
   },
   PolicyGuard: {
-    address: "0xf087B0e4e829109603533FA3c81BAe101e46934b" as Address,
+    address: "0x66fca14edb48b6a67d6036e40a88e43cdc9f50ae" as Address,
     abi: [
       {
         "type": "constructor",
