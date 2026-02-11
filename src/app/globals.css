@@ -5,7 +5,7 @@
   --color-burgundy: #9F1239;
   --color-sky: #0EA5E9;
   --color-dark-text: #0F172A;
-  
+
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
@@ -13,6 +13,33 @@
 :root {
   --background: var(--color-paper);
   --foreground: var(--color-dark-text);
+
+  --card: var(--color-paper);
+  --card-foreground: var(--color-dark-text);
+
+  --popover: var(--color-paper);
+  --popover-foreground: var(--color-dark-text);
+
+  --primary: var(--color-burgundy);
+  --primary-foreground: #FFFFFF;
+
+  --secondary: #F5F5F4;
+  --secondary-foreground: var(--color-dark-text);
+
+  --muted: #F5F5F4;
+  --muted-foreground: #78716c;
+
+  --accent: #F5F5F4;
+  --accent-foreground: var(--color-burgundy);
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 60 9.1% 97.8%;
+
+  --border: #E7E5E4;
+  --input: #E7E5E4;
+  --ring: var(--color-burgundy);
+
+  --radius: 0.5rem;
 }
 
 body {
@@ -21,6 +48,11 @@ body {
   font-family: var(--font-sans);
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-serif);
 }

@@ -9,6 +9,7 @@ export interface AgentData {
     name: string;
     description: string;
     pricePerDay: string;
+    pricePerDayRaw: bigint;
     minDays: number;
     status: "active" | "rented" | "paused" | "terminated";
     renter: string;
@@ -196,13 +197,14 @@ export function useAgent(tokenId: string) {
         owner: owner || "",
         name: parsedPersona.name,
         description: parsedPersona.description,
-        pricePerDay: listing?.active ? formatEther(listing.pricePerDay) + " BNB" : "Not Listed",
-        minDays: listing?.active ? Number(listing.minDays) : 0,
+        pricePerDay: listing?.[5] ? formatEther(listing[3]) + " BNB" : "Not Listed",
+        pricePerDayRaw: listing?.[3] || BigInt(0),
+        minDays: listing?.[5] ? Number(listing[4]) : 0,
         status: uiStatus,
         renter: user || "0x0000000000000000000000000000000000000000",
         expires: Number(userExpires || 0),
         listingId: listingId || "",
-        isListed: listing?.active || false,
+        isListed: listing?.[5] || false,
         policy: {
             maxDeadlineWindow: Number(maxDeadline || 0),
             maxPathLength: Number(maxPath || 0),

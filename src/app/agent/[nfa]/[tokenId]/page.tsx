@@ -139,7 +139,9 @@ export default function AgentDetailPage() {
                             isOwner={isOwner}
                             isRenter={isRenter}
                             pricePerDay={agent.pricePerDay.split(' ')[0]} // Strip " BNB"
+                            pricePerDayRaw={agent.pricePerDayRaw}
                             minDays={agent.minDays}
+                            listingId={agent.listingId}
                         />
                     </div>
                 </div>

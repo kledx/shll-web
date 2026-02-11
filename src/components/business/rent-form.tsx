@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, Check, Banknote } from "lucide-react";
 import { useAccount } from "wagmi";
@@ -33,7 +34,9 @@ export function RentForm({ pricePerDay, minDays, paymentToken, onRent, isRenting
         await onRent(days);
     };
 
-    const totalCost = (parseFloat(pricePerDay) * days).toFixed(4);
+    console.log("RentForm calc:", { pricePerDay, days });
+    const price = parseFloat(pricePerDay) || 0;
+    const totalCost = (price * days).toFixed(4);
 
     return (
         <Card className="border-[var(--color-burgundy)]/10">
@@ -55,9 +58,16 @@ export function RentForm({ pricePerDay, minDays, paymentToken, onRent, isRenting
                         >
                             -
                         </Button>
-                        <div className="flex-1 text-center font-mono text-lg border rounded-md py-2">
-                            {days}
-                        </div>
+                        <Input
+                            type="number"
+                            className="flex-1 text-center font-mono text-lg h-auto py-2"
+                            value={days}
+                            onChange={(e) => {
+                                const val = parseInt(e.target.value);
+                                if (!isNaN(val)) setDays(val);
+                            }}
+                            min={minDays}
+                        />
                         <Button
                             variant="outline"
                             size="icon"

@@ -14,6 +14,14 @@ export interface PolicyRules {
     allowedSpenders: string[];
 }
 
+function formatLimit(value: string | number) {
+    const s = value.toString();
+    // Check for uint256 max (approx check by prefix)
+    if (s.startsWith("1157920892373161954235709850086879")) return "Unlimited";
+    if (s.length > 12) return s.slice(0, 6) + "..." + s.slice(-4);
+    return s;
+}
+
 export function PolicySummary({ rules }: { rules: PolicyRules }) {
     return (
         <Card className="border-[var(--color-burgundy)]/10">
@@ -32,7 +40,9 @@ export function PolicySummary({ rules }: { rules: PolicyRules }) {
                     </div>
                     <div className="grid grid-cols-2 gap-2 pl-6">
                         <div className="text-muted-foreground">Max Amount In:</div>
-                        <div className="font-mono">{rules.maxSwapAmountIn}</div>
+                        <div className="font-mono truncate" title={rules.maxSwapAmountIn}>
+                            {formatLimit(rules.maxSwapAmountIn)}
+                        </div>
                         <div className="text-muted-foreground">Max Path Length:</div>
                         <div className="font-mono">{rules.maxPathLength} hops</div>
                     </div>
@@ -56,9 +66,13 @@ export function PolicySummary({ rules }: { rules: PolicyRules }) {
                     </div>
                     <div className="grid grid-cols-2 gap-2 pl-6">
                         <div className="text-muted-foreground">Max Approve:</div>
-                        <div className="font-mono">{rules.maxApproveAmount}</div>
+                        <div className="font-mono truncate" title={rules.maxApproveAmount}>
+                            {formatLimit(rules.maxApproveAmount)}
+                        </div>
                         <div className="text-muted-foreground">Max Repay:</div>
-                        <div className="font-mono">{rules.maxRepayAmount}</div>
+                        <div className="font-mono truncate" title={rules.maxRepayAmount}>
+                            {formatLimit(rules.maxRepayAmount)}
+                        </div>
                     </div>
                 </div>
 

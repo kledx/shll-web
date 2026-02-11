@@ -23,6 +23,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                 className={cn(inputVariants(), className)}
                 ref={ref}
                 {...props}
+                suppressHydrationWarning={true}
             />
         )
     }

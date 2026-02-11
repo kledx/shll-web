@@ -18,16 +18,20 @@ interface ActionPanelProps {
     isOwner: boolean;
     isRenter: boolean;
     pricePerDay: string;
+    pricePerDayRaw: bigint;
     minDays: number;
+    listingId: string;
 }
 
-export function ActionPanel({ nfaAddress, tokenId, isActive, isOwner, isRenter, pricePerDay, minDays }: ActionPanelProps) {
+export function ActionPanel({ nfaAddress, tokenId, isActive, isOwner, isRenter, pricePerDay, pricePerDayRaw, minDays, listingId }: ActionPanelProps) {
     const { rentAgent, isLoading: isRenting } = useRent();
 
     const handleRent = async (days: number) => {
-        // 0x1 is a mock listing ID for now
-        const mockListingId = pad("0x01", { size: 32 });
-        await rentAgent(mockListingId, days, pricePerDay);
+        if (!listingId) {
+            console.error("No listing ID found");
+            return;
+        }
+        await rentAgent(listingId as Hex, days, pricePerDayRaw);
     };
 
     return (
