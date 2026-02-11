@@ -13,7 +13,7 @@ export function useListings() {
 
     // Phase 1: Get listing IDs for all possible token IDs (1..MAX)
     const tokenIds = useMemo(
-        () => Array.from({ length: MAX_TOKEN_ID }, (_, i) => BigInt(i + 1)),
+        () => Array.from({ length: MAX_TOKEN_ID }, (_, i) => BigInt(i)),
         []
     );
 
