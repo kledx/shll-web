@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Providers } from "./providers";
 import { LanguageProvider } from "@/components/providers/language-provider";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -23,10 +24,13 @@ export default function RootLayout({
       <body className="antialiased">
         <Providers>
           <LanguageProvider>
-            {children}
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
           </LanguageProvider>
         </Providers>
       </body>
     </html>
   );
 }
+

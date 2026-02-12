@@ -1,6 +1,8 @@
 import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { CONTRACTS } from "@/config/contracts";
 import { Address } from "viem";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 export function useWithdraw() {
     const {
@@ -15,6 +17,31 @@ export function useWithdraw() {
         isSuccess: isConfirmed,
         data: receipt
     } = useWaitForTransactionReceipt({ hash });
+
+    // Toast on tx submitted
+    useEffect(() => {
+        if (hash) {
+            toast.info("Withdrawal submitted", {
+                description: `Tx: ${hash.slice(0, 10)}...`,
+            });
+        }
+    }, [hash]);
+
+    // Toast on confirmation
+    useEffect(() => {
+        if (isConfirmed) {
+            toast.success("Withdrawal confirmed!");
+        }
+    }, [isConfirmed]);
+
+    // Toast on error
+    useEffect(() => {
+        if (writeError) {
+            toast.error("Withdrawal failed", {
+                description: writeError.message?.slice(0, 120),
+            });
+        }
+    }, [writeError]);
 
     const withdrawNative = (agentAccount: Address, amount: bigint, to: Address) => {
         writeContract({
@@ -44,3 +71,4 @@ export function useWithdraw() {
         error: writeError
     };
 }
+

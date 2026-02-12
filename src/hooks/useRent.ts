@@ -1,6 +1,8 @@
 import { useWriteContract, useWaitForTransactionReceipt, usePublicClient, useConnection } from "wagmi";
 import { CONTRACTS } from "@/config/contracts";
 import { parseEther, Hex } from "viem";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 export function useRent() {
     const { address } = useConnection();
@@ -17,22 +19,39 @@ export function useRent() {
         isSuccess: isConfirmed
     } = useWaitForTransactionReceipt({ hash });
 
+    // Toast on tx submitted
+    useEffect(() => {
+        if (hash) {
+            toast.info("Rental transaction submitted", {
+                description: `Tx: ${hash.slice(0, 10)}...`,
+            });
+        }
+    }, [hash]);
+
+    // Toast on confirmation
+    useEffect(() => {
+        if (isConfirmed) {
+            toast.success("Rental confirmed! You are now the renter.");
+        }
+    }, [isConfirmed]);
+
+    // Toast on write error
+    useEffect(() => {
+        if (writeError) {
+            toast.error("Rental transaction failed", {
+                description: writeError.message?.slice(0, 120),
+            });
+        }
+    }, [writeError]);
+
     const rentAgent = async (listingId: Hex, days: number, pricePerDay: bigint) => {
         if (!publicClient || !address) {
-            console.error("Wallet not connected or client unavailable");
+            toast.error("Wallet not connected");
             return;
         }
 
         // Calculate total value
         const totalValue = pricePerDay * BigInt(days);
-
-        console.log("Simulating Rent:", {
-            from: address,
-            listingId,
-            days,
-            pricePerDay: pricePerDay.toString(),
-            totalValue: totalValue.toString()
-        });
 
         try {
             // Simulate first to catch errors
@@ -45,11 +64,11 @@ export function useRent() {
                 value: totalValue
             });
 
-            console.log("Simulation success:", request);
             writeContract(request);
         } catch (e: any) {
-            console.error("Rent Simulation Failed:", e);
-            alert(`Simulation Failed: ${e.shortMessage || e.message || "Unknown error"}`);
+            toast.error("Rental simulation failed", {
+                description: e.shortMessage || e.message || "Unknown error",
+            });
         }
     };
 
@@ -61,3 +80,4 @@ export function useRent() {
         error: writeError
     };
 }
+
