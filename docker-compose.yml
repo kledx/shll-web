@@ -1,9 +1,10 @@
+version: "3.8"
 services:
   shll-web:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/kledx/shll-web:latest
     restart: unless-stopped
+    ports:
+      - "3000:3000"
     environment:
       - NODE_ENV=production
       - PORT=3000
