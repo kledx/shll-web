@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { encodeFunctionData, parseUnits, Address } from "viem";
 import { Action } from "./action-builder";
+import { useTranslation } from "@/hooks/useTranslation";
 
 // Venus vToken ABI (partial)
 const VTOKEN_ABI = [
@@ -30,6 +31,7 @@ interface RepayTemplateProps {
 }
 
 export function RepayTemplate({ onActionGenerated, renterAddress }: RepayTemplateProps) {
+    const { t } = useTranslation();
     const [amount, setAmount] = useState<string>("100");
 
     const generateAction = () => {
@@ -39,11 +41,6 @@ export function RepayTemplate({ onActionGenerated, renterAddress }: RepayTemplat
         const repayAmount = parseUnits(amount, 18);
 
         // 2. Encode Calldata
-        // Note: In MVP we simplify. Ideally this is a batch: Approve USDT -> Repay vUSDT
-        // Here we just generate the repay action for the template demonstration.
-        // User would click "Add to Batch" in a full implementation.
-        // For now, let's assume approval is done or we just generate the repay call.
-
         const data = encodeFunctionData({
             abi: VTOKEN_ABI,
             functionName: "repayBorrowBehalf",
@@ -63,13 +60,15 @@ export function RepayTemplate({ onActionGenerated, renterAddress }: RepayTemplat
     return (
         <div className="space-y-4 p-4 border rounded-lg bg-[var(--color-paper)]/50">
             <div className="space-y-2">
-                <Label>Repay Amount (USDT)</Label>
+                <Label>{t.agent.console.templates.repay.amount}</Label>
                 <Input type="number" value={amount} onChange={e => setAmount(e.target.value)} />
-                <p className="text-xs text-muted-foreground">Repaying loan for borrower: {renterAddress}</p>
+                <p className="text-xs text-muted-foreground">
+                    {t.agent.console.templates.repay.borrower.replace("{address}", renterAddress || "N/A")}
+                </p>
             </div>
 
             <Button onClick={generateAction} disabled={!renterAddress} className="w-full" variant="secondary">
-                Generate Repay Action
+                {t.agent.console.templates.repay.generate}
             </Button>
         </div>
     );

@@ -5,9 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { encodeFunctionData, parseUnits, Address, zeroAddress } from "viem";
-import { Loader2 } from "lucide-react";
+import { encodeFunctionData, parseUnits, Address } from "viem";
 import { Action } from "./action-builder";
+import { useTranslation } from "@/hooks/useTranslation";
 
 // PancakeRouter ABI (partial)
 const ROUTER_ABI = [
@@ -42,10 +42,10 @@ interface SwapTemplateProps {
 }
 
 export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplateProps) {
+    const { t } = useTranslation();
     const [tokenIn, setTokenIn] = useState<string>("USDT");
     const [tokenOut, setTokenOut] = useState<string>("WBNB");
     const [amountIn, setAmountIn] = useState<string>("10");
-    const [slippage, setSlippage] = useState<string>("0.5"); // %
 
     const generateAction = () => {
         if (!agentAccount) return;
@@ -81,7 +81,7 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
         <div className="space-y-4 p-4 border rounded-lg bg-[var(--color-paper)]/50">
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label>Token In</Label>
+                    <Label>{t.agent.console.templates.swap.tokenIn}</Label>
                     <Select value={tokenIn} onValueChange={setTokenIn}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -90,7 +90,7 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
                     </Select>
                 </div>
                 <div className="space-y-2">
-                    <Label>Token Out</Label>
+                    <Label>{t.agent.console.templates.swap.tokenOut}</Label>
                     <Select value={tokenOut} onValueChange={setTokenOut}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -101,12 +101,12 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
             </div>
 
             <div className="space-y-2">
-                <Label>Amount In</Label>
+                <Label>{t.agent.console.templates.swap.amountIn}</Label>
                 <Input type="number" value={amountIn} onChange={e => setAmountIn(e.target.value)} />
             </div>
 
             <Button onClick={generateAction} disabled={!agentAccount} className="w-full">
-                Generate Swap Action
+                {t.agent.console.templates.swap.generate}
             </Button>
         </div>
     );

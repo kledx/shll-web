@@ -6,6 +6,7 @@ import { usePublicClient } from "wagmi";
 import { CONTRACTS } from "@/config/contracts";
 import { Address, parseAbiItem, zeroAddress } from "viem";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface TransactionRecord {
     hash: string;
@@ -16,6 +17,7 @@ interface TransactionRecord {
 }
 
 export function TransactionHistory({ tokenId }: { tokenId: string }) {
+    const { t } = useTranslation();
     const publicClient = usePublicClient();
     const [logs, setLogs] = useState<TransactionRecord[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -73,10 +75,10 @@ export function TransactionHistory({ tokenId }: { tokenId: string }) {
         return (
             <Card className="border-[var(--color-burgundy)]/10">
                 <CardHeader>
-                    <CardTitle className="text-lg">Transaction History</CardTitle>
+                    <CardTitle className="text-lg">{t.agent.console.history.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-sm text-muted-foreground">No transactions executed yet.</p>
+                    <p className="text-sm text-muted-foreground">{t.agent.console.history.empty}</p>
                 </CardContent>
             </Card>
         );
@@ -85,7 +87,7 @@ export function TransactionHistory({ tokenId }: { tokenId: string }) {
     return (
         <Card className="border-[var(--color-burgundy)]/10">
             <CardHeader>
-                <CardTitle className="text-lg">Transaction History</CardTitle>
+                <CardTitle className="text-lg">{t.agent.console.history.title}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
                 {logs.map((log) => (
@@ -98,7 +100,7 @@ export function TransactionHistory({ tokenId }: { tokenId: string }) {
                             )}
                             <div>
                                 <div className="text-sm font-bold font-mono">{log.target}</div>
-                                <div className="text-xs text-muted-foreground">Block #{log.blockNumber.toString()}</div>
+                                <div className="text-xs text-muted-foreground">{t.agent.console.history.block} {log.blockNumber.toString()}</div>
                             </div>
                         </div>
                         <div className="text-right">

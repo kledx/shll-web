@@ -3,9 +3,11 @@
 import { AgentCard } from "./agent-card";
 import { useListings } from "@/hooks/useListings";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function MarketplaceList() {
     const { data: listings, isLoading } = useListings();
+    const { t } = useTranslation();
 
     if (isLoading) {
         return (
@@ -18,7 +20,7 @@ export function MarketplaceList() {
     if (!listings || listings.length === 0) {
         return (
             <div className="text-center p-12 text-muted-foreground">
-                No agents available for rent.
+                {t.marketplace.noAgents}
             </div>
         );
     }

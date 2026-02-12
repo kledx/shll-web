@@ -14,6 +14,7 @@ import { VaultPanel } from "@/components/console/vault-panel";
 import { useAgentAccount } from "@/hooks/useAgentAccount";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 function CopyButton({ text }: { text: string }) {
     const handleCopy = () => {
@@ -32,6 +33,7 @@ export default function AgentDetailPage() {
     const nfaAddress = params.nfa as string;
     const tokenId = params.tokenId as string;
     const { address } = useConnection();
+    const { t } = useTranslation();
 
     const { data: agent, isLoading } = useAgent(tokenId);
     const { account: agentAccount } = useAgentAccount(tokenId);
@@ -50,7 +52,7 @@ export default function AgentDetailPage() {
         return (
             <AppShell>
                 <div className="flex justify-center p-20">
-                    <p className="text-xl text-muted-foreground">Agent not found.</p>
+                    <p className="text-xl text-muted-foreground">{t.agent.detail.notFound}</p>
                 </div>
             </AppShell>
         );
@@ -71,13 +73,13 @@ export default function AgentDetailPage() {
                                 value="overview"
                                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--color-burgundy)] data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6 py-3"
                             >
-                                Overview
+                                {t.agent.detail.tabs.overview}
                             </TabsTrigger>
                             <TabsTrigger
                                 value="history"
                                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--color-burgundy)] data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6 py-3"
                             >
-                                History & Records
+                                {t.agent.detail.tabs.history}
                             </TabsTrigger>
                         </TabsList>
 
@@ -86,7 +88,7 @@ export default function AgentDetailPage() {
                                 <div className="flex items-center gap-2">
                                     <Chip variant="sticker" className="text-sm">#{tokenId}</Chip>
                                     <Chip variant={agent.status === 'active' ? 'default' : 'secondary'}>
-                                        {agent.status.toUpperCase()}
+                                        {agent.status === 'active' ? t.agent.detail.status.active.toUpperCase() : t.agent.detail.status.inactive.toUpperCase()}
                                     </Chip>
                                 </div>
 
@@ -101,14 +103,14 @@ export default function AgentDetailPage() {
                                 <div className="flex flex-wrap gap-4 text-sm font-mono text-muted-foreground pt-2">
                                     <div className="flex items-center gap-1">
                                         <User className="w-4 h-4" />
-                                        <span>Owner: {agent.owner.slice(0, 6)}...{agent.owner.slice(-4)}</span>
+                                        <span>{t.agent.detail.status.owner}: {agent.owner.slice(0, 6)}...{agent.owner.slice(-4)}</span>
                                         <CopyButton text={agent.owner} />
                                     </div>
                                     <div className="flex items-center gap-1">
-                                        <Clock className="w-4 h-4" /> Min Lease: {agent.minDays} days
+                                        <Clock className="w-4 h-4" /> {t.agent.detail.status.minLease.replace("{days}", agent.minDays.toString())}
                                     </div>
                                     <div className="flex items-center gap-1">
-                                        <ShieldCheck className="w-4 h-4" /> Policy Active
+                                        <ShieldCheck className="w-4 h-4" /> {t.agent.detail.status.policyActive}
                                     </div>
                                 </div>
                             </div>
@@ -138,7 +140,7 @@ export default function AgentDetailPage() {
                             isActive={agent.status === 'active'}
                             isOwner={isOwner}
                             isRenter={isRenter}
-                            pricePerDay={agent.pricePerDay.split(' ')[0]} // Strip " BNB"
+                            pricePerDay={agent.pricePerDay.split(' ')[0]}
                             pricePerDayRaw={agent.pricePerDayRaw}
                             minDays={agent.minDays}
                             listingId={agent.listingId}

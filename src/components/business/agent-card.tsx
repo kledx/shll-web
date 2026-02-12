@@ -12,6 +12,7 @@ import {
 import { Chip } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { Clock, ArrowRight, ShieldCheck } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export interface AgentListing {
     tokenId: string;
@@ -31,6 +32,8 @@ export interface AgentListing {
 }
 
 export function AgentCard({ listing }: { listing: AgentListing }) {
+    const { t } = useTranslation();
+
     return (
         <Card className={`hover:shadow-md transition-shadow relative overflow-hidden group ${listing.rented ? 'opacity-75' : ''}`}>
             {/* Decorative stamp effect */}
@@ -43,13 +46,13 @@ export function AgentCard({ listing }: { listing: AgentListing }) {
                         {listing.rented && (
                             <span className="flex items-center gap-1 bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full text-xs font-semibold">
                                 <ShieldCheck className="w-3 h-3" />
-                                Rented
+                                {t.agent.card.rented}
                             </span>
                         )}
                     </div>
                     <div className="flex items-center gap-1 text-xs font-mono text-muted-foreground">
                         <Clock className="w-3 h-3" />
-                        <span>min {listing.minDays}d</span>
+                        <span>{t.agent.card.minDays.replace("{days}", listing.minDays.toString())}</span>
                     </div>
                 </div>
                 <CardTitle className="truncate">
@@ -68,7 +71,7 @@ export function AgentCard({ listing }: { listing: AgentListing }) {
                             variant={cap === "swap" ? "secondary" : "default"}
                             className={cap === "swap" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"}
                         >
-                            {cap === "swap" ? "Swap Pack" : "Repay Pack"}
+                            {cap === "swap" ? t.agent.card.swapPack : t.agent.card.repayPack}
                         </Chip>
                     ))}
                 </div>
@@ -77,7 +80,7 @@ export function AgentCard({ listing }: { listing: AgentListing }) {
                     <span className="text-2xl font-bold font-serif text-[var(--color-burgundy)]">
                         {listing.pricePerDay}
                     </span>
-                    <span className="text-sm text-muted-foreground">/ day</span>
+                    <span className="text-sm text-muted-foreground">{t.agent.card.day}</span>
                 </div>
             </CardContent>
 
@@ -87,7 +90,7 @@ export function AgentCard({ listing }: { listing: AgentListing }) {
                         className={`w-full justify-between ${listing.rented ? 'bg-muted text-muted-foreground hover:bg-muted/90' : 'group-hover:bg-[var(--color-burgundy)]/90'}`}
                         variant={listing.rented ? 'outline' : 'default'}
                     >
-                        {listing.rented ? 'View Details' : 'Rent Now'} <ArrowRight className="w-4 h-4" />
+                        {listing.rented ? t.agent.card.viewDetails : t.agent.card.rentNow} <ArrowRight className="w-4 h-4" />
                     </Button>
                 </Link>
             </CardFooter>

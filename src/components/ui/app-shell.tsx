@@ -8,14 +8,21 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 import { TestnetBanner } from "@/components/layout/testnet-banner";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const { t, language, setLanguage } = useTranslation();
 
     const navItems = [
-        { name: "Market", href: "/" },
-        { name: "Me", href: "/me" },
+        { name: t.common.nav.market, href: "/" },
+        { name: t.common.nav.me, href: "/me" },
+        { name: t.common.nav.docs, href: "/docs" },
     ];
+
+    const toggleLanguage = () => {
+        setLanguage(language === 'en' ? 'zh' : 'en');
+    };
 
     return (
         <div className="min-h-screen flex flex-col font-sans bg-[var(--color-paper)] text-[var(--color-dark-text)]">
@@ -49,6 +56,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     </div>
 
                     <div className="flex items-center gap-4">
+                        <Button
+                            variant="ghost"
+                            onClick={toggleLanguage}
+                            className="text-sm font-medium text-[var(--color-burgundy)] hover:bg-[var(--color-burgundy)]/5"
+                        >
+                            {language === 'en' ? 'EN' : '中文'}
+                        </Button>
                         <ConnectButton showBalance={false} accountStatus="address" chainStatus="icon" />
                     </div>
                 </div>
@@ -61,7 +75,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             {/* Footer */}
             <footer className="border-t border-[var(--color-burgundy)]/10 py-6 text-center text-sm text-muted-foreground">
-                <p>© 2026 shll protocol. Decentralized AI Agent Rental on BNB Chain.</p>
+                <p>{t.common.footer}</p>
             </footer>
         </div>
     );

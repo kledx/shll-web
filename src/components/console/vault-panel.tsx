@@ -3,16 +3,16 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Wallet, ArrowDownToLine, ArrowUpFromLine, Copy, Loader2 } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, Loader2 } from "lucide-react";
 import { Address } from "viem";
-import { useVaultBalances, Asset } from "@/hooks/useVaultBalances";
-import { cn } from "@/lib/utils";
+import { useVaultBalances } from "@/hooks/useVaultBalances";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useWithdraw } from "@/hooks/useWithdraw";
 import { useConnection } from "wagmi";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface VaultPanelProps {
     agentAccount?: Address;
@@ -21,12 +21,12 @@ interface VaultPanelProps {
 }
 
 export function VaultPanel({ agentAccount, isRenter, isOwner }: VaultPanelProps) {
+    const { t } = useTranslation();
     const { assets, isLoading } = useVaultBalances(agentAccount);
-    const [isDepositOpen, setIsDepositOpen] = useState(false);
     const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
 
     // Withdraw State
-    const { withdrawNative, withdrawToken, isLoading: isWithdrawing, isSuccess: isWithdrawSuccess } = useWithdraw();
+    const { withdrawNative, withdrawToken, isLoading: isWithdrawing } = useWithdraw();
     const { address: userAddress } = useConnection();
     const [selectedAsset, setSelectedAsset] = useState<string>("Native Token");
     const [withdrawAmount, setWithdrawAmount] = useState<string>("");
@@ -47,9 +47,7 @@ export function VaultPanel({ agentAccount, isRenter, isOwner }: VaultPanelProps)
         if (!asset) return;
 
         // Parse amount (simplified for MVP)
-        // In reality, use parseUnits with asset.decimals
-        // Here assuming 18 decimals for all
-        const amountBigInt = BigInt(parseFloat(withdrawAmount) * 1e18);
+        const amountBigInt = BigInt(Math.floor(parseFloat(withdrawAmount || "0") * 1e18));
 
         if (asset.isNative) {
             withdrawNative(agentAccount, amountBigInt, withdrawAddress as Address);
@@ -64,36 +62,36 @@ export function VaultPanel({ agentAccount, isRenter, isOwner }: VaultPanelProps)
         <Card className="border-[var(--color-burgundy)]/10">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <div className="space-y-1">
-                    <CardTitle className="text-xl font-serif">Vault Balance</CardTitle>
-                    <CardDescription>Assets held by the Agent Account.</CardDescription>
+                    <CardTitle className="text-xl font-serif">{t.agent.vault.title}</CardTitle>
+                    <CardDescription>{t.agent.vault.desc}</CardDescription>
                 </div>
                 <div className="flex gap-2">
                     {/* Deposit (Simple Copy) */}
                     <Button variant="outline" size="sm" onClick={handleCopyAddress} className="gap-2">
-                        <ArrowDownToLine className="w-4 h-4" /> Deposit
+                        <ArrowDownToLine className="w-4 h-4" /> {t.agent.vault.deposit}
                     </Button>
 
                     {/* Withdraw (Modal) */}
                     <Dialog open={isWithdrawOpen} onOpenChange={setIsWithdrawOpen}>
                         <DialogTrigger asChild>
                             <Button variant="secondary" size="sm" disabled={!canWithdraw} className="gap-2">
-                                <ArrowUpFromLine className="w-4 h-4" /> Withdraw
+                                <ArrowUpFromLine className="w-4 h-4" /> {t.agent.vault.withdraw}
                             </Button>
                         </DialogTrigger>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Withdraw Assets</DialogTitle>
+                                <DialogTitle>{t.agent.vault.dialog.title}</DialogTitle>
                                 <DialogDescription>
-                                    Transfer funds from the Agent Account to your wallet.
+                                    {t.agent.vault.dialog.desc}
                                 </DialogDescription>
                             </DialogHeader>
 
                             <div className="grid gap-4 py-4">
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label className="text-right">Asset</Label>
+                                    <Label className="text-right">{t.agent.vault.dialog.assetLabel}</Label>
                                     <Select onValueChange={setSelectedAsset} defaultValue={selectedAsset}>
                                         <SelectTrigger className="col-span-3">
-                                            <SelectValue placeholder="Select asset" />
+                                            <SelectValue placeholder={t.agent.vault.dialog.select} />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {assets.map(asset => (
@@ -105,7 +103,7 @@ export function VaultPanel({ agentAccount, isRenter, isOwner }: VaultPanelProps)
                                     </Select>
                                 </div>
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label className="text-right">Amount</Label>
+                                    <Label className="text-right">{t.agent.vault.dialog.amountLabel}</Label>
                                     <Input
                                         type="number"
                                         value={withdrawAmount}
@@ -115,7 +113,7 @@ export function VaultPanel({ agentAccount, isRenter, isOwner }: VaultPanelProps)
                                     />
                                 </div>
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label className="text-right">To</Label>
+                                    <Label className="text-right">{t.agent.vault.dialog.toLabel}</Label>
                                     <Input
                                         value={withdrawAddress}
                                         onChange={e => setWithdrawAddress(e.target.value)}
@@ -127,7 +125,7 @@ export function VaultPanel({ agentAccount, isRenter, isOwner }: VaultPanelProps)
                             <DialogFooter>
                                 <Button onClick={handleWithdraw} disabled={isWithdrawing}>
                                     {isWithdrawing ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
-                                    Confirm Withdraw
+                                    {t.agent.vault.dialog.confirm}
                                 </Button>
                             </DialogFooter>
                         </DialogContent>
@@ -139,7 +137,7 @@ export function VaultPanel({ agentAccount, isRenter, isOwner }: VaultPanelProps)
                     <div className="flex justify-center py-4"><Loader2 className="animate-spin text-muted-foreground" /></div>
                 ) : (
                     <div className="space-y-4">
-                        {assets.length === 0 && <p className="text-sm text-muted-foreground">No assets found.</p>}
+                        {assets.length === 0 && <p className="text-sm text-muted-foreground">{t.agent.vault.assets.noAssets}</p>}
                         {assets.map((asset, i) => (
                             <div key={i} className="flex items-center justify-between p-2 border rounded bg-muted/20">
                                 <div className="flex items-center gap-3">
@@ -148,12 +146,11 @@ export function VaultPanel({ agentAccount, isRenter, isOwner }: VaultPanelProps)
                                     </div>
                                     <div>
                                         <div className="font-medium">{asset.symbol}</div>
-                                        <div className="text-xs text-muted-foreground">{asset.isNative ? "Native" : "ERC20"}</div>
+                                        <div className="text-xs text-muted-foreground">{asset.isNative ? t.agent.vault.assets.native : t.agent.vault.assets.erc20}</div>
                                     </div>
                                 </div>
                                 <div className="text-right">
                                     <div className="font-mono">{parseFloat(asset.balance).toFixed(4)}</div>
-                                    {/* <div className="text-xs text-muted-foreground">~$0.00</div> */}
                                 </div>
                             </div>
                         ))}
