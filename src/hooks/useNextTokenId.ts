@@ -13,13 +13,16 @@ const OWNER_OF_ABI = [
     },
 ] as const;
 
-// Probe up to this many token IDs. Keep generous but bounded.
-const PROBE_LIMIT = 100;
+// Probe up to this many token IDs
+const PROBE_LIMIT = 50;
+
+// Safe fallback when probe is loading or fails — scan at least this many
+const DEFAULT_FALLBACK = 20;
 
 /**
  * Dynamically determines the next token ID by probing ownerOf on AgentNFA.
  * Returns the count of existing tokens (i.e., the first ID that doesn't exist).
- * Token IDs start from 0 in the contract (_nextTokenId++ pattern).
+ * While loading or on error, returns DEFAULT_FALLBACK to avoid empty marketplace.
  */
 export function useNextTokenId() {
     const nfaAddress = CONTRACTS.AgentNFA.address;
@@ -40,25 +43,27 @@ export function useNextTokenId() {
         [nfaAddress, probeIds]
     );
 
-    const { data: results, isLoading } = useReadContracts({
+    const { data: results, isLoading, isError } = useReadContracts({
         contracts,
         query: {
-            staleTime: 60_000, // Cache for 1 minute, token minting is rare
+            staleTime: 60_000,
         },
     });
 
     const nextTokenId = useMemo(() => {
-        if (!results) return 0;
+        // While loading or on error, return safe fallback so marketplace stays populated
+        if (!results || isError) return DEFAULT_FALLBACK;
 
         // Find the first token ID where ownerOf reverts (status !== "success")
         for (let i = 0; i < results.length; i++) {
             if (results[i]?.status !== "success") {
-                return i;
+                // Return at least DEFAULT_FALLBACK to handle partial RPC failures
+                return Math.max(i, DEFAULT_FALLBACK);
             }
         }
-        // All probed IDs exist - return PROBE_LIMIT (unlikely in practice)
         return PROBE_LIMIT;
-    }, [results]);
+    }, [results, isError]);
 
     return { nextTokenId, isLoading };
 }
+
