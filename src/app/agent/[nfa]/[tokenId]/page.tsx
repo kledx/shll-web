@@ -120,6 +120,7 @@ export default function AgentDetailPage() {
                                 agentAccount={agentAccount}
                                 isRenter={isRenter}
                                 isOwner={isOwner}
+                                tokenId={tokenId}
                             />
 
                             <PolicySummary rules={agent.policy} />
