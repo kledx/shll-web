@@ -2,7 +2,9 @@ import { useMemo } from "react";
 import { useConnection, useReadContracts } from "wagmi";
 import { CONTRACTS } from "../config/contracts";
 import { Address } from "viem";
-import { useNextTokenId } from "./useNextTokenId";
+
+// Generous upper bound. Non-existent token IDs are safely skipped.
+const MAX_TOKEN_ID = 20;
 
 export interface RentalItem {
     nfa: Address;
@@ -15,12 +17,11 @@ export interface RentalItem {
 export function useMyRentals() {
     const { address } = useConnection();
     const nfaAddress = CONTRACTS.AgentNFA.address;
-    const { nextTokenId } = useNextTokenId();
 
-    // Token IDs to check (0..nextTokenId-1)
+    // Token IDs to check (0..MAX-1)
     const tokenIds = useMemo(
-        () => Array.from({ length: nextTokenId }, (_, i) => BigInt(i)),
-        [nextTokenId]
+        () => Array.from({ length: MAX_TOKEN_ID }, (_, i) => BigInt(i)),
+        []
     );
 
     // Batch read: userOf, userExpires, accountOf for each token

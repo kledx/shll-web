@@ -3,17 +3,18 @@ import { useReadContracts } from "wagmi";
 import { formatEther, Address } from "viem";
 import { CONTRACTS } from "../config/contracts";
 import { AgentListing } from "@/components/business/agent-card";
-import { useNextTokenId } from "./useNextTokenId";
+
+// Generous upper bound. Non-existent token IDs are safely skipped in Phase 1/2.
+const MAX_TOKEN_ID = 20;
 
 export function useListings() {
     const nfaAddress = CONTRACTS.AgentNFA.address;
     const listingManagerAddress = CONTRACTS.ListingManager.address;
-    const { nextTokenId, isLoading: isTokenIdLoading } = useNextTokenId();
 
-    // Phase 1: Get listing IDs for all possible token IDs (0..nextTokenId-1)
+    // Phase 1: Get listing IDs for all possible token IDs (0..MAX-1)
     const tokenIds = useMemo(
-        () => Array.from({ length: nextTokenId }, (_, i) => BigInt(i)),
-        [nextTokenId]
+        () => Array.from({ length: MAX_TOKEN_ID }, (_, i) => BigInt(i)),
+        []
     );
 
     const phase1Contracts = useMemo(() => tokenIds.map(id => ({
@@ -134,7 +135,7 @@ export function useListings() {
         return validListings;
     }, [listingIdReads, phase2Reads, tokenIds, nfaAddress]);
 
-    const isLoading = isTokenIdLoading || isPhase1Loading || (phase2Contracts.length > 0 && isPhase2Loading);
+    const isLoading = isPhase1Loading || (phase2Contracts.length > 0 && isPhase2Loading);
 
     return { data: listings, isLoading, error: null };
 }
