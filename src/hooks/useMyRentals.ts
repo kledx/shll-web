@@ -2,9 +2,7 @@ import { useMemo } from "react";
 import { useConnection, useReadContracts } from "wagmi";
 import { CONTRACTS } from "../config/contracts";
 import { Address } from "viem";
-
-// Max token ID to scan. Keep in sync with useListings.ts.
-const MAX_TOKEN_ID = 10;
+import { useNextTokenId } from "./useNextTokenId";
 
 export interface RentalItem {
     nfa: Address;
@@ -17,11 +15,12 @@ export interface RentalItem {
 export function useMyRentals() {
     const { address } = useConnection();
     const nfaAddress = CONTRACTS.AgentNFA.address;
+    const { nextTokenId } = useNextTokenId();
 
-    // Token IDs to check
+    // Token IDs to check (0..nextTokenId-1)
     const tokenIds = useMemo(
-        () => Array.from({ length: MAX_TOKEN_ID }, (_, i) => BigInt(i + 1)),
-        []
+        () => Array.from({ length: nextTokenId }, (_, i) => BigInt(i)),
+        [nextTokenId]
     );
 
     // Batch read: userOf, userExpires, accountOf for each token
