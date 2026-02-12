@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowDownToLine, ArrowUpFromLine, Loader2 } from "lucide-react";
@@ -11,52 +11,109 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useWithdraw } from "@/hooks/useWithdraw";
-import { useConnection } from "wagmi";
+import { useDeposit } from "@/hooks/useDeposit";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useAccount } from "wagmi";
+
+// Tokens available for deposit (must match PolicyGuard config)
+const DEPOSIT_TOKENS: { name: string; symbol: string; address: string; decimals: number; isNative: boolean }[] = [
+    { name: "BNB", symbol: "BNB", address: "", decimals: 18, isNative: true },
+    { name: "USDT", symbol: "USDT", address: "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd", decimals: 18, isNative: false },
+    { name: "WBNB", symbol: "WBNB", address: "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd", decimals: 18, isNative: false },
+];
 
 interface VaultPanelProps {
     agentAccount?: Address;
     isRenter: boolean;
     isOwner: boolean;
+    tokenId: string;
 }
 
-export function VaultPanel({ agentAccount, isRenter, isOwner }: VaultPanelProps) {
+export function VaultPanel({ agentAccount, isRenter, isOwner, tokenId }: VaultPanelProps) {
     const { t } = useTranslation();
-    const { assets, isLoading } = useVaultBalances(agentAccount);
-    const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
+    const { address: userAddress } = useAccount();
+    const { assets, isLoading, refetch } = useVaultBalances(agentAccount);
+
+    // Deposit State
+    const [isDepositOpen, setIsDepositOpen] = useState(false);
+    const { depositNative, approveToken, depositToken, step: depositStep, isLoading: isDepositing, isSuccess: isDepositSuccess } = useDeposit();
+    const [depositAsset, setDepositAsset] = useState<string>("BNB");
+    const [depositAmount, setDepositAmount] = useState<string>("");
 
     // Withdraw State
-    const { withdrawNative, withdrawToken, isLoading: isWithdrawing } = useWithdraw();
-    const { address: userAddress } = useConnection();
+    const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
+    const { withdrawNative, withdrawToken, isLoading: isWithdrawing, isSuccess: isWithdrawSuccess } = useWithdraw();
     const [selectedAsset, setSelectedAsset] = useState<string>("Native Token");
     const [withdrawAmount, setWithdrawAmount] = useState<string>("");
-    const [withdrawAddress, setWithdrawAddress] = useState<string>(userAddress || "");
 
-    const handleCopyAddress = () => {
-        if (agentAccount) {
-            navigator.clipboard.writeText(agentAccount);
-            // In a real app, show toast
+    // Auto-refresh balances and close dialogs after deposit or withdraw confirms
+    useEffect(() => {
+        if (isDepositSuccess) {
+            const timer = setTimeout(() => {
+                refetch();
+                setIsDepositOpen(false);
+                setDepositAmount("");
+            }, 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [isDepositSuccess, refetch]);
+
+    useEffect(() => {
+        if (isWithdrawSuccess) {
+            const timer = setTimeout(() => {
+                refetch();
+                setIsWithdrawOpen(false);
+                setWithdrawAmount("");
+            }, 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [isWithdrawSuccess, refetch]);
+
+    const handleDeposit = () => {
+        if (!agentAccount || !depositAmount || parseFloat(depositAmount) <= 0) return;
+
+        const token = DEPOSIT_TOKENS.find(t => t.name === depositAsset);
+        if (!token) return;
+
+        if (token.isNative) {
+            // Native BNB: call AgentNFA.fundAgent(tokenId) {value: amount}
+            depositNative(tokenId, depositAmount);
+        } else {
+            if (depositStep === "idle" || depositStep === "approving") {
+                // ERC-20 Step 1: approve, then deposit
+                // For simplicity, we do approve first. User clicks again for deposit.
+                approveToken(token.address as Address, agentAccount, depositAmount, token.decimals);
+            }
         }
     };
 
-    const handleWithdraw = () => {
-        if (!agentAccount || !withdrawAddress) return;
+    // After approval confirmed, deposit the token
+    const handleDepositAfterApprove = () => {
+        if (!agentAccount || !depositAmount) return;
+        const token = DEPOSIT_TOKENS.find(t => t.name === depositAsset);
+        if (!token || token.isNative) return;
+        depositToken(agentAccount, token.address as Address, depositAmount, token.decimals);
+    };
 
-        // Find selected asset
+    const handleWithdraw = () => {
+        if (!agentAccount || !userAddress) return;
+
         const asset = assets.find(a => a.name === selectedAsset);
         if (!asset) return;
 
-        // Parse amount (simplified for MVP)
         const amountBigInt = BigInt(Math.floor(parseFloat(withdrawAmount || "0") * 1e18));
 
         if (asset.isNative) {
-            withdrawNative(agentAccount, amountBigInt, withdrawAddress as Address);
+            // Contract requires to == msg.sender (user's wallet)
+            withdrawNative(agentAccount, amountBigInt, userAddress as Address);
         } else if (asset.address) {
-            withdrawToken(agentAccount, asset.address, amountBigInt, withdrawAddress as Address);
+            withdrawToken(agentAccount, asset.address, amountBigInt, userAddress as Address);
         }
     };
 
     const canWithdraw = isRenter || isOwner;
+    const selectedDepositToken = DEPOSIT_TOKENS.find(t => t.name === depositAsset);
+    const isERC20Deposit = selectedDepositToken && !selectedDepositToken.isNative;
 
     return (
         <Card className="border-[var(--color-burgundy)]/10">
@@ -66,12 +123,90 @@ export function VaultPanel({ agentAccount, isRenter, isOwner }: VaultPanelProps)
                     <CardDescription>{t.agent.vault.desc}</CardDescription>
                 </div>
                 <div className="flex gap-2">
-                    {/* Deposit (Simple Copy) */}
-                    <Button variant="outline" size="sm" onClick={handleCopyAddress} className="gap-2">
-                        <ArrowDownToLine className="w-4 h-4" /> {t.agent.vault.deposit}
-                    </Button>
+                    {/* Deposit Dialog */}
+                    <Dialog open={isDepositOpen} onOpenChange={setIsDepositOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="gap-2">
+                                <ArrowDownToLine className="w-4 h-4" /> {t.agent.vault.deposit}
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Deposit to Agent Vault</DialogTitle>
+                                <DialogDescription>
+                                    Send tokens to the Agent&apos;s isolated account.
+                                    {agentAccount && (
+                                        <span className="block mt-1 font-mono text-xs">
+                                            Account: {agentAccount.slice(0, 8)}...{agentAccount.slice(-6)}
+                                        </span>
+                                    )}
+                                </DialogDescription>
+                            </DialogHeader>
 
-                    {/* Withdraw (Modal) */}
+                            <div className="grid gap-4 py-4">
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label className="text-right">Token</Label>
+                                    <Select onValueChange={setDepositAsset} defaultValue={depositAsset}>
+                                        <SelectTrigger className="col-span-3">
+                                            <SelectValue placeholder="Select token" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {DEPOSIT_TOKENS.map(token => (
+                                                <SelectItem key={token.name} value={token.name}>
+                                                    {token.symbol} {token.isNative ? "(Native)" : ""}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label className="text-right">Amount</Label>
+                                    <Input
+                                        type="number"
+                                        value={depositAmount}
+                                        onChange={e => setDepositAmount(e.target.value)}
+                                        className="col-span-3"
+                                        placeholder="0.0"
+                                        step="0.001"
+                                        min="0"
+                                    />
+                                </div>
+                            </div>
+
+                            <DialogFooter className="flex gap-2">
+                                {isERC20Deposit ? (
+                                    <>
+                                        <Button
+                                            onClick={handleDeposit}
+                                            disabled={isDepositing || !depositAmount}
+                                            variant="outline"
+                                        >
+                                            {isDepositing && depositStep === "approving" ? (
+                                                <Loader2 className="animate-spin w-4 h-4 mr-2" />
+                                            ) : null}
+                                            1. Approve
+                                        </Button>
+                                        <Button
+                                            onClick={handleDepositAfterApprove}
+                                            disabled={isDepositing || !depositAmount}
+                                        >
+                                            {isDepositing && depositStep === "depositing" ? (
+                                                <Loader2 className="animate-spin w-4 h-4 mr-2" />
+                                            ) : null}
+                                            2. Deposit
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <Button onClick={handleDeposit} disabled={isDepositing || !depositAmount}>
+                                        {isDepositing ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
+                                        Deposit BNB
+                                    </Button>
+                                )}
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+
+                    {/* Withdraw Dialog */}
                     <Dialog open={isWithdrawOpen} onOpenChange={setIsWithdrawOpen}>
                         <DialogTrigger asChild>
                             <Button variant="secondary" size="sm" disabled={!canWithdraw} className="gap-2">
@@ -110,14 +245,6 @@ export function VaultPanel({ agentAccount, isRenter, isOwner }: VaultPanelProps)
                                         onChange={e => setWithdrawAmount(e.target.value)}
                                         className="col-span-3"
                                         placeholder="0.0"
-                                    />
-                                </div>
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label className="text-right">{t.agent.vault.dialog.toLabel}</Label>
-                                    <Input
-                                        value={withdrawAddress}
-                                        onChange={e => setWithdrawAddress(e.target.value)}
-                                        className="col-span-3 font-mono text-xs"
                                     />
                                 </div>
                             </div>

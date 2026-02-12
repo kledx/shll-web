@@ -1908,7 +1908,7 @@ export const CONTRACTS = {
     ] as const,
   },
   PolicyGuard: {
-    address: "0x66fca14edb48b6a67d6036e40a88e43cdc9f50ae" as Address,
+    address: "0xDe20D3655ba4C69990FDA427dCdD5674b8C52595" as Address,
     abi: [
       {
         "type": "constructor",

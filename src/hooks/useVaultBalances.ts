@@ -1,11 +1,11 @@
 import { useBalance, useReadContracts } from "wagmi";
 import { Address, erc20Abi, formatUnits } from "viem";
 
-// Token addresses (BSC Testnet)
+// Token addresses (BSC Testnet) — must match PolicyGuard config
 const TOKENS = {
-    USDT: "0x66E972502A34A625828C544a1914E8D8cc2A9dE5",
+    USDT: "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd",
     WBNB: "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd",
-    DAI: "0xEC5dCb5Dbf4B114C9d0F65BcCAb49EC54F9a0F92"
+
 } as const;
 
 export interface Asset {
@@ -19,7 +19,7 @@ export interface Asset {
 
 export function useVaultBalances(agentAccount?: Address) {
     // 1. Native Balance (BNB)
-    const { data: nativeBalance, isLoading: isNativeLoading } = useBalance({
+    const { data: nativeBalance, isLoading: isNativeLoading, refetch: refetchNative } = useBalance({
         address: agentAccount,
     });
 
@@ -27,7 +27,7 @@ export function useVaultBalances(agentAccount?: Address) {
     const tokenList = Object.entries(TOKENS).map(([symbol, address]) => ({ symbol, address: address as Address }));
     const zeroAddr = "0x0000000000000000000000000000000000000000" as Address;
 
-    const { data: tokenData, isLoading: isTokensLoading } = useReadContracts({
+    const { data: tokenData, isLoading: isTokensLoading, refetch: refetchTokens } = useReadContracts({
         contracts: [
             // First: balanceOf for each token
             ...tokenList.map(token => ({
@@ -64,6 +64,7 @@ export function useVaultBalances(agentAccount?: Address) {
 
     // Tokens
     if (tokenData) {
+        // console.log("VaultBalances tokenData:", tokenData);
         const count = tokenList.length;
         tokenList.forEach((token, index) => {
             const balanceResult = tokenData[index];
@@ -82,13 +83,26 @@ export function useVaultBalances(agentAccount?: Address) {
                     address: token.address,
                     isNative: false
                 });
+            } else {
+                console.warn(`Failed to fetch balance for ${token.symbol}`, balanceResult);
             }
         });
+    } else if (isTokensLoading) {
+        // console.log("Loading tokens...");
+    } else {
+        console.warn("No tokenData returned from useReadContracts");
     }
+
+    // Combined refetch for both native and ERC-20
+    const refetch = () => {
+        refetchNative();
+        refetchTokens();
+    };
 
     return {
         assets,
-        isLoading: isNativeLoading || isTokensLoading
+        isLoading: isNativeLoading || isTokensLoading,
+        refetch,
     };
 }
 

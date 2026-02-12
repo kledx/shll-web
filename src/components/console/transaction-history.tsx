@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePublicClient } from "wagmi";
 import { CONTRACTS } from "@/config/contracts";
-import { Address, parseAbiItem, zeroAddress } from "viem";
+import { Address, parseAbi, zeroAddress } from "viem";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 
@@ -31,40 +31,77 @@ export function TransactionHistory({ tokenId }: { tokenId: string }) {
             return;
         }
 
+        let cancelled = false;
+
         const fetchLogs = async () => {
             try {
-                const blockNumber = await publicClient.getBlockNumber();
-                // Fetch last 5000 blocks to avoid RPC limits on public nodes
-                const fromBlock = blockNumber - BigInt(5000) > BigInt(0) ? blockNumber - BigInt(5000) : BigInt(0);
+                const latestBlock = await publicClient.getBlockNumber();
 
-                const events = await publicClient.getLogs({
-                    address: CONTRACTS.AgentNFA.address,
-                    event: parseAbiItem(
-                        "event Executed(uint256 indexed tokenId, address indexed caller, address indexed account, address target, bytes4 selector, bool success, bytes result)"
-                    ),
-                    args: {
-                        tokenId: BigInt(tokenId),
-                    },
-                    fromBlock: fromBlock
+                // Scan fast ~24 hours (approx 30k blocks)
+                const TOTAL_BLOCKS_TO_SCAN = BigInt(30000);
+                const CHUNK_SIZE = BigInt(5000); // Safe chunk size for public BSC nodes
+
+                let currentToBlock = latestBlock;
+                const minBlock = latestBlock - TOTAL_BLOCKS_TO_SCAN > BigInt(0) ? latestBlock - TOTAL_BLOCKS_TO_SCAN : BigInt(0);
+
+                let allEvents: any[] = [];
+
+                // Fetch in chunks
+                while (currentToBlock > minBlock && !cancelled) {
+                    const fromBlock = currentToBlock - CHUNK_SIZE > minBlock ? currentToBlock - CHUNK_SIZE : minBlock;
+
+                    try {
+                        const chunks = await publicClient.getLogs({
+                            address: CONTRACTS.AgentNFA.address,
+                            events: parseAbi([
+                                "event Execution(uint256 indexed tokenId, address indexed target, uint256 value, bytes data, bool success, bytes result)"
+                            ]),
+                            fromBlock,
+                            toBlock: currentToBlock
+                        });
+                        allEvents = [...allEvents, ...chunks];
+                    } catch (err) {
+                        console.warn(`Failed to fetch logs from ${fromBlock} to ${currentToBlock}`, err);
+                        // Convert BigInt to string for replacement, then back to BigInt if needed, or just let the loop continue?
+                        // If a chunk fails, we skip it and continue. Or break? 
+                        // Continuing might leave gaps. But better than nothing.
+                    }
+
+                    currentToBlock = fromBlock - BigInt(1);
+                }
+
+                // Filter for current agent
+                const agentEvents = allEvents.filter(e => e.args.tokenId === BigInt(tokenId));
+
+                const history: TransactionRecord[] = agentEvents.map((e) => {
+                    return {
+                        hash: e.transactionHash || "0x",
+                        blockNumber: e.blockNumber || BigInt(0),
+                        target: e.args.target!,
+                        success: e.args.success!,
+                        result: e.args.result!
+                    };
                 });
 
-                const records = events.map(log => ({
-                    hash: log.transactionHash,
-                    blockNumber: log.blockNumber,
-                    target: log.args.target!,
-                    success: log.args.success!,
-                    result: log.args.result!
-                })).reverse(); // Newest first
+                // Deduplicate by hash just in case
+                const uniqueHistory = Array.from(new Map(history.map(item => [item.hash, item])).values());
 
-                setLogs(records);
-            } catch (err) {
-                console.error("Failed to fetch logs:", err);
+                // Sort: Newest first (descending blockNumber)
+                uniqueHistory.sort((a, b) => Number(b.blockNumber - a.blockNumber));
+
+                setLogs(uniqueHistory);
+            } catch (err: any) {
+                if (!cancelled) {
+                    console.warn("TransactionHistory: Unexpected error", err);
+                }
             } finally {
-                setIsLoading(false);
+                if (!cancelled) setIsLoading(false);
             }
         };
 
         fetchLogs();
+
+        return () => { cancelled = true; };
     }, [publicClient, tokenId]);
 
     if (isLoading) {
@@ -105,7 +142,7 @@ export function TransactionHistory({ tokenId }: { tokenId: string }) {
                         </div>
                         <div className="text-right">
                             <a
-                                href={`https://opbnb-testnet.bscscan.com/tx/${log.hash}`}
+                                href={`https://testnet.bscscan.com/tx/${log.hash}`}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="text-xs text-[var(--color-sky)] hover:underline"

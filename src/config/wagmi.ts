@@ -7,8 +7,9 @@ const bscTestnetWithCustomRpc = {
     rpcUrls: {
         default: {
             http: [
-                'https://bnb-testnet.g.alchemy.com/v2/CVaHvQCguUQe5C-mRLHWe5qzcCmPkA1T',
-                'https://data-seed-prebsc-1-s1.binance.org:8545'
+                'https://bsc-testnet.publicnode.com',
+                'https://data-seed-prebsc-1-s1.binance.org:8545',
+                'https://data-seed-prebsc-2-s1.binance.org:8545',
             ],
         },
     },
@@ -17,9 +18,9 @@ const bscTestnetWithCustomRpc = {
 export const config = getDefaultConfig({
     appName: 'SHLL',
     projectId: '1e7ed9b14b2c61a5e9c2273f5ed6d048',
-    chains: [bscTestnetWithCustomRpc],
+    chains: [bscTestnetWithCustomRpc, bsc],
     transports: {
-        [bscTestnetWithCustomRpc.id]: http('https://data-seed-prebsc-1-s1.binance.org:8545', {
+        [bscTestnetWithCustomRpc.id]: http('https://bsc-testnet.publicnode.com', {
             batch: { wait: 0 }, // Disable batching
             retryCount: 3,
             retryDelay: 1000,

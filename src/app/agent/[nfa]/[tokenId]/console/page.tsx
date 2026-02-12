@@ -113,6 +113,7 @@ export default function ConsolePage() {
                     agentAccount={agentAccount}
                     isRenter={isRenter}
                     isOwner={isOwner}
+                    tokenId={tokenId}
                 />
 
                 <TransactionHistory tokenId={tokenId} />
