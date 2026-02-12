@@ -116,6 +116,7 @@ export const en = {
                     tokenIn: "Token In",
                     tokenOut: "Token Out",
                     amountIn: "Amount In",
+                    slippage: "Slippage Tolerance",
                     generate: "Generate Swap Action"
                 },
                 repay: {
@@ -426,6 +427,7 @@ export const zh: Dictionary = {
                     tokenIn: "支付代币",
                     tokenOut: "获得代币",
                     amountIn: "支付数量",
+                    slippage: "滑点容忍度",
                     generate: "生成兑换动作"
                 },
                 repay: {

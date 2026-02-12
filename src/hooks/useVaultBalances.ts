@@ -1,7 +1,6 @@
 import { useBalance, useReadContracts } from "wagmi";
 import { Address, erc20Abi, formatUnits } from "viem";
 
-// Token addresses (Testnet Mock)
 // Token addresses (BSC Testnet)
 const TOKENS = {
     USDT: "0x66E972502A34A625828C544a1914E8D8cc2A9dE5",
@@ -24,16 +23,26 @@ export function useVaultBalances(agentAccount?: Address) {
         address: agentAccount,
     });
 
-    // 2. ERC20 Balances
+    // 2. ERC20 Balances + Decimals (batch read)
     const tokenList = Object.entries(TOKENS).map(([symbol, address]) => ({ symbol, address: address as Address }));
+    const zeroAddr = "0x0000000000000000000000000000000000000000" as Address;
 
-    const { data: tokenBalances, isLoading: isTokensLoading } = useReadContracts({
-        contracts: tokenList.map(token => ({
-            address: token.address,
-            abi: erc20Abi,
-            functionName: 'balanceOf',
-            args: [agentAccount || "0x0000000000000000000000000000000000000000" as Address],
-        })),
+    const { data: tokenData, isLoading: isTokensLoading } = useReadContracts({
+        contracts: [
+            // First: balanceOf for each token
+            ...tokenList.map(token => ({
+                address: token.address,
+                abi: erc20Abi,
+                functionName: 'balanceOf' as const,
+                args: [agentAccount || zeroAddr],
+            })),
+            // Then: decimals for each token
+            ...tokenList.map(token => ({
+                address: token.address,
+                abi: erc20Abi,
+                functionName: 'decimals' as const,
+            })),
+        ],
         query: {
             enabled: !!agentAccount
         }
@@ -47,7 +56,6 @@ export function useVaultBalances(agentAccount?: Address) {
         assets.push({
             symbol: nativeBalance?.symbol || "BNB",
             name: "Native Token",
-            // Manual format to avoid type issues with .formatted
             balance: nativeBalance ? formatUnits(nativeBalance.value, nativeBalance.decimals) : "0",
             decimals: nativeBalance?.decimals || 18,
             isNative: true
@@ -55,15 +63,22 @@ export function useVaultBalances(agentAccount?: Address) {
     }
 
     // Tokens
-    if (tokenBalances) {
-        tokenBalances.forEach((result, index) => {
-            const token = tokenList[index];
-            if (result.status === "success") {
+    if (tokenData) {
+        const count = tokenList.length;
+        tokenList.forEach((token, index) => {
+            const balanceResult = tokenData[index];
+            const decimalsResult = tokenData[count + index];
+
+            if (balanceResult?.status === "success") {
+                const decimals = decimalsResult?.status === "success"
+                    ? Number(decimalsResult.result)
+                    : 18; // Fallback to 18 if decimals read fails
+
                 assets.push({
                     symbol: token.symbol,
-                    name: token.symbol, // Simplified for now
-                    balance: formatUnits(result.result as unknown as bigint, 18), // Assuming 18 decimals for these mocks
-                    decimals: 18,
+                    name: token.symbol,
+                    balance: formatUnits(balanceResult.result as unknown as bigint, decimals),
+                    decimals,
                     address: token.address,
                     isNative: false
                 });
@@ -76,3 +91,4 @@ export function useVaultBalances(agentAccount?: Address) {
         isLoading: isNativeLoading || isTokensLoading
     };
 }
+
