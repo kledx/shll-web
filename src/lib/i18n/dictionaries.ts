@@ -84,6 +84,8 @@ export const en = {
                 subtitle: "Interact with external protocols via your agent.",
                 agentId: "Agent ID",
                 unknown: "Unknown Account",
+                connectWallet: "Please connect your wallet to access the console.",
+                noAccess: "You must be the owner or active renter of this agent to use the console.",
             },
             builder: {
                 title: "Transaction Builder",
@@ -392,6 +394,8 @@ export const zh: Dictionary = {
                 subtitle: "通过你的 Agent 与外部协议进行交互。",
                 agentId: "Agent ID",
                 unknown: "未知账户",
+                connectWallet: "请连接钱包以访问控制台。",
+                noAccess: "您必须是此 Agent 的所有者或当前租户才能使用控制台。",
             },
             builder: {
                 title: "交易构建器",
