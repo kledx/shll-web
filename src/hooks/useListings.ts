@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useReadContracts } from "wagmi";
-import { formatEther, Address } from "viem";
+import { formatEther } from "viem";
 import { CONTRACTS } from "../config/contracts";
 import { AgentListing } from "@/components/business/agent-card";
 

@@ -2,12 +2,35 @@
 
 import { AgentCard } from "./agent-card";
 import { useListings } from "@/hooks/useListings";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useAccount } from "wagmi";
+import { bscTestnet } from "viem/chains";
+
+// Chain ID where contracts are deployed
+const SUPPORTED_CHAIN_ID = bscTestnet.id; // 97
 
 export function MarketplaceList() {
     const { data: listings, isLoading } = useListings();
     const { t } = useTranslation();
+    const { chain, isConnected } = useAccount();
+
+    // Show chain warning if connected to wrong network
+    const isWrongChain = isConnected && chain && chain.id !== SUPPORTED_CHAIN_ID;
+
+    if (isWrongChain) {
+        return (
+            <div className="flex flex-col items-center gap-4 p-12 rounded-xl border border-yellow-500/30 bg-yellow-500/5">
+                <AlertTriangle className="w-10 h-10 text-yellow-500" />
+                <p className="text-center text-muted-foreground text-sm max-w-md">
+                    {t.marketplace.wrongChain}
+                </p>
+                <p className="text-xs text-muted-foreground/60">
+                    Current: <strong>{chain.name}</strong> → Required: <strong>BSC Testnet</strong>
+                </p>
+            </div>
+        );
+    }
 
     if (isLoading) {
         return (

@@ -20,8 +20,6 @@ export default function Home() {
           </p>
         </div>
 
-
-
         <MarketplaceList />
       </div>
     </AppShell>
