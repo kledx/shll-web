@@ -2,6 +2,7 @@ version: "3.8"
 services:
   shll-web:
     image: ghcr.io/kledx/shll-web:latest
+    pull_policy: always
     restart: unless-stopped
     # ports:
     #   - "3000:3000"
