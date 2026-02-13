@@ -124,7 +124,8 @@ export const en = {
                     stepApprove: "Step 1: Approve {token}",
                     approveNotice: "You must approve the Router to spend your {token} before swapping.",
                     txNotice: "This is transaction 1 of 2. After approval confirms, click again to Swap.",
-                    bnbNotice: "Uses swapExactETHForTokens — swaps native BNB from the vault directly."
+                    bnbNotice: "Uses swapExactETHForTokens — swaps native BNB from the vault directly.",
+                    unsupportedPair: "Unsupported pair: input and output resolve to the same underlying token."
                 },
                 repay: {
                     amount: "Repay Amount (USDT)",
@@ -442,7 +443,8 @@ export const zh: Dictionary = {
                     stepApprove: "第 1 步：授权 {token}",
                     approveNotice: "在兑换之前，您必须授权路由合约使用您的 {token}。",
                     txNotice: "这是 2 个交易中的第 1 个。授权确认后，再次点击即可兑换。",
-                    bnbNotice: "使用 swapExactETHForTokens — 直接从金库中兑换原生 BNB。"
+                    bnbNotice: "使用 swapExactETHForTokens — 直接从金库中兑换原生 BNB。",
+                    unsupportedPair: "不支持该交易对：输入与输出映射到同一底层资产。"
                 },
                 repay: {
                     amount: "还款数量 (USDT)",

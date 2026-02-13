@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -49,6 +49,23 @@ const ROUTER_ABI = [
     }
 ] as const;
 
+const WBNB_ABI = [
+    {
+        inputs: [],
+        name: "deposit",
+        outputs: [],
+        stateMutability: "payable",
+        type: "function"
+    },
+    {
+        inputs: [{ internalType: "uint256", name: "wad", type: "uint256" }],
+        name: "withdraw",
+        outputs: [],
+        stateMutability: "nonpayable",
+        type: "function"
+    }
+] as const;
+
 // BSC Testnet token config — addresses must match PolicyGuard allowlist
 const WBNB_ADDRESS = "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd";
 
@@ -67,6 +84,20 @@ interface SwapTemplateProps {
     agentAccount?: Address;
 }
 
+function getOutputTokens(inputSymbol: string): string[] {
+    const inputConfig = TOKENS[inputSymbol];
+    if (!inputConfig) return Object.keys(TOKENS).filter((symbol) => symbol !== inputSymbol);
+
+    // Allow BNB <-> WBNB (wrap/unwrap), block other same-address pairs.
+    return Object.keys(TOKENS).filter((symbol) => {
+        if (symbol === inputSymbol) return false;
+        const outputConfig = TOKENS[symbol];
+        const sameAddress = outputConfig.address.toLowerCase() === inputConfig.address.toLowerCase();
+        if (!sameAddress) return true;
+        return outputConfig.isNative !== inputConfig.isNative;
+    });
+}
+
 export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplateProps) {
     const { t } = useTranslation();
     const [tokenIn, setTokenIn] = useState<string>("BNB");
@@ -76,10 +107,32 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
 
     const tokenInConfig = TOKENS[tokenIn];
     const tokenOutConfig = TOKENS[tokenOut];
+    const outputTokens = getOutputTokens(tokenIn);
+    const isSameUnderlyingToken =
+        !!tokenInConfig &&
+        !!tokenOutConfig &&
+        tokenInConfig.address.toLowerCase() === tokenOutConfig.address.toLowerCase();
+    const isWrapUnwrapPair =
+        isSameUnderlyingToken &&
+        !!tokenInConfig &&
+        !!tokenOutConfig &&
+        tokenInConfig.isNative !== tokenOutConfig.isNative;
+    const isWrap = isWrapUnwrapPair && tokenInConfig?.isNative;
+    const isUnwrap = isWrapUnwrapPair && tokenOutConfig?.isNative;
+    const isRouterSwap = !!tokenInConfig && !!tokenOutConfig && !isWrapUnwrapPair;
+    const isUnsupportedPair =
+        isSameUnderlyingToken && !isWrapUnwrapPair;
+
+    useEffect(() => {
+        const options = getOutputTokens(tokenIn);
+        if (options.length > 0 && !options.includes(tokenOut)) {
+            setTokenOut(options[0]!);
+        }
+    }, [tokenIn, tokenOut]);
 
     // Amount with correct decimals
     const amountInWei = parseUnits(amountIn, tokenInConfig?.decimals || 18);
-    const path = tokenInConfig && tokenOutConfig ? [tokenInConfig.address, tokenOutConfig.address] as Address[] : undefined;
+    const path = isRouterSwap ? [tokenInConfig.address, tokenOutConfig.address] as Address[] : undefined;
 
     // Fetch Quote
     const { data: quoteData } = useReadContract({
@@ -88,13 +141,17 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
         functionName: "getAmountsOut",
         args: path && amountInWei > BigInt(0) ? [amountInWei, path] : undefined,
         query: {
-            enabled: !!path && amountInWei > BigInt(0),
+            enabled: isRouterSwap && !!path && amountInWei > BigInt(0),
             refetchInterval: 10000
         }
     });
 
     // Verify quote corresponds to current input amount to prevent stale data
-    const expectedOut = quoteData && quoteData[0] === amountInWei ? quoteData[1] : BigInt(0);
+    const expectedOut = isWrapUnwrapPair
+        ? amountInWei
+        : quoteData && quoteData[0] === amountInWei
+        ? quoteData[1]
+        : BigInt(0);
 
     // Read allowance for ERC-20 tokens
     const { data: allowance } = useReadContract({
@@ -103,7 +160,7 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
         functionName: "allowance",
         args: agentAccount ? [agentAccount, ROUTER_ADDRESS] : undefined,
         query: {
-            enabled: !!agentAccount && !!tokenInConfig && !tokenInConfig.isNative,
+            enabled: !!agentAccount && !!tokenInConfig && !tokenInConfig.isNative && !isUnwrap,
             refetchInterval: 5000
         }
     });
@@ -127,12 +184,47 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
 
     const currentBalance = tokenInConfig?.isNative ? ethBalance?.value : tokenBalance;
     const hasInsufficientBalance = currentBalance !== undefined && amountInWei > currentBalance;
-    const isApproveNeeded = tokenInConfig && !tokenInConfig.isNative && (allowance === undefined || allowance < amountInWei);
+    const isApproveNeeded =
+        !!tokenInConfig &&
+        !tokenInConfig.isNative &&
+        !isUnwrap &&
+        (allowance === undefined || allowance < amountInWei);
 
     const generateAction = () => {
         if (!agentAccount) return;
 
-        if (!tokenInConfig || !tokenOutConfig || !path) return;
+        if (!tokenInConfig || !tokenOutConfig) return;
+        if (isUnsupportedPair) return;
+
+        if (isWrap) {
+            const data = encodeFunctionData({
+                abi: WBNB_ABI,
+                functionName: "deposit",
+                args: []
+            });
+            onActionGenerated({
+                target: WBNB_ADDRESS as Address,
+                value: amountInWei,
+                data,
+            });
+            return;
+        }
+
+        if (isUnwrap) {
+            const data = encodeFunctionData({
+                abi: WBNB_ABI,
+                functionName: "withdraw",
+                args: [amountInWei]
+            });
+            onActionGenerated({
+                target: WBNB_ADDRESS as Address,
+                value: BigInt(0),
+                data,
+            });
+            return;
+        }
+
+        if (!path) return;
 
         if (isApproveNeeded) {
             // Generate Approve Action
@@ -191,15 +283,12 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
         onActionGenerated(action);
     };
 
-    // Filter out same token in output options
-    const outputTokens = Object.keys(TOKENS).filter(t => t !== tokenIn);
-
     return (
         <div className="space-y-4 p-4 border rounded-lg bg-[var(--color-paper)]/50">
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label>{t.agent.console.templates.swap.tokenIn}</Label>
-                    <Select value={tokenIn} onValueChange={(v) => { setTokenIn(v); if (v === tokenOut) setTokenOut(outputTokens[0] || ""); }}>
+                    <Select value={tokenIn} onValueChange={setTokenIn}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                             {Object.keys(TOKENS).map(tk => (
@@ -224,6 +313,12 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
             {tokenIn === "BNB" && (
                 <p className="text-xs text-muted-foreground">
                     💡 {t.agent.console.templates.swap.bnbNotice}
+                </p>
+            )}
+
+            {isUnsupportedPair && (
+                <p className="text-xs text-red-600">
+                    {t.agent.console.templates.swap.unsupportedPair}
                 </p>
             )}
 
@@ -264,17 +359,19 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
 
             <Button
                 onClick={generateAction}
-                disabled={!agentAccount || hasInsufficientBalance}
+                disabled={!agentAccount || hasInsufficientBalance || isUnsupportedPair}
                 className="w-full"
                 variant={hasInsufficientBalance ? "destructive" : "default"}
             >
-                {hasInsufficientBalance
+                {isUnsupportedPair
+                    ? t.agent.console.templates.swap.unsupportedPair
+                    : hasInsufficientBalance
                     ? t.agent.console.templates.swap.insufficientBalance.replace("{token}", tokenIn)
                     : (isApproveNeeded ? t.agent.console.templates.swap.stepApprove.replace("{token}", tokenIn) : t.agent.console.templates.swap.generate)
                 }
             </Button>
 
-            {isApproveNeeded && !hasInsufficientBalance && (
+            {isApproveNeeded && !hasInsufficientBalance && !isUnsupportedPair && (
                 <p className="text-xs text-muted-foreground text-center">
                     ℹ️ {t.agent.console.templates.swap.approveNotice.replace("{token}", tokenIn)} <br />
                     {t.agent.console.templates.swap.txNotice}
