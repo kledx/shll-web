@@ -11,9 +11,9 @@ const client = createPublicClient({
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
-    const tokenId = params.id;
+    const { id: tokenId } = await params;
 
     try {
         // 1. Fetch metadata from AgentNFA contract
