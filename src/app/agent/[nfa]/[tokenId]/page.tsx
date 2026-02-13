@@ -3,7 +3,7 @@
 import { AppShell } from "@/components/ui/app-shell";
 import { PolicySummary } from "@/components/business/policy-summary";
 import { ActionPanel } from "@/components/business/action-panel";
-import { useConnection } from "wagmi";
+import { useAccount } from "wagmi";
 import { useParams } from "next/navigation";
 import { Chip } from "@/components/ui/chip";
 import { Clock, ShieldCheck, User } from "lucide-react";
@@ -32,7 +32,7 @@ export default function AgentDetailPage() {
     const params = useParams();
     const nfaAddress = params.nfa as string;
     const tokenId = params.tokenId as string;
-    const { address } = useConnection();
+    const { address } = useAccount();
     const { t } = useTranslation();
 
     const { data: agent, isLoading } = useAgent(tokenId);

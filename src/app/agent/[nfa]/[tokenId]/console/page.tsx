@@ -8,7 +8,7 @@ import { useExecute } from "@/hooks/useExecute";
 import { TransactionHistory } from "@/components/console/transaction-history";
 import { VaultPanel } from "@/components/console/vault-panel";
 import { useSimulate } from "@/hooks/useSimulate";
-import { useConnection } from "wagmi";
+import { useAccount } from "wagmi";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -20,7 +20,7 @@ export default function ConsolePage() {
     const tokenId = params.tokenId as string;
     const nfaAddress = params.nfa as string;
 
-    const { address } = useConnection();
+    const { address } = useAccount();
     const { data: agent, isLoading: isAgentLoading } = useAgent(tokenId);
     const { account: agentAccount, isLoading: isAccountLoading } = useAgentAccount(tokenId);
     const {
