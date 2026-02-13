@@ -27,9 +27,10 @@ interface VaultPanelProps {
     isRenter: boolean;
     isOwner: boolean;
     tokenId: string;
+    refreshKey?: number;
 }
 
-export function VaultPanel({ agentAccount, isRenter, isOwner, tokenId }: VaultPanelProps) {
+export function VaultPanel({ agentAccount, isRenter, isOwner, tokenId, refreshKey = 0 }: VaultPanelProps) {
     const { t } = useTranslation();
     const { address: userAddress } = useAccount();
     const { assets, isLoading, refetch } = useVaultBalances(agentAccount);
@@ -68,6 +69,15 @@ export function VaultPanel({ agentAccount, isRenter, isOwner, tokenId }: VaultPa
             return () => clearTimeout(timer);
         }
     }, [isWithdrawSuccess, refetch]);
+
+    // Refresh vault balances after execute() confirmed on console page
+    useEffect(() => {
+        if (refreshKey <= 0) return;
+        const timer = setTimeout(() => {
+            refetch();
+        }, 1500);
+        return () => clearTimeout(timer);
+    }, [refreshKey, refetch]);
 
     const handleDeposit = () => {
         if (!agentAccount || !depositAmount || parseFloat(depositAmount) <= 0) return;

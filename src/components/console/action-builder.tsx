@@ -25,6 +25,7 @@ interface ActionBuilderProps {
     isSimulating: boolean;
     isExecuting: boolean;
     simulationResult: { success: boolean, data: Hex } | null;
+    simulationError?: string | null;
     agentAccount?: Address;
 }
 
@@ -34,6 +35,7 @@ export function ActionBuilder({
     isSimulating,
     isExecuting,
     simulationResult,
+    simulationError,
     agentAccount
 }: ActionBuilderProps) {
     const { t } = useTranslation();
@@ -66,6 +68,28 @@ export function ActionBuilder({
             data: data as Hex
         });
     };
+
+    const getPolicyHint = (raw?: string | null) => {
+        if (!raw) return null;
+        if (/Target not allowed/i.test(raw)) {
+            return "策略未授权目标合约，请让管理员在 PolicyGuard 白名单中放行该 token/router。";
+        }
+        if (/Selector not allowed/i.test(raw)) {
+            return "策略未授权该函数选择器，请更新 PolicyGuard 的 selector 白名单。";
+        }
+        if (/Token not allowed/i.test(raw)) {
+            return "策略未授权该 token，请更新 PolicyGuard token allowlist。";
+        }
+        if (/Spender not allowed/i.test(raw)) {
+            return "策略未授权该 spender，请更新 token->spender 白名单。";
+        }
+        if (/PolicyViolation/i.test(raw)) {
+            return "策略校验未通过，请检查 PolicyGuard 配置。";
+        }
+        return null;
+    };
+
+    const policyHint = getPolicyHint(simulationError);
 
     return (
         <div className="space-y-6">
@@ -176,6 +200,16 @@ export function ActionBuilder({
                             <div className="text-xs font-mono break-all opacity-80">
                                 {t.agent.console.builder.simulation.return}: {simulationResult.data}
                             </div>
+                            {!simulationResult.success && policyHint && (
+                                <div className="mt-2 text-xs font-medium">
+                                    {policyHint}
+                                </div>
+                            )}
+                            {!simulationResult.success && simulationError && (
+                                <div className="mt-1 text-[11px] font-mono break-all opacity-80">
+                                    {simulationError}
+                                </div>
+                            )}
                         </div>
                     )}
 

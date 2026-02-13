@@ -10,7 +10,7 @@ import { VaultPanel } from "@/components/console/vault-panel";
 import { useSimulate } from "@/hooks/useSimulate";
 import { useConnection } from "wagmi";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { ShieldAlert } from "lucide-react";
 
@@ -23,7 +23,12 @@ export default function ConsolePage() {
     const { address } = useConnection();
     const { data: agent, isLoading: isAgentLoading } = useAgent(tokenId);
     const { account: agentAccount, isLoading: isAccountLoading } = useAgentAccount(tokenId);
-    const { executeAction, isLoading: isExecuting } = useExecute();
+    const {
+        executeAction,
+        isLoading: isExecuting,
+        isSuccess: isExecuteSuccess,
+        hash: executeHash,
+    } = useExecute();
 
     // Derive permissions from on-chain data
     const isOwner = !!address && !!agent && address.toLowerCase() === agent.owner.toLowerCase();
@@ -32,10 +37,12 @@ export default function ConsolePage() {
 
     // Simulation State Management
     const [simAction, setSimAction] = useState<Action | null>(null);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     const {
         simulate,
         result: simulationResult,
+        error: simulationError,
         isLoading: isSimulating
     } = useSimulate(tokenId, simAction);
 
@@ -49,6 +56,12 @@ export default function ConsolePage() {
     const handleExecute = (action: Action) => {
         executeAction(tokenId, action);
     };
+
+    useEffect(() => {
+        if (isExecuteSuccess && executeHash) {
+            setRefreshKey((k) => k + 1);
+        }
+    }, [isExecuteSuccess, executeHash]);
 
     // Show loading while fetching agent data
     if (isAgentLoading) {
@@ -106,6 +119,7 @@ export default function ConsolePage() {
                     isSimulating={isSimulating}
                     isExecuting={isExecuting}
                     simulationResult={simulationResult}
+                    simulationError={simulationError}
                     agentAccount={agentAccount}
                 />
 
@@ -114,9 +128,10 @@ export default function ConsolePage() {
                     isRenter={isRenter}
                     isOwner={isOwner}
                     tokenId={tokenId}
+                    refreshKey={refreshKey}
                 />
 
-                <TransactionHistory tokenId={tokenId} />
+                <TransactionHistory tokenId={tokenId} refreshKey={refreshKey} />
             </div>
         </AppShell>
     );

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePublicClient } from "wagmi";
 import { CONTRACTS } from "@/config/contracts";
-import { Address, Hex, parseAbi, zeroAddress } from "viem";
+import { Address, Hex, parseAbiItem, zeroAddress } from "viem";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 
@@ -21,13 +21,16 @@ interface ExecutionEventLike {
     blockNumber?: bigint;
     args: {
         tokenId?: bigint;
+        caller?: Address;
+        account?: Address;
         target?: Address;
+        selector?: Hex;
         success?: boolean;
         result?: Hex;
     };
 }
 
-export function TransactionHistory({ tokenId }: { tokenId: string }) {
+export function TransactionHistory({ tokenId, refreshKey = 0 }: { tokenId: string; refreshKey?: number }) {
     const { t } = useTranslation();
     const publicClient = usePublicClient();
     const [logs, setLogs] = useState<TransactionRecord[]>([]);
@@ -44,13 +47,14 @@ export function TransactionHistory({ tokenId }: { tokenId: string }) {
 
         let cancelled = false;
 
-        const fetchLogs = async () => {
+        const fetchLogs = async (silent = false) => {
             try {
+                if (!silent) setIsLoading(true);
                 const latestBlock = await publicClient.getBlockNumber();
 
                 // Scan fast ~24 hours (approx 30k blocks)
                 const TOTAL_BLOCKS_TO_SCAN = BigInt(30000);
-                const CHUNK_SIZE = BigInt(5000); // Safe chunk size for public BSC nodes
+                const CHUNK_SIZE = BigInt(1500); // Smaller chunks reduce public RPC log-limit failures
 
                 let currentToBlock = latestBlock;
                 const minBlock = latestBlock - TOTAL_BLOCKS_TO_SCAN > BigInt(0) ? latestBlock - TOTAL_BLOCKS_TO_SCAN : BigInt(0);
@@ -64,9 +68,10 @@ export function TransactionHistory({ tokenId }: { tokenId: string }) {
                     try {
                         const chunks = await publicClient.getLogs({
                             address: CONTRACTS.AgentNFA.address,
-                            events: parseAbi([
-                                "event Execution(uint256 indexed tokenId, address indexed target, uint256 value, bytes data, bool success, bytes result)"
-                            ]),
+                            event: parseAbiItem(
+                                "event Executed(uint256 indexed tokenId, address indexed caller, address indexed account, address target, bytes4 selector, bool success, bytes result)"
+                            ),
+                            args: { tokenId: BigInt(tokenId) },
                             fromBlock,
                             toBlock: currentToBlock
                         });
@@ -106,14 +111,20 @@ export function TransactionHistory({ tokenId }: { tokenId: string }) {
                     console.warn("TransactionHistory: Unexpected error", err);
                 }
             } finally {
-                if (!cancelled) setIsLoading(false);
+                if (!cancelled && !silent) setIsLoading(false);
             }
         };
 
-        fetchLogs();
+        void fetchLogs();
+        const interval = setInterval(() => {
+            void fetchLogs(true);
+        }, 15000);
 
-        return () => { cancelled = true; };
-    }, [publicClient, tokenId]);
+        return () => {
+            cancelled = true;
+            clearInterval(interval);
+        };
+    }, [publicClient, tokenId, refreshKey]);
 
     if (isLoading) {
         return <div className="flex justify-center p-4"><Loader2 className="animate-spin text-muted-foreground" /></div>;

@@ -12,6 +12,7 @@ export const en = {
         testnet: "Testnet Beta",
         language: "Language",
         switchChain: "Switch Chain",
+        native: "Native",
     },
     marketplace: {
         title: "Marketplace",
@@ -118,7 +119,12 @@ export const en = {
                     tokenOut: "Token Out",
                     amountIn: "Amount In",
                     slippage: "Slippage Tolerance",
-                    generate: "Generate Swap Action"
+                    generate: "Generate Swap Action",
+                    insufficientBalance: "Insufficient {token} Balance",
+                    stepApprove: "Step 1: Approve {token}",
+                    approveNotice: "You must approve the Router to spend your {token} before swapping.",
+                    txNotice: "This is transaction 1 of 2. After approval confirms, click again to Swap.",
+                    bnbNotice: "Uses swapExactETHForTokens — swaps native BNB from the vault directly."
                 },
                 repay: {
                     amount: "Repay Amount (USDT)",
@@ -324,6 +330,7 @@ export const zh: Dictionary = {
         testnet: "测试网 Beta",
         language: "语言",
         switchChain: "切换网络",
+        native: "原生",
     },
     marketplace: {
         title: "市场",
@@ -430,7 +437,12 @@ export const zh: Dictionary = {
                     tokenOut: "获得代币",
                     amountIn: "支付数量",
                     slippage: "滑点容忍度",
-                    generate: "生成兑换动作"
+                    generate: "生成兑换动作",
+                    insufficientBalance: "{token} 余额不足",
+                    stepApprove: "第 1 步：授权 {token}",
+                    approveNotice: "在兑换之前，您必须授权路由合约使用您的 {token}。",
+                    txNotice: "这是 2 个交易中的第 1 个。授权确认后，再次点击即可兑换。",
+                    bnbNotice: "使用 swapExactETHForTokens — 直接从金库中兑换原生 BNB。"
                 },
                 repay: {
                     amount: "还款数量 (USDT)",

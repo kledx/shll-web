@@ -203,7 +203,7 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                             {Object.keys(TOKENS).map(tk => (
-                                <SelectItem key={tk} value={tk}>{tk} {TOKENS[tk].isNative ? "(Native)" : ""}</SelectItem>
+                                <SelectItem key={tk} value={tk}>{tk} {TOKENS[tk].isNative ? `(${t.common.native})` : ""}</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
@@ -223,7 +223,7 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
 
             {tokenIn === "BNB" && (
                 <p className="text-xs text-muted-foreground">
-                    💡 Uses <code>swapExactETHForTokens</code> — swaps native BNB from the vault directly.
+                    💡 {t.agent.console.templates.swap.bnbNotice}
                 </p>
             )}
 
@@ -269,15 +269,15 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
                 variant={hasInsufficientBalance ? "destructive" : "default"}
             >
                 {hasInsufficientBalance
-                    ? `Insufficient ${tokenIn} Balance`
-                    : (isApproveNeeded ? `Step 1: Approve ${tokenIn}` : t.agent.console.templates.swap.generate)
+                    ? t.agent.console.templates.swap.insufficientBalance.replace("{token}", tokenIn)
+                    : (isApproveNeeded ? t.agent.console.templates.swap.stepApprove.replace("{token}", tokenIn) : t.agent.console.templates.swap.generate)
                 }
             </Button>
 
             {isApproveNeeded && !hasInsufficientBalance && (
                 <p className="text-xs text-muted-foreground text-center">
-                    ℹ️ You must approve the Router to spend your {tokenIn} before swapping. <br />
-                    This is transaction 1 of 2. After approval confirms, click again to Swap.
+                    ℹ️ {t.agent.console.templates.swap.approveNotice.replace("{token}", tokenIn)} <br />
+                    {t.agent.console.templates.swap.txNotice}
                 </p>
             )}
         </div>
