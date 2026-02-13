@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, Check, Banknote } from "lucide-react";
-import { useConnection } from "wagmi";
+import { useAccount } from "wagmi";
 import { useTranslation } from "@/hooks/useTranslation";
 
 interface RentFormProps {
@@ -18,7 +18,7 @@ interface RentFormProps {
 
 export function RentForm({ pricePerDay, minDays, paymentToken, onRent, isRenting }: RentFormProps) {
     const { t } = useTranslation();
-    const { isConnected } = useConnection();
+    const { isConnected } = useAccount();
     const [days, setDays] = useState(minDays);
     const [isApproved, setIsApproved] = useState(false); // Mock state for now
     const [isApproving, setIsApproving] = useState(false);

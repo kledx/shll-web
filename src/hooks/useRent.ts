@@ -1,4 +1,4 @@
-import { useWriteContract, useWaitForTransactionReceipt, usePublicClient, useConnection } from "wagmi";
+import { useWriteContract, useWaitForTransactionReceipt, usePublicClient, useAccount } from "wagmi";
 import { CONTRACTS } from "@/config/contracts";
 import { Hex } from "viem";
 import { useEffect } from "react";
@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
 export function useRent() {
-    const { address } = useConnection();
+    const { address } = useAccount();
     const publicClient = usePublicClient();
     const queryClient = useQueryClient();
     const {

@@ -10,8 +10,11 @@ export interface RentalItem {
     nfa: Address;
     tokenId: bigint;
     agentAccount: Address;
+    owner: Address;
     expires: bigint;
     isActive: boolean;
+    isOwner: boolean;
+    isRenter: boolean;
 }
 
 export function useMyRentals() {
@@ -24,8 +27,14 @@ export function useMyRentals() {
         []
     );
 
-    // Batch read: userOf, userExpires, accountOf for each token
+    // Batch read: ownerOf, userOf, userExpires, accountOf for each token
     const contracts = useMemo(() => tokenIds.flatMap(id => [
+        {
+            address: nfaAddress,
+            abi: CONTRACTS.AgentNFA.abi,
+            functionName: 'ownerOf' as const,
+            args: [id]
+        },
         {
             address: nfaAddress,
             abi: CONTRACTS.AgentNFA.abi,
@@ -54,36 +63,44 @@ export function useMyRentals() {
         }
     });
 
-    // Filter tokens where current user is the renter
+    // Filter tokens where current user is either the owner or the renter
     const rentals = useMemo(() => {
         if (!reads || !address) return [];
 
-        const activeRentals: RentalItem[] = [];
+        const items: RentalItem[] = [];
 
         for (let i = 0; i < tokenIds.length; i++) {
-            const userResult = reads[i * 3];
-            const expiresResult = reads[i * 3 + 1];
-            const accountResult = reads[i * 3 + 2];
+            const ownerResult = reads[i * 4];
+            const userResult = reads[i * 4 + 1];
+            const expiresResult = reads[i * 4 + 2];
+            const accountResult = reads[i * 4 + 3];
 
-            if (userResult?.status !== 'success') continue;
+            if (ownerResult?.status !== 'success' || userResult?.status !== 'success') continue;
 
+            const agentOwner = ownerResult.result as Address;
             const currentUser = userResult.result as Address;
             const expires = (expiresResult?.result as bigint) || BigInt(0);
             const account = (accountResult?.result as Address) || ("0x0000000000000000000000000000000000000000" as Address);
 
-            // Check if I am the current renter
-            if (currentUser && currentUser.toLowerCase() === address.toLowerCase()) {
-                activeRentals.push({
+            const isOwner = !!address && agentOwner.toLowerCase() === address.toLowerCase();
+            const isRenter = !!address && currentUser.toLowerCase() === address.toLowerCase();
+
+            // Include if either owner or renter
+            if (isOwner || isRenter) {
+                items.push({
                     nfa: nfaAddress,
                     tokenId: tokenIds[i],
                     agentAccount: account,
+                    owner: agentOwner,
                     expires: expires,
-                    isActive: true
+                    isActive: isRenter && expires > BigInt(Math.floor(Date.now() / 1000)),
+                    isOwner,
+                    isRenter
                 });
             }
         }
 
-        return activeRentals;
+        return items;
     }, [reads, address, tokenIds, nfaAddress]);
 
     return { rentals, isLoading };

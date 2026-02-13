@@ -83,7 +83,7 @@ export function RentalCard({ rental }: RentalCardProps) {
     const isERC20 = selectedToken && !selectedToken.isNative;
 
     return (
-        <Card className={`border ${isExpired ? 'border-gray-200 opacity-70' : 'border-[var(--color-burgundy)]/20'}`}>
+        <Card className={`border ${isExpired && !rental.isOwner ? 'border-gray-200 opacity-70' : 'border-[var(--color-burgundy)]/20'}`}>
             <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                     <div>
@@ -92,23 +92,35 @@ export function RentalCard({ rental }: RentalCardProps) {
                             {formatAddress(rental.agentAccount)}
                         </CardDescription>
                     </div>
-                    <Chip variant={isExpired ? "default" : "burgundy"}>
-                        {isExpired ? "Expired" : "Active"}
-                    </Chip>
+                    <div className="flex flex-col items-end gap-1">
+                        {rental.isOwner && (
+                            <Chip variant="default" className="bg-yellow-100 text-yellow-800 border-yellow-200 text-[10px] px-1.5 py-0 h-4">
+                                OWNER
+                            </Chip>
+                        )}
+                        <Chip variant={isExpired && !rental.isOwner ? "default" : "burgundy"}>
+                            {isExpired && !rental.isOwner ? "Expired" : "Active"}
+                        </Chip>
+                    </div>
                 </div>
             </CardHeader>
             <CardContent className="pb-3">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
                     <Clock className="w-4 h-4" />
                     <span>
-                        {isExpired
-                            ? `Expired on ${new Date(Number(rental.expires) * 1000).toLocaleDateString()}`
-                            : `Expires in ${daysLeft} days`}
+                        {rental.isOwner && !rental.isRenter
+                            ? "You own this agent"
+                            : isExpired
+                                ? `Expired on ${new Date(Number(rental.expires) * 1000).toLocaleDateString()}`
+                                : `Expires in ${daysLeft} days`
+                        }
                     </span>
                 </div>
-                <div className="h-1 bg-gray-100 rounded overflow-hidden">
-                    <div className={`h-full ${isExpired ? 'bg-gray-300' : 'bg-[var(--color-burgundy)]'} w-3/4`} />
-                </div>
+                {!rental.isOwner && (
+                    <div className="h-1 bg-gray-100 rounded overflow-hidden">
+                        <div className={`h-full ${isExpired ? 'bg-gray-300' : 'bg-[var(--color-burgundy)]'} w-3/4`} />
+                    </div>
+                )}
             </CardContent>
             <CardFooter className="gap-2">
                 {/* Deposit Dialog */}
@@ -136,18 +148,20 @@ export function RentalCard({ rental }: RentalCardProps) {
                         <div className="grid gap-4 py-4">
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label className="text-right">Token</Label>
-                                <Select onValueChange={setDepositAsset} defaultValue={depositAsset}>
-                                    <SelectTrigger className="col-span-3">
-                                        <SelectValue placeholder="Select token" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {DEPOSIT_TOKENS.map(token => (
-                                            <SelectItem key={token.name} value={token.name}>
-                                                {token.symbol} {token.isNative ? "(Native)" : ""}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <PopoutWrapper>
+                                    <Select onValueChange={setDepositAsset} defaultValue={depositAsset}>
+                                        <SelectTrigger className="col-span-3">
+                                            <SelectValue placeholder="Select token" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {DEPOSIT_TOKENS.map(token => (
+                                                <SelectItem key={token.name} value={token.name}>
+                                                    {token.symbol} {token.isNative ? "(Native)" : ""}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </PopoutWrapper>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label className="text-right">Amount</Label>
@@ -185,7 +199,7 @@ export function RentalCard({ rental }: RentalCardProps) {
                 </Dialog>
 
                 <Link href={`/agent/${rental.nfa}/${rental.tokenId}/console`} className="flex-1">
-                    <Button variant={isExpired ? "outline" : "default"} className="w-full group">
+                    <Button variant={isExpired && !rental.isOwner ? "outline" : "default"} className="w-full group">
                         Manage
                         <ExternalLink className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                     </Button>
@@ -193,4 +207,9 @@ export function RentalCard({ rental }: RentalCardProps) {
             </CardFooter>
         </Card>
     );
+}
+
+// Simple wrapper to fix select popout visibility in dialogs if helpful
+function PopoutWrapper({ children }: { children: React.ReactNode }) {
+    return <div className="relative z-[50]">{children}</div>;
 }
