@@ -3,7 +3,7 @@ import { Address } from 'viem';
 export const CONTRACTS = {
   AgentNFA: {
     // BSC Testnet — deployed 2026-02-13
-    address: "0x30Ba562CE38fbD0ff300Dfc4b0271fe9c40C4cf0" as Address,
+    address: "0x4c0bcc8a43da7ec63d792fe7d3c932b1d9d88181" as Address,
     deployBlock: BigInt(89967916),
     abi: [
       {
@@ -1407,7 +1407,7 @@ export const CONTRACTS = {
     ] as const,
   },
   ListingManager: {
-    address: "0x599917b3df76b9A599b4C6f58E6aE5adE9b185B5" as Address,
+    address: "0x18ad506d40f730ced90a14a9ceb0770ad4c2b3fd" as Address,
     deployBlock: BigInt(89967916),
     abi: [
       {
@@ -1908,7 +1908,7 @@ export const CONTRACTS = {
     ] as const,
   },
   PolicyGuard: {
-    address: "0xDe20D3655ba4C69990FDA427dCdD5674b8C52595" as Address,
+    address: "0xae9b520f9efdd9d0ba0a913aca475a3581bb4b4c" as Address,
     abi: [
       {
         "type": "constructor",

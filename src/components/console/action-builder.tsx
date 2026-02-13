@@ -6,12 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Play, Terminal, ArrowRightLeft, Banknote } from "lucide-react";
+import { Loader2, Play, Terminal, ArrowRightLeft, Banknote, ShieldAlert } from "lucide-react";
 import { Address, Hex, isAddress, isHex } from "viem";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SwapTemplate } from "./swap-template";
 import { RepayTemplate } from "./repay-template";
 import { useTranslation } from "@/hooks/useTranslation";
+import { usePolicyPreflight } from "@/hooks/usePolicyPreflight";
 
 export interface Action {
     target: Address;
@@ -44,6 +45,10 @@ export function ActionBuilder({
     const [data, setData] = useState<string>("0x");
 
     const isValid = isAddress(target) && isHex(data);
+
+    // Preflight check — read on-chain policy state
+    const preflightAction = isValid ? { target: target as Address, value: BigInt(value || "0"), data: data as Hex } : null;
+    const { violations, isChecking: isPreflightChecking } = usePolicyPreflight(preflightAction);
 
     const handleActionGenerated = (action: Action) => {
         setTarget(action.target);
@@ -85,6 +90,15 @@ export function ActionBuilder({
         }
         if (/PolicyViolation/i.test(raw)) {
             return "策略校验未通过，请检查 PolicyGuard 配置。";
+        }
+        if (/amountOutMin is zero/i.test(raw)) {
+            return "滑点保护：最小输出金额不能为零，请设置合理的 amountOutMin。";
+        }
+        if (/Slippage exceeds/i.test(raw)) {
+            return "滑点超出上限，当前策略限制最大滑点为 3%。请调整交易参数。";
+        }
+        if (/Quote unavailable/i.test(raw)) {
+            return "链上报价失败，交易对可能不存在或路径无效。";
         }
         return null;
     };
@@ -170,6 +184,33 @@ export function ActionBuilder({
                             />
                         </div>
                     </div>
+
+                    {/* Preflight Warning Card */}
+                    {violations.length > 0 && (
+                        <div className="mt-4 p-4 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700">
+                            <div className="flex items-center gap-2 mb-2 text-amber-700 dark:text-amber-400 font-semibold text-sm">
+                                <ShieldAlert className="w-4 h-4" />
+                                策略预检发现 {violations.length} 项缺失
+                            </div>
+                            <ul className="space-y-1">
+                                {violations.map((v, i) => (
+                                    <li key={i} className="text-sm text-amber-800 dark:text-amber-300 flex items-start gap-1.5">
+                                        <span className="mt-0.5">⚠</span>
+                                        <span>{v.messageZh}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                            <div className="mt-2 text-sm text-amber-600 dark:text-amber-500">
+                                您仍可继续模拟，但链上执行大概率会被 PolicyGuard 拒绝。
+                            </div>
+                        </div>
+                    )}
+                    {isPreflightChecking && isValid && (
+                        <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            正在预检策略...
+                        </div>
+                    )}
 
                     <div className="flex gap-4 pt-2">
                         <Button
