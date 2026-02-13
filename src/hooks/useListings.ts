@@ -60,7 +60,7 @@ export function useListings() {
     abi: CONTRACTS.AgentNFA.abi,
     functionName: "getAgentMetadata",
     args: [BigInt(item.tokenId)],
-  }));
+  })) as any;
 
   const { data: metadataResults } = useReadContracts({
     contracts: metadataContracts,
@@ -73,7 +73,7 @@ export function useListings() {
     abi: CONTRACTS.AgentNFA.abi,
     functionName: "userOf",
     args: [BigInt(item.tokenId)],
-  }));
+  })) as any;
 
   const { data: renterResults } = useReadContracts({
     contracts: renterContracts,
@@ -84,7 +84,10 @@ export function useListings() {
     const indexerRenter = item.renter as Address;
     const chainRenterResult = renterResults?.[index];
     const chainRenter =
-      chainRenterResult?.status === "success" ? (chainRenterResult.result as Address) : undefined;
+      chainRenterResult?.status === "success" &&
+      typeof chainRenterResult.result === "string"
+        ? (chainRenterResult.result as Address)
+        : undefined;
     const effectiveRenter = chainRenter ?? indexerRenter;
     const isRented = Boolean(effectiveRenter && effectiveRenter !== zeroAddress);
 

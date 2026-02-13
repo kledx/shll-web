@@ -192,14 +192,55 @@ export function ActionBuilder({
                                 <ShieldAlert className="w-4 h-4" />
                                 策略预检发现 {violations.length} 项缺失
                             </div>
-                            <ul className="space-y-1">
+                            <ul className="space-y-2">
                                 {violations.map((v, i) => (
-                                    <li key={i} className="text-sm text-amber-800 dark:text-amber-300 flex items-start gap-1.5">
-                                        <span className="mt-0.5">⚠</span>
-                                        <span>{v.messageZh}</span>
+                                    <li key={i} className="text-sm">
+                                        <div className="flex items-start gap-1.5 text-amber-800 dark:text-amber-300">
+                                            <span className="mt-0.5">⚠</span>
+                                            <span>{v.messageZh}</span>
+                                        </div>
+                                        {v.fixCommand && (
+                                            <div className="mt-2 ml-5 space-y-1">
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => {
+                                                            navigator.clipboard.writeText(v.fixCommand!);
+                                                            // Simple toast fallback
+                                                            alert('修复命令已复制到剪贴板');
+                                                        }}
+                                                        className="px-2 py-1 text-xs bg-amber-600 hover:bg-amber-700 text-white rounded transition-colors"
+                                                    >
+                                                        📋 复制修复命令
+                                                    </button>
+                                                </div>
+                                                <code className="block text-xs bg-amber-100 dark:bg-amber-900/50 p-2 rounded font-mono overflow-x-auto">
+                                                    {v.fixCommand}
+                                                </code>
+                                            </div>
+                                        )}
                                     </li>
                                 ))}
                             </ul>
+
+                            {/* Batch copy all fix commands */}
+                            {violations.filter(v => v.fixCommand).length > 1 && (
+                                <div className="mt-3 pt-3 border-t border-amber-300 dark:border-amber-700">
+                                    <button
+                                        onClick={() => {
+                                            const allCommands = violations
+                                                .map(v => v.fixCommand)
+                                                .filter(Boolean)
+                                                .join('\n\n');
+                                            navigator.clipboard.writeText(allCommands);
+                                            alert(`已复制 ${violations.filter(v => v.fixCommand).length} 条修复命令`);
+                                        }}
+                                        className="w-full px-3 py-2 text-sm bg-amber-600 hover:bg-amber-700 text-white rounded transition-colors font-medium"
+                                    >
+                                        📋 批量复制所有修复命令 ({violations.filter(v => v.fixCommand).length} 条)
+                                    </button>
+                                </div>
+                            )}
+
                             <div className="mt-2 text-sm text-amber-600 dark:text-amber-500">
                                 您仍可继续模拟，但链上执行大概率会被 PolicyGuard 拒绝。
                             </div>

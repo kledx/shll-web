@@ -1,0 +1,12 @@
+
+> shll-web@0.1.0 dev
+> next dev --port 3000
+
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://198.18.0.1:3000
+- Environments: .env.local
+
+✓ Starting...
+✓ Ready in 585ms
+ POST /api/autopilot/enable 400 in 137ms (compile: 117ms, render: 20ms)

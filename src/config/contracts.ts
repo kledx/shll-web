@@ -2,9 +2,9 @@ import { Address } from 'viem';
 
 export const CONTRACTS = {
   AgentNFA: {
-    // BSC Testnet — deployed 2026-02-13
-    address: "0x4c0bcc8a43da7ec63d792fe7d3c932b1d9d88181" as Address,
-    deployBlock: BigInt(89967916),
+    // BSC Testnet — redeployed 2026-02-13 (off-chain permit + runner flow)
+    address: "0x827E342A9835536c03dCDC369626e1a981299f30" as Address,
+    deployBlock: BigInt(90131714),
     abi: [
       {
         "type": "constructor",
@@ -662,6 +662,92 @@ export const CONTRACTS = {
       },
       {
         "type": "function",
+        "name": "setOperator",
+        "inputs": [
+          {
+            "name": "tokenId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "operator",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "opExpires",
+            "type": "uint64",
+            "internalType": "uint64"
+          }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+      },
+      {
+        "type": "function",
+        "name": "setOperatorWithSig",
+        "inputs": [
+          {
+            "name": "permit",
+            "type": "tuple",
+            "internalType": "struct AgentNFA.OperatorPermit",
+            "components": [
+              {
+                "name": "tokenId",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "renter",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "operator",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "expires",
+                "type": "uint64",
+                "internalType": "uint64"
+              },
+              {
+                "name": "nonce",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "deadline",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "sig",
+            "type": "bytes",
+            "internalType": "bytes"
+          }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+      },
+      {
+        "type": "function",
+        "name": "clearOperator",
+        "inputs": [
+          {
+            "name": "tokenId",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+      },
+      {
+        "type": "function",
         "name": "setPolicy",
         "inputs": [
           {
@@ -918,6 +1004,63 @@ export const CONTRACTS = {
             "name": "",
             "type": "address",
             "internalType": "address"
+          }
+        ],
+        "stateMutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "operatorNonceOf",
+        "inputs": [
+          {
+            "name": "tokenId",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ],
+        "stateMutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "operatorOf",
+        "inputs": [
+          {
+            "name": "tokenId",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "",
+            "type": "address",
+            "internalType": "address"
+          }
+        ],
+        "stateMutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "operatorExpiresOf",
+        "inputs": [
+          {
+            "name": "tokenId",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "",
+            "type": "uint256",
+            "internalType": "uint256"
           }
         ],
         "stateMutability": "view"
@@ -1407,8 +1550,8 @@ export const CONTRACTS = {
     ] as const,
   },
   ListingManager: {
-    address: "0x18ad506d40f730ced90a14a9ceb0770ad4c2b3fd" as Address,
-    deployBlock: BigInt(89967916),
+    address: "0x3d8D7e13cC40b2D3bA4AB8Df64D8B2Fd44A98921" as Address,
+    deployBlock: BigInt(90131714),
     abi: [
       {
         "type": "constructor",
@@ -1908,7 +2051,7 @@ export const CONTRACTS = {
     ] as const,
   },
   PolicyGuard: {
-    address: "0xae9b520f9efdd9d0ba0a913aca475a3581bb4b4c" as Address,
+    address: "0x0D927Df3787FdBA7FCBB77f89411aEBef2383Edb" as Address,
     abi: [
       {
         "type": "constructor",

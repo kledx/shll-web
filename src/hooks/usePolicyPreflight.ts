@@ -18,6 +18,11 @@ export interface PreflightViolation {
     code: string;
     messageZh: string;
     messageEn: string;
+    fixCommand?: string;
+    fixAction?: {
+        type: 'add_target' | 'add_selector' | 'add_token' | 'add_spender';
+        params: Record<string, string>;
+    };
 }
 
 export interface PreflightResult {
@@ -155,6 +160,8 @@ export function usePolicyPreflight(action: { target: Address; value: bigint; dat
         contracts: contracts as any,
         query: {
             enabled: contracts.length > 0,
+            staleTime: 30_000,      // 30 seconds - don't refetch within this time
+            gcTime: 5 * 60_000,     // 5 minutes - cache time (formerly cacheTime)
         },
     });
 
@@ -171,6 +178,11 @@ export function usePolicyPreflight(action: { target: Address; value: bigint; dat
                 code: "TARGET_NOT_ALLOWED",
                 messageZh: `目标合约 ${action.target.slice(0, 10)}... 不在白名单`,
                 messageEn: `Target ${action.target.slice(0, 10)}... not in allowlist`,
+                fixCommand: `forge script script/ApplyPolicy.s.sol --sig "addTarget(address)" ${action.target} --rpc-url $RPC_URL --broadcast`,
+                fixAction: {
+                    type: 'add_target',
+                    params: { address: action.target },
+                },
             });
         }
         idx++;
@@ -181,6 +193,11 @@ export function usePolicyPreflight(action: { target: Address; value: bigint; dat
                 code: "SELECTOR_NOT_ALLOWED",
                 messageZh: `函数选择器 ${selector} 不在白名单`,
                 messageEn: `Selector ${selector} not in allowlist`,
+                fixCommand: `forge script script/ApplyPolicy.s.sol --sig "addSelector(address,bytes4)" ${action.target} ${selector} --rpc-url $RPC_URL --broadcast`,
+                fixAction: {
+                    type: 'add_selector',
+                    params: { target: action.target, selector },
+                },
             });
         }
         idx++;
@@ -192,6 +209,11 @@ export function usePolicyPreflight(action: { target: Address; value: bigint; dat
                     code: "TOKEN_NOT_ALLOWED",
                     messageZh: `代币 ${swapPath[i].slice(0, 10)}... 不在白名单`,
                     messageEn: `Token ${swapPath[i].slice(0, 10)}... not in allowlist`,
+                    fixCommand: `forge script script/ApplyPolicy.s.sol --sig "addToken(address)" ${swapPath[i]} --rpc-url $RPC_URL --broadcast`,
+                    fixAction: {
+                        type: 'add_token',
+                        params: { address: swapPath[i] },
+                    },
                 });
             }
             idx++;
@@ -204,6 +226,11 @@ export function usePolicyPreflight(action: { target: Address; value: bigint; dat
                     code: "SPENDER_NOT_ALLOWED",
                     messageZh: `授权对象 ${approveSpender.slice(0, 10)}... 不在白名单`,
                     messageEn: `Spender ${approveSpender.slice(0, 10)}... not in allowlist`,
+                    fixCommand: `forge script script/ApplyPolicy.s.sol --sig "addSpender(address,address)" ${action.target} ${approveSpender} --rpc-url $RPC_URL --broadcast`,
+                    fixAction: {
+                        type: 'add_spender',
+                        params: { token: action.target, spender: approveSpender },
+                    },
                 });
             }
             idx++;

@@ -70,9 +70,9 @@ interface ParsedPersona {
     role?: string;
 }
 
-export function useAgent(tokenId: string) {
+export function useAgent(tokenId: string, nfaAddressInput?: string) {
     const tokenIdBigInt = BigInt(tokenId || "0");
-    const nfaAddress = CONTRACTS.AgentNFA.address;
+    const nfaAddress = (nfaAddressInput || CONTRACTS.AgentNFA.address) as Address;
     const listingManagerAddress = CONTRACTS.ListingManager.address;
     const policyGuardAddress = CONTRACTS.PolicyGuard.address;
 
@@ -196,17 +196,30 @@ export function useAgent(tokenId: string) {
     const maxRepay = reads[10].result as bigint;
 
     // Parse Metadata JSON
-    let parsedPersona = { name: "Unknown", description: "No metadata", role: "Agent" };
+    const fallbackName = `Agent #${tokenId}`;
+    let parsedPersona = {
+        name: fallbackName,
+        description: metadata?.experience || "No metadata",
+        role: "Agent"
+    };
     try {
-        if (metadata && metadata.persona) {
-            const parsed = JSON.parse(metadata.persona) as ParsedPersona;
-            parsedPersona = {
-                name: parsed.name ?? "Unknown",
-                description: parsed.description ?? "No metadata",
-                role: parsed.role ?? "Agent",
-            };
+        const rawPersona = metadata?.persona?.trim();
+        if (rawPersona) {
+            const parsed = JSON.parse(rawPersona) as ParsedPersona | string;
+            if (typeof parsed === "string") {
+                parsedPersona.name = parsed || fallbackName;
+            } else {
+                parsedPersona = {
+                    name: parsed.name ?? fallbackName,
+                    description: parsed.description ?? parsedPersona.description,
+                    role: parsed.role ?? "Agent",
+                };
+            }
         }
     } catch (e) {
+        if (metadata?.persona?.trim()) {
+            parsedPersona.name = metadata.persona.trim();
+        }
         console.warn("Failed to parse persona JSON", e);
     }
 

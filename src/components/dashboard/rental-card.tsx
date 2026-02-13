@@ -27,7 +27,7 @@ interface RentalCardProps {
 }
 
 export function RentalCard({ rental }: RentalCardProps) {
-    const { account: agentAccount } = useAgentAccount(rental.tokenId.toString());
+    const { account: agentAccount } = useAgentAccount(rental.tokenId.toString(), rental.nfa);
     const tokenId = rental.tokenId.toString();
 
     // Deposit state

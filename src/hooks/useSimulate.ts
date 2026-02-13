@@ -11,12 +11,13 @@ interface Action {
     data: Hex;
 }
 
-export function useSimulate(tokenId: string, action: Action | null) {
+export function useSimulate(tokenId: string, action: Action | null, nfaAddress?: string) {
     const publicClient = usePublicClient();
     const { address: userAddress } = useAccount();
     const [result, setResult] = useState<{ success: boolean; data: Hex } | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const resolvedNfaAddress = (nfaAddress || CONTRACTS.AgentNFA.address) as Address;
 
     const simulate = async () => {
         if (!publicClient || !action || !tokenId) return;
@@ -35,7 +36,7 @@ export function useSimulate(tokenId: string, action: Action | null) {
             // Simulate by calling `execute` as the connected user
             // so the contract's permission checks (owner/renter) pass correctly.
             const { result } = await publicClient.simulateContract({
-                address: CONTRACTS.AgentNFA.address,
+                address: resolvedNfaAddress,
                 abi: CONTRACTS.AgentNFA.abi,
                 functionName: "execute",
                 args: [BigInt(tokenId), action],

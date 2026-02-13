@@ -35,8 +35,8 @@ export default function AgentDetailPage() {
     const { address } = useAccount();
     const { t } = useTranslation();
 
-    const { data: agent, isLoading } = useAgent(tokenId);
-    const { account: agentAccount } = useAgentAccount(tokenId);
+    const { data: agent, isLoading } = useAgent(tokenId, nfaAddress);
+    const { account: agentAccount } = useAgentAccount(tokenId, nfaAddress);
 
     if (isLoading) {
         return (

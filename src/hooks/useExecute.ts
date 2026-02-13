@@ -10,7 +10,8 @@ interface Action {
     data: Hex;
 }
 
-export function useExecute() {
+export function useExecute(nfaAddress?: string) {
+    const resolvedNfaAddress = (nfaAddress || CONTRACTS.AgentNFA.address) as Address;
     const {
         data: hash,
         writeContract,
@@ -51,7 +52,7 @@ export function useExecute() {
 
     const executeAction = (tokenId: string, action: Action) => {
         writeContract({
-            address: CONTRACTS.AgentNFA.address,
+            address: resolvedNfaAddress,
             abi: CONTRACTS.AgentNFA.abi,
             functionName: "execute",
             args: [BigInt(tokenId), action],
