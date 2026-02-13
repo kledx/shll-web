@@ -59,11 +59,15 @@ export async function GET(
                 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
             },
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error(`[Metadata API] Error fetching for ID ${tokenId}:`, error);
         return NextResponse.json(
-            { error: "Agent not found or contract error" },
-            { status: 404 }
+            {
+                error: "Agent fetch failed",
+                message: error.message || "Unknown error",
+                tokenId
+            },
+            { status: error.name === 'ContractFunctionExecutionError' ? 404 : 500 }
         );
     }
 }
