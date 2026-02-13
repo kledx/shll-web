@@ -1,12 +1,14 @@
 import { useWriteContract, useWaitForTransactionReceipt, usePublicClient, useConnection } from "wagmi";
 import { CONTRACTS } from "@/config/contracts";
-import { parseEther, Hex } from "viem";
+import { Hex } from "viem";
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function useRent() {
     const { address } = useConnection();
     const publicClient = usePublicClient();
+    const queryClient = useQueryClient();
     const {
         data: hash,
         writeContract,
@@ -32,8 +34,9 @@ export function useRent() {
     useEffect(() => {
         if (isConfirmed) {
             toast.success("Rental confirmed! You are now the renter.");
+            void queryClient.invalidateQueries({ queryKey: ["listings"] });
         }
-    }, [isConfirmed]);
+    }, [isConfirmed, queryClient]);
 
     // Toast on write error
     useEffect(() => {
@@ -65,9 +68,10 @@ export function useRent() {
             });
 
             writeContract(request);
-        } catch (e: any) {
+        } catch (e: unknown) {
+            const err = e as { shortMessage?: string; message?: string };
             toast.error("Rental simulation failed", {
-                description: e.shortMessage || e.message || "Unknown error",
+                description: err.shortMessage || err.message || "Unknown error",
             });
         }
     };

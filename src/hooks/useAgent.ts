@@ -48,6 +48,28 @@ const KEY_MAX_SWAP = keccak256(toBytes("MAX_SWAP_AMOUNT_IN"));
 const KEY_MAX_APPROVE = keccak256(toBytes("MAX_APPROVE_AMOUNT"));
 const KEY_MAX_REPAY = keccak256(toBytes("MAX_REPAY_AMOUNT"));
 
+interface MetadataStruct {
+    persona?: string;
+    experience?: string;
+    voiceHash?: string;
+    animationURI?: string;
+    vaultURI?: string;
+    vaultHash?: string;
+}
+
+interface StateStruct {
+    balance?: bigint;
+    status?: bigint | number;
+    logicAddress?: Address;
+    lastActionTimestamp?: bigint | number;
+}
+
+interface ParsedPersona {
+    name?: string;
+    description?: string;
+    role?: string;
+}
+
 export function useAgent(tokenId: string) {
     const tokenIdBigInt = BigInt(tokenId || "0");
     const nfaAddress = CONTRACTS.AgentNFA.address;
@@ -157,11 +179,14 @@ export function useAgent(tokenId: string) {
     const owner = reads[0].result as Address;
     const user = reads[1].result as Address;
     const userExpires = reads[2].result as bigint;
-    const metadata = reads[3].result as any; // Struct
-    const state = reads[4].result as any; // Struct
+    const metadata = (reads[3].result as MetadataStruct | undefined) ?? {};
+    const state = (reads[4].result as StateStruct | undefined) ?? {};
 
     // Listing Read
-    const listing = listingData?.[0]?.result as any;
+    const listing = listingData?.[0]?.result as readonly unknown[] | undefined;
+    const listingActive = Boolean(listing?.[5]);
+    const listingPricePerDay = typeof listing?.[3] === "bigint" ? listing[3] : BigInt(0);
+    const listingMinDays = typeof listing?.[4] === "bigint" ? Number(listing[4]) : 0;
 
     // Policy Limits
     const maxDeadline = reads[6].result as bigint;
@@ -174,7 +199,12 @@ export function useAgent(tokenId: string) {
     let parsedPersona = { name: "Unknown", description: "No metadata", role: "Agent" };
     try {
         if (metadata && metadata.persona) {
-            parsedPersona = JSON.parse(metadata.persona);
+            const parsed = JSON.parse(metadata.persona) as ParsedPersona;
+            parsedPersona = {
+                name: parsed.name ?? "Unknown",
+                description: parsed.description ?? "No metadata",
+                role: parsed.role ?? "Agent",
+            };
         }
     } catch (e) {
         console.warn("Failed to parse persona JSON", e);
@@ -197,14 +227,14 @@ export function useAgent(tokenId: string) {
         owner: owner || "",
         name: parsedPersona.name,
         description: parsedPersona.description,
-        pricePerDay: listing?.[5] ? formatEther(listing[3]) + " BNB" : "Not Listed",
-        pricePerDayRaw: listing?.[3] || BigInt(0),
-        minDays: listing?.[5] ? Number(listing[4]) : 0,
+        pricePerDay: listingActive ? formatEther(listingPricePerDay) + " BNB" : "Not Listed",
+        pricePerDayRaw: listingPricePerDay,
+        minDays: listingActive ? listingMinDays : 0,
         status: uiStatus,
         renter: user || "0x0000000000000000000000000000000000000000",
         expires: Number(userExpires || 0),
         listingId: listingId || "",
-        isListed: listing?.[5] || false,
+        isListed: listingActive,
         policy: {
             maxDeadlineWindow: Number(maxDeadline || 0),
             maxPathLength: Number(maxPath || 0),

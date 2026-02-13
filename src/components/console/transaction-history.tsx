@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePublicClient } from "wagmi";
 import { CONTRACTS } from "@/config/contracts";
-import { Address, parseAbi, zeroAddress } from "viem";
+import { Address, Hex, parseAbi, zeroAddress } from "viem";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 
@@ -13,7 +13,18 @@ interface TransactionRecord {
     blockNumber: bigint;
     target: Address;
     success: boolean;
-    result: string;
+    result: Hex;
+}
+
+interface ExecutionEventLike {
+    transactionHash?: Hex;
+    blockNumber?: bigint;
+    args: {
+        tokenId?: bigint;
+        target?: Address;
+        success?: boolean;
+        result?: Hex;
+    };
 }
 
 export function TransactionHistory({ tokenId }: { tokenId: string }) {
@@ -44,7 +55,7 @@ export function TransactionHistory({ tokenId }: { tokenId: string }) {
                 let currentToBlock = latestBlock;
                 const minBlock = latestBlock - TOTAL_BLOCKS_TO_SCAN > BigInt(0) ? latestBlock - TOTAL_BLOCKS_TO_SCAN : BigInt(0);
 
-                let allEvents: any[] = [];
+                let allEvents: ExecutionEventLike[] = [];
 
                 // Fetch in chunks
                 while (currentToBlock > minBlock && !cancelled) {
@@ -59,7 +70,7 @@ export function TransactionHistory({ tokenId }: { tokenId: string }) {
                             fromBlock,
                             toBlock: currentToBlock
                         });
-                        allEvents = [...allEvents, ...chunks];
+                        allEvents = [...allEvents, ...(chunks as ExecutionEventLike[])];
                     } catch (err) {
                         console.warn(`Failed to fetch logs from ${fromBlock} to ${currentToBlock}`, err);
                         // Convert BigInt to string for replacement, then back to BigInt if needed, or just let the loop continue?
@@ -77,9 +88,9 @@ export function TransactionHistory({ tokenId }: { tokenId: string }) {
                     return {
                         hash: e.transactionHash || "0x",
                         blockNumber: e.blockNumber || BigInt(0),
-                        target: e.args.target!,
-                        success: e.args.success!,
-                        result: e.args.result!
+                        target: e.args.target ?? zeroAddress,
+                        success: Boolean(e.args.success),
+                        result: e.args.result ?? "0x",
                     };
                 });
 
@@ -90,7 +101,7 @@ export function TransactionHistory({ tokenId }: { tokenId: string }) {
                 uniqueHistory.sort((a, b) => Number(b.blockNumber - a.blockNumber));
 
                 setLogs(uniqueHistory);
-            } catch (err: any) {
+            } catch (err: unknown) {
                 if (!cancelled) {
                     console.warn("TransactionHistory: Unexpected error", err);
                 }

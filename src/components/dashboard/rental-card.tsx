@@ -35,6 +35,7 @@ export function RentalCard({ rental }: RentalCardProps) {
     const { depositNative, approveToken, depositToken, step: depositStep, isLoading: isDepositing, isSuccess: isDepositSuccess } = useDeposit();
     const [depositAsset, setDepositAsset] = useState<string>("BNB");
     const [depositAmount, setDepositAmount] = useState<string>("");
+    const [nowSec, setNowSec] = useState<number | null>(null);
 
     // Auto-close dialog after deposit confirms
     useEffect(() => {
@@ -46,6 +47,13 @@ export function RentalCard({ rental }: RentalCardProps) {
             return () => clearTimeout(timer);
         }
     }, [isDepositSuccess]);
+
+    useEffect(() => {
+        const updateNow = () => setNowSec(Math.floor(Date.now() / 1000));
+        updateNow();
+        const timer = setInterval(updateNow, 60_000);
+        return () => clearInterval(timer);
+    }, []);
 
     const handleDeposit = () => {
         if (!agentAccount || !depositAmount || parseFloat(depositAmount) <= 0) return;
@@ -67,7 +75,7 @@ export function RentalCard({ rental }: RentalCardProps) {
     };
 
     const isExpired = !rental.isActive;
-    const daysLeft = Math.ceil((Number(rental.expires) - Date.now() / 1000) / 86400);
+    const daysLeft = nowSec === null ? 0 : Math.ceil((Number(rental.expires) - nowSec) / 86400);
 
     const formatAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 

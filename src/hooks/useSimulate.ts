@@ -43,10 +43,11 @@ export function useSimulate(tokenId: string, action: Action | null) {
             });
 
             setResult({ success: true, data: result });
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Simulation failed:", err);
             // Try to extract revert reason
-            const reason = err?.shortMessage || err?.message || "Simulation failed";
+            const errorLike = err as { shortMessage?: string; message?: string };
+            const reason = errorLike.shortMessage || errorLike.message || "Simulation failed";
             setError(reason);
             setResult({ success: false, data: "0x" });
         } finally {

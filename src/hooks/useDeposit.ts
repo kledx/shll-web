@@ -38,7 +38,8 @@ export function useDeposit() {
     useEffect(() => {
         if (isConfirmed && step === "depositing") {
             toast.success("Deposit confirmed!");
-            setStep("idle");
+            const timer = setTimeout(() => setStep("idle"), 0);
+            return () => clearTimeout(timer);
         }
     }, [isConfirmed, step]);
 
@@ -47,7 +48,8 @@ export function useDeposit() {
             toast.error(step === "approving" ? "Approval failed" : "Deposit failed", {
                 description: writeError.message?.slice(0, 120),
             });
-            setStep("idle");
+            const timer = setTimeout(() => setStep("idle"), 0);
+            return () => clearTimeout(timer);
         }
     }, [writeError, step]);
 

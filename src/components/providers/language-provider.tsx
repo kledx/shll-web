@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
 type Language = 'en' | 'zh';
 
@@ -15,9 +15,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     const [language, setLanguage] = useState<Language>('en');
 
     useEffect(() => {
-        const savedLang = localStorage.getItem('shll-language') as Language;
-        if (savedLang && (savedLang === 'en' || savedLang === 'zh')) {
-            setLanguage(savedLang);
+        const savedLang = localStorage.getItem('shll-language');
+        if (savedLang === 'zh' || savedLang === 'en') {
+            const timer = setTimeout(() => setLanguage(savedLang), 0);
+            return () => clearTimeout(timer);
         }
     }, []);
 

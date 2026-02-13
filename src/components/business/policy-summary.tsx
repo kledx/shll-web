@@ -34,7 +34,7 @@ export function PolicySummary({ rules }: { rules: PolicyRules }) {
                     <div className="grid grid-cols-2 gap-2 pl-6">
                         <div className="text-muted-foreground">{t.agent.policy.maxAmountIn}:</div>
                         <div className="font-mono truncate" title={rules.maxSwapAmountIn}>
-                            {formatLimit(rules.maxSwapAmountIn, t)}
+                            {formatLimit(rules.maxSwapAmountIn, t.agent.policy.unlimited)}
                         </div>
                         <div className="text-muted-foreground">{t.agent.policy.maxPathLength}:</div>
                         <div className="font-mono">{rules.maxPathLength} {t.agent.policy.hops}</div>
@@ -60,11 +60,11 @@ export function PolicySummary({ rules }: { rules: PolicyRules }) {
                     <div className="grid grid-cols-2 gap-2 pl-6">
                         <div className="text-muted-foreground">{t.agent.policy.maxApprove}:</div>
                         <div className="font-mono truncate" title={rules.maxApproveAmount}>
-                            {formatLimit(rules.maxApproveAmount, t)}
+                            {formatLimit(rules.maxApproveAmount, t.agent.policy.unlimited)}
                         </div>
                         <div className="text-muted-foreground">{t.agent.policy.maxRepay}:</div>
                         <div className="font-mono truncate" title={rules.maxRepayAmount}>
-                            {formatLimit(rules.maxRepayAmount, t)}
+                            {formatLimit(rules.maxRepayAmount, t.agent.policy.unlimited)}
                         </div>
                     </div>
                 </div>
@@ -88,10 +88,10 @@ export function PolicySummary({ rules }: { rules: PolicyRules }) {
     );
 }
 
-function formatLimit(value: string | number, t: any) {
+function formatLimit(value: string | number, unlimitedLabel: string) {
     const s = value.toString();
     // Check for uint256 max (approx check by prefix)
-    if (s.startsWith("1157920892373161954235709850086879")) return t.agent.policy.unlimited;
+    if (s.startsWith("1157920892373161954235709850086879")) return unlimitedLabel;
     if (s.length > 12) return s.slice(0, 6) + "..." + s.slice(-4);
     return s;
 }
