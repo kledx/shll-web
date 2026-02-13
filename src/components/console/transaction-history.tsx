@@ -4,31 +4,15 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePublicClient } from "wagmi";
 import { CONTRACTS } from "@/config/contracts";
-import { Address, Hex, parseAbiItem, zeroAddress } from "viem";
+import { parseAbiItem, zeroAddress } from "viem";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
-
-interface TransactionRecord {
-    hash: string;
-    blockNumber: bigint;
-    target: Address;
-    success: boolean;
-    result: Hex;
-}
-
-interface ExecutionEventLike {
-    transactionHash?: Hex;
-    blockNumber?: bigint;
-    args: {
-        tokenId?: bigint;
-        caller?: Address;
-        account?: Address;
-        target?: Address;
-        selector?: Hex;
-        success?: boolean;
-        result?: Hex;
-    };
-}
+import {
+    buildBlockRanges,
+    ExecutionEventLike,
+    normalizeExecutionHistory,
+    TransactionRecord,
+} from "@/lib/console/history-utils";
 
 export function TransactionHistory({ tokenId, refreshKey = 0 }: { tokenId: string; refreshKey?: number }) {
     const { t } = useTranslation();
@@ -56,15 +40,16 @@ export function TransactionHistory({ tokenId, refreshKey = 0 }: { tokenId: strin
                 const TOTAL_BLOCKS_TO_SCAN = BigInt(30000);
                 const CHUNK_SIZE = BigInt(1500); // Smaller chunks reduce public RPC log-limit failures
 
-                let currentToBlock = latestBlock;
-                const minBlock = latestBlock - TOTAL_BLOCKS_TO_SCAN > BigInt(0) ? latestBlock - TOTAL_BLOCKS_TO_SCAN : BigInt(0);
-
                 let allEvents: ExecutionEventLike[] = [];
+                const ranges = buildBlockRanges({
+                    latestBlock,
+                    totalBlocksToScan: TOTAL_BLOCKS_TO_SCAN,
+                    chunkSize: CHUNK_SIZE,
+                });
 
                 // Fetch in chunks
-                while (currentToBlock > minBlock && !cancelled) {
-                    const fromBlock = currentToBlock - CHUNK_SIZE > minBlock ? currentToBlock - CHUNK_SIZE : minBlock;
-
+                for (const { fromBlock, toBlock } of ranges) {
+                    if (cancelled) break;
                     try {
                         const chunks = await publicClient.getLogs({
                             address: CONTRACTS.AgentNFA.address,
@@ -73,39 +58,19 @@ export function TransactionHistory({ tokenId, refreshKey = 0 }: { tokenId: strin
                             ),
                             args: { tokenId: BigInt(tokenId) },
                             fromBlock,
-                            toBlock: currentToBlock
+                            toBlock
                         });
                         allEvents = [...allEvents, ...(chunks as ExecutionEventLike[])];
                     } catch (err) {
-                        console.warn(`Failed to fetch logs from ${fromBlock} to ${currentToBlock}`, err);
-                        // Convert BigInt to string for replacement, then back to BigInt if needed, or just let the loop continue?
-                        // If a chunk fails, we skip it and continue. Or break? 
-                        // Continuing might leave gaps. But better than nothing.
+                        console.warn(`Failed to fetch logs from ${fromBlock} to ${toBlock}`, err);
                     }
-
-                    currentToBlock = fromBlock - BigInt(1);
                 }
-
-                // Filter for current agent
-                const agentEvents = allEvents.filter(e => e.args.tokenId === BigInt(tokenId));
-
-                const history: TransactionRecord[] = agentEvents.map((e) => {
-                    return {
-                        hash: e.transactionHash || "0x",
-                        blockNumber: e.blockNumber || BigInt(0),
-                        target: e.args.target ?? zeroAddress,
-                        success: Boolean(e.args.success),
-                        result: e.args.result ?? "0x",
-                    };
+                const history = normalizeExecutionHistory({
+                    events: allEvents,
+                    tokenId: BigInt(tokenId),
                 });
 
-                // Deduplicate by hash just in case
-                const uniqueHistory = Array.from(new Map(history.map(item => [item.hash, item])).values());
-
-                // Sort: Newest first (descending blockNumber)
-                uniqueHistory.sort((a, b) => Number(b.blockNumber - a.blockNumber));
-
-                setLogs(uniqueHistory);
+                setLogs(history);
             } catch (err: unknown) {
                 if (!cancelled) {
                     console.warn("TransactionHistory: Unexpected error", err);

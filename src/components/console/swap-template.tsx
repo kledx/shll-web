@@ -9,6 +9,13 @@ import { encodeFunctionData, parseUnits, Address, erc20Abi } from "viem";
 import { Action } from "./action-builder";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useReadContract, useBalance } from "wagmi";
+import {
+    calcAmountOutMin,
+    getOutputTokens,
+    getSwapPairFlags,
+    resolveExpectedOut,
+    SwapTokenConfig,
+} from "@/lib/console/swap-utils";
 
 // PancakeRouter ABI (partial — swap functions)
 const ROUTER_ABI = [
@@ -70,7 +77,7 @@ const WBNB_ABI = [
 const WBNB_ADDRESS = "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd";
 
 // Token options including native BNB
-const TOKENS: Record<string, { address: string; decimals: number; isNative: boolean }> = {
+const TOKENS: Record<string, SwapTokenConfig> = {
     "BNB": { address: WBNB_ADDRESS, decimals: 18, isNative: true },
     "USDT": { address: "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd", decimals: 18, isNative: false },
     "WBNB": { address: WBNB_ADDRESS, decimals: 18, isNative: false },
@@ -84,20 +91,6 @@ interface SwapTemplateProps {
     agentAccount?: Address;
 }
 
-function getOutputTokens(inputSymbol: string): string[] {
-    const inputConfig = TOKENS[inputSymbol];
-    if (!inputConfig) return Object.keys(TOKENS).filter((symbol) => symbol !== inputSymbol);
-
-    // Allow BNB <-> WBNB (wrap/unwrap), block other same-address pairs.
-    return Object.keys(TOKENS).filter((symbol) => {
-        if (symbol === inputSymbol) return false;
-        const outputConfig = TOKENS[symbol];
-        const sameAddress = outputConfig.address.toLowerCase() === inputConfig.address.toLowerCase();
-        if (!sameAddress) return true;
-        return outputConfig.isNative !== inputConfig.isNative;
-    });
-}
-
 export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplateProps) {
     const { t } = useTranslation();
     const [tokenIn, setTokenIn] = useState<string>("BNB");
@@ -107,24 +100,17 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
 
     const tokenInConfig = TOKENS[tokenIn];
     const tokenOutConfig = TOKENS[tokenOut];
-    const outputTokens = getOutputTokens(tokenIn);
-    const isSameUnderlyingToken =
-        !!tokenInConfig &&
-        !!tokenOutConfig &&
-        tokenInConfig.address.toLowerCase() === tokenOutConfig.address.toLowerCase();
-    const isWrapUnwrapPair =
-        isSameUnderlyingToken &&
-        !!tokenInConfig &&
-        !!tokenOutConfig &&
-        tokenInConfig.isNative !== tokenOutConfig.isNative;
-    const isWrap = isWrapUnwrapPair && tokenInConfig?.isNative;
-    const isUnwrap = isWrapUnwrapPair && tokenOutConfig?.isNative;
-    const isRouterSwap = !!tokenInConfig && !!tokenOutConfig && !isWrapUnwrapPair;
-    const isUnsupportedPair =
-        isSameUnderlyingToken && !isWrapUnwrapPair;
+    const outputTokens = getOutputTokens(TOKENS, tokenIn);
+    const {
+        isWrapUnwrapPair,
+        isWrap,
+        isUnwrap,
+        isRouterSwap,
+        isUnsupportedPair,
+    } = getSwapPairFlags(TOKENS, tokenIn, tokenOut);
 
     useEffect(() => {
-        const options = getOutputTokens(tokenIn);
+        const options = getOutputTokens(TOKENS, tokenIn);
         if (options.length > 0 && !options.includes(tokenOut)) {
             setTokenOut(options[0]!);
         }
@@ -147,11 +133,11 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
     });
 
     // Verify quote corresponds to current input amount to prevent stale data
-    const expectedOut = isWrapUnwrapPair
-        ? amountInWei
-        : quoteData && quoteData[0] === amountInWei
-        ? quoteData[1]
-        : BigInt(0);
+    const expectedOut = resolveExpectedOut({
+        isWrapUnwrapPair,
+        amountInWei,
+        quoteData,
+    });
 
     // Read allowance for ERC-20 tokens
     const { data: allowance } = useReadContract({
@@ -245,10 +231,7 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
 
         // Slippage: amountOutMin = expectedOut * (1 - slippage%)
         // If no quote, fallback to 0 (unsafe but allows execution for testing) or prevent
-        const estimatedOut = expectedOut > BigInt(0) ? expectedOut : BigInt(0);
-
-        const slippageBps = Math.round(parseFloat(slippage) * 100);
-        const amountOutMin = estimatedOut - (estimatedOut * BigInt(slippageBps)) / BigInt(10000);
+        const amountOutMin = calcAmountOutMin(expectedOut, slippage);
 
         // Deadline (20 mins)
         const deadline = BigInt(Math.floor(Date.now() / 1000) + 1200);
