@@ -26,6 +26,14 @@ interface EnableAutopilotResult {
     txHash: string;
 }
 
+export type EnableState =
+    | "IDLE"
+    | "SIGNING"
+    | "SUBMITTING"
+    | "ONCHAIN_PENDING"
+    | "ONCHAIN_CONFIRMED"
+    | "ERROR";
+
 export function useAutopilot({ tokenId, renter, nfaAddress }: UseAutopilotOptions) {
     const { address } = useAccount();
     const chainId = useChainId();
@@ -36,6 +44,7 @@ export function useAutopilot({ tokenId, renter, nfaAddress }: UseAutopilotOption
     const [error, setError] = useState<string | null>(null);
     const [lastTxHash, setLastTxHash] = useState<string | null>(null);
     const [clearHash, setClearHash] = useState<`0x${string}` | undefined>(undefined);
+    const [enableState, setEnableState] = useState<EnableState>("IDLE");
 
     const tokenIdBigInt = useMemo(() => {
         try {
@@ -85,6 +94,7 @@ export function useAutopilot({ tokenId, renter, nfaAddress }: UseAutopilotOption
         setIsSubmitting(true);
         setError(null);
         try {
+            setEnableState("SIGNING");
             const nonce = (await refetchNonce()).data as bigint | undefined;
             const currentNonce = nonce ?? BigInt(0);
 
@@ -126,6 +136,7 @@ export function useAutopilot({ tokenId, renter, nfaAddress }: UseAutopilotOption
                 deadline: permit.deadline.toString(),
             };
 
+            setEnableState("SUBMITTING");
             const response = await fetch("/api/autopilot/enable", {
                 method: "POST",
                 headers: {
@@ -144,12 +155,15 @@ export function useAutopilot({ tokenId, renter, nfaAddress }: UseAutopilotOption
             }
 
             setLastTxHash(body.txHash);
+            setEnableState("ONCHAIN_PENDING");
             await refetchOperator();
             await refetchOperatorExpires();
+            setEnableState("ONCHAIN_CONFIRMED");
             return { txHash: body.txHash as string };
         } catch (err) {
             const message = err instanceof Error ? err.message : "Unknown error";
             setError(message);
+            setEnableState("ERROR");
             throw err;
         } finally {
             setIsSubmitting(false);
@@ -191,6 +205,7 @@ export function useAutopilot({ tokenId, renter, nfaAddress }: UseAutopilotOption
         operatorExpires: (operatorExpiresData as bigint | undefined) ?? BigInt(0),
         nonce: (nonceData as bigint | undefined) ?? BigInt(0),
         lastTxHash,
+        enableState,
         isSubmitting,
         isClearingAutopilot,
         error,

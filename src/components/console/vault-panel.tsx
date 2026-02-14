@@ -14,6 +14,7 @@ import { useWithdraw } from "@/hooks/useWithdraw";
 import { useDeposit } from "@/hooks/useDeposit";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useAccount } from "wagmi";
+import { getConsoleCopy } from "@/lib/console/console-copy";
 
 // Tokens available for deposit (must match PolicyGuard config)
 const DEPOSIT_TOKENS: { name: string; symbol: string; address: string; decimals: number; isNative: boolean }[] = [
@@ -28,10 +29,21 @@ interface VaultPanelProps {
     isOwner: boolean;
     tokenId: string;
     refreshKey?: number;
+    readOnly?: boolean;
+    allowWithdraw?: boolean;
 }
 
-export function VaultPanel({ agentAccount, isRenter, isOwner, tokenId, refreshKey = 0 }: VaultPanelProps) {
-    const { t } = useTranslation();
+export function VaultPanel({
+    agentAccount,
+    isRenter,
+    isOwner,
+    tokenId,
+    refreshKey = 0,
+    readOnly = false,
+    allowWithdraw = false,
+}: VaultPanelProps) {
+    const { t, language } = useTranslation();
+    const ui = getConsoleCopy(language).vault;
     const { address: userAddress } = useAccount();
     const { assets, isLoading, refetch } = useVaultBalances(agentAccount);
 
@@ -44,7 +56,7 @@ export function VaultPanel({ agentAccount, isRenter, isOwner, tokenId, refreshKe
     // Withdraw State
     const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
     const { withdrawNative, withdrawToken, isLoading: isWithdrawing, isSuccess: isWithdrawSuccess } = useWithdraw();
-    const [selectedAsset, setSelectedAsset] = useState<string>("Native Token");
+    const [selectedAsset, setSelectedAsset] = useState<string>("");
     const [withdrawAmount, setWithdrawAmount] = useState<string>("");
 
     // Auto-refresh balances and close dialogs after deposit or withdraw confirms
@@ -108,7 +120,7 @@ export function VaultPanel({ agentAccount, isRenter, isOwner, tokenId, refreshKe
     const handleWithdraw = () => {
         if (!agentAccount || !userAddress) return;
 
-        const asset = assets.find(a => a.name === selectedAsset);
+        const asset = assets.find(a => a.name === effectiveSelectedAsset);
         if (!asset) return;
 
         const amountBigInt = BigInt(Math.floor(parseFloat(withdrawAmount || "0") * 1e18));
@@ -121,33 +133,45 @@ export function VaultPanel({ agentAccount, isRenter, isOwner, tokenId, refreshKe
         }
     };
 
-    const canWithdraw = isRenter || isOwner;
+    const canDeposit = !readOnly && (isRenter || isOwner);
+    const canWithdraw = allowWithdraw && !readOnly && (isRenter || isOwner);
     const selectedDepositToken = DEPOSIT_TOKENS.find(t => t.name === depositAsset);
     const isERC20Deposit = selectedDepositToken && !selectedDepositToken.isNative;
+    const effectiveSelectedAsset = selectedAsset || assets[0]?.name || "";
 
     return (
         <Card className="border-[var(--color-burgundy)]/10">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-col gap-3 space-y-0 pb-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
                     <CardTitle className="text-xl font-serif">{t.agent.vault.title}</CardTitle>
                     <CardDescription>{t.agent.vault.desc}</CardDescription>
+                    {readOnly && (
+                        <div className="text-xs text-amber-700">
+                            {ui.readOnlyHint}
+                        </div>
+                    )}
+                    {!allowWithdraw && (
+                        <div className="text-xs text-muted-foreground">
+                            {ui.safeModeHint}
+                        </div>
+                    )}
                 </div>
                 <div className="flex gap-2">
                     {/* Deposit Dialog */}
                     <Dialog open={isDepositOpen} onOpenChange={setIsDepositOpen}>
                         <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="gap-2">
+                            <Button variant="outline" size="sm" className="gap-2" disabled={!canDeposit}>
                                 <ArrowDownToLine className="w-4 h-4" /> {t.agent.vault.deposit}
                             </Button>
                         </DialogTrigger>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Deposit to Agent Vault</DialogTitle>
+                                <DialogTitle>{ui.depositDialogTitle}</DialogTitle>
                                 <DialogDescription>
-                                    Send tokens to the Agent&apos;s isolated account.
+                                    {ui.depositDialogDesc}
                                     {agentAccount && (
                                         <span className="block mt-1 font-mono text-xs">
-                                            Account: {agentAccount.slice(0, 8)}...{agentAccount.slice(-6)}
+                                            {ui.accountLabel}: {agentAccount.slice(0, 8)}...{agentAccount.slice(-6)}
                                         </span>
                                     )}
                                 </DialogDescription>
@@ -155,22 +179,22 @@ export function VaultPanel({ agentAccount, isRenter, isOwner, tokenId, refreshKe
 
                             <div className="grid gap-4 py-4">
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label className="text-right">Token</Label>
+                                    <Label className="text-right">{ui.tokenLabel}</Label>
                                     <Select onValueChange={setDepositAsset} defaultValue={depositAsset}>
                                         <SelectTrigger className="col-span-3">
-                                            <SelectValue placeholder="Select token" />
+                                            <SelectValue placeholder={ui.selectToken} />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {DEPOSIT_TOKENS.map(token => (
                                                 <SelectItem key={token.name} value={token.name}>
-                                                    {token.symbol} {token.isNative ? "(Native)" : ""}
+                                                    {token.symbol} {token.isNative ? ui.nativeTag : ""}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label className="text-right">Amount</Label>
+                                    <Label className="text-right">{ui.amountLabel}</Label>
                                     <Input
                                         type="number"
                                         value={depositAmount}
@@ -188,28 +212,28 @@ export function VaultPanel({ agentAccount, isRenter, isOwner, tokenId, refreshKe
                                     <>
                                         <Button
                                             onClick={handleDeposit}
-                                            disabled={isDepositing || !depositAmount}
+                                            disabled={!canDeposit || isDepositing || !depositAmount}
                                             variant="outline"
                                         >
                                             {isDepositing && depositStep === "approving" ? (
                                                 <Loader2 className="animate-spin w-4 h-4 mr-2" />
                                             ) : null}
-                                            1. Approve
+                                            {ui.approveStep}
                                         </Button>
                                         <Button
                                             onClick={handleDepositAfterApprove}
-                                            disabled={isDepositing || !depositAmount}
+                                            disabled={!canDeposit || isDepositing || !depositAmount}
                                         >
                                             {isDepositing && depositStep === "depositing" ? (
                                                 <Loader2 className="animate-spin w-4 h-4 mr-2" />
                                             ) : null}
-                                            2. Deposit
+                                            {ui.depositStep}
                                         </Button>
                                     </>
                                 ) : (
-                                    <Button onClick={handleDeposit} disabled={isDepositing || !depositAmount}>
+                                    <Button onClick={handleDeposit} disabled={!canDeposit || isDepositing || !depositAmount}>
                                         {isDepositing ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
-                                        Deposit BNB
+                                        {ui.depositNative}
                                     </Button>
                                 )}
                             </DialogFooter>
@@ -217,56 +241,62 @@ export function VaultPanel({ agentAccount, isRenter, isOwner, tokenId, refreshKe
                     </Dialog>
 
                     {/* Withdraw Dialog */}
-                    <Dialog open={isWithdrawOpen} onOpenChange={setIsWithdrawOpen}>
-                        <DialogTrigger asChild>
-                            <Button variant="secondary" size="sm" disabled={!canWithdraw} className="gap-2">
-                                <ArrowUpFromLine className="w-4 h-4" /> {t.agent.vault.withdraw}
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>{t.agent.vault.dialog.title}</DialogTitle>
-                                <DialogDescription>
-                                    {t.agent.vault.dialog.desc}
-                                </DialogDescription>
-                            </DialogHeader>
-
-                            <div className="grid gap-4 py-4">
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label className="text-right">{t.agent.vault.dialog.assetLabel}</Label>
-                                    <Select onValueChange={setSelectedAsset} defaultValue={selectedAsset}>
-                                        <SelectTrigger className="col-span-3">
-                                            <SelectValue placeholder={t.agent.vault.dialog.select} />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {assets.map(asset => (
-                                                <SelectItem key={asset.name} value={asset.name}>
-                                                    {asset.symbol} (Bal: {parseFloat(asset.balance).toFixed(4)})
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label className="text-right">{t.agent.vault.dialog.amountLabel}</Label>
-                                    <Input
-                                        type="number"
-                                        value={withdrawAmount}
-                                        onChange={e => setWithdrawAmount(e.target.value)}
-                                        className="col-span-3"
-                                        placeholder="0.0"
-                                    />
-                                </div>
-                            </div>
-
-                            <DialogFooter>
-                                <Button onClick={handleWithdraw} disabled={isWithdrawing}>
-                                    {isWithdrawing ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
-                                    {t.agent.vault.dialog.confirm}
+                    {allowWithdraw && (
+                        <Dialog open={isWithdrawOpen} onOpenChange={setIsWithdrawOpen}>
+                            <DialogTrigger asChild>
+                                <Button variant="secondary" size="sm" disabled={!canWithdraw} className="gap-2">
+                                    <ArrowUpFromLine className="w-4 h-4" /> {t.agent.vault.withdraw}
                                 </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>{t.agent.vault.dialog.title}</DialogTitle>
+                                    <DialogDescription>
+                                        {t.agent.vault.dialog.desc}
+                                    </DialogDescription>
+                                </DialogHeader>
+
+                                <div className="grid gap-4 py-4">
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                        <Label className="text-right">{t.agent.vault.dialog.assetLabel}</Label>
+                                        <Select
+                                            value={effectiveSelectedAsset}
+                                            onValueChange={setSelectedAsset}
+                                            disabled={assets.length === 0}
+                                        >
+                                            <SelectTrigger className="col-span-3">
+                                                <SelectValue placeholder={t.agent.vault.dialog.select} />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {assets.map(asset => (
+                                                    <SelectItem key={asset.name} value={asset.name}>
+                                                        {asset.symbol} (Bal: {parseFloat(asset.balance).toFixed(4)})
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                        <Label className="text-right">{t.agent.vault.dialog.amountLabel}</Label>
+                                        <Input
+                                            type="number"
+                                            value={withdrawAmount}
+                                            onChange={e => setWithdrawAmount(e.target.value)}
+                                            className="col-span-3"
+                                            placeholder="0.0"
+                                        />
+                                    </div>
+                                </div>
+
+                                <DialogFooter>
+                                    <Button onClick={handleWithdraw} disabled={!canWithdraw || isWithdrawing}>
+                                        {isWithdrawing ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
+                                        {t.agent.vault.dialog.confirm}
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                    )}
                 </div>
             </CardHeader>
             <CardContent>

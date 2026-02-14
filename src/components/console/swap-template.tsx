@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { encodeFunctionData, parseUnits, Address, erc20Abi } from "viem";
-import { Action } from "./action-builder";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useReadContract, useBalance } from "wagmi";
 import {
@@ -16,6 +15,7 @@ import {
     resolveExpectedOut,
     SwapTokenConfig,
 } from "@/lib/console/swap-utils";
+import { Action } from "./action-types";
 
 // PancakeRouter ABI (partial — swap functions)
 const ROUTER_ABI = [

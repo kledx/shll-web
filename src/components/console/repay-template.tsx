@@ -5,8 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { encodeFunctionData, parseUnits, Address } from "viem";
-import { Action } from "./action-builder";
 import { useTranslation } from "@/hooks/useTranslation";
+import { Action } from "./action-types";
 
 // Venus vToken ABI (partial)
 const VTOKEN_ABI = [

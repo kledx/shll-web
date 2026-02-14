@@ -1,21 +1,27 @@
 "use client";
 
 import { AppShell } from "@/components/ui/app-shell";
-import { ActionBuilder, Action } from "@/components/console/action-builder";
+import { ActionBuilder } from "@/components/console/action-builder";
+import { Action, TemplateKey } from "@/components/console/action-types";
 import { useAgentAccount } from "@/hooks/useAgentAccount";
 import { useAgent } from "@/hooks/useAgent";
 import { useExecute } from "@/hooks/useExecute";
 import { TransactionHistory } from "@/components/console/transaction-history";
 import { VaultPanel } from "@/components/console/vault-panel";
+import { StatusCard, LeaseStatus, PackStatus, RunnerMode } from "@/components/console/status-card";
+import { AutopilotCard } from "@/components/console/autopilot-card";
 import { useSimulate } from "@/hooks/useSimulate";
 import { useAccount } from "wagmi";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { ChevronRight, ShieldAlert } from "lucide-react";
 import { useAutopilot } from "@/hooks/useAutopilot";
+import { useCapabilityPack } from "@/hooks/useCapabilityPack";
+import { useAutopilotStatus } from "@/hooks/useAutopilotStatus";
+import { getConsoleCopy } from "@/lib/console/console-copy";
 import { toast } from "sonner";
-import { Address } from "viem";
+import { Address, zeroAddress } from "viem";
 import Link from "next/link";
 
 export default function ConsolePage() {
@@ -26,10 +32,18 @@ export default function ConsolePage() {
     const detailPath = `/agent/${nfaAddress}/${tokenId}`;
     const consolePath = `${detailPath}/console`;
     const runnerOperatorDefault = process.env.NEXT_PUBLIC_RUNNER_OPERATOR || "";
+    const tokenIdBigInt = useMemo(() => {
+        try {
+            return BigInt(tokenId);
+        } catch {
+            return undefined;
+        }
+    }, [tokenId]);
 
     const { address } = useAccount();
     const { data: agent, isLoading: isAgentLoading, error: agentError } = useAgent(tokenId, nfaAddress);
     const { account: agentAccount, isLoading: isAccountLoading } = useAgentAccount(tokenId, nfaAddress);
+    const capabilityPack = useCapabilityPack(tokenIdBigInt, nfaAddress);
     const {
         executeAction,
         isLoading: isExecuting,
@@ -41,96 +55,68 @@ export default function ConsolePage() {
     const isOwner = !!address && !!agent && address.toLowerCase() === agent.owner.toLowerCase();
     const isRenter = !!address && !!agent && address.toLowerCase() === agent.renter.toLowerCase();
     const hasAccess = isOwner || isRenter;
+    const ui = getConsoleCopy(language);
     const roleLabel = isOwner
-        ? (language === "zh" ? "所有者" : "Owner")
+        ? ui.roleLabels.owner
         : isRenter
-            ? (language === "zh" ? "当前租户" : "Active Renter")
-            : (language === "zh" ? "无权限" : "No Access");
-    const ui = language === "zh"
-        ? {
-            errorLoadAgent: "加载 Agent 链上数据失败。",
-            goAgentDetail: "返回 Agent 详情",
-            openDocs: "打开文档",
-            nextStepTitle: "下一步建议",
-            nextStepConnect: "先连接钱包，再重新进入控制台。",
-            nextStepRent: "请先在 Agent 详情页完成租用/续租，再返回控制台。",
-            nextStepPathConnect: "/me -> 连接钱包 -> 返回控制台",
-            nextStepPathRentPrefix: "路径: ",
-            agentDetail: "Agent 详情",
-            currentRole: "当前角色",
-            roleHintOwner: "你可以查看记录和关闭 Autopilot，但只有当前租户可以签名开启。",
-            roleHintRenter: "你可以模拟、执行，并通过签名开启 Autopilot。",
-            roleHintGuest: "请切换到所有者/租户钱包，或先完成租用。",
-            autopilot: {
-                title: "Autopilot",
-                nonce: "Nonce",
-                onchainOperator: "链上 Operator",
-                operatorExpires: "Operator 过期时间",
-                notSet: "未设置",
-                operatorAddress: "Operator 地址",
-                useDefaultRunner: "使用默认 Runner 地址",
-                operatorExpiresInput: "Operator 过期时间",
-                hint: "提示: operator 应填写 Runner 地址，过期时间不要超过租期。",
-                enabling: "启用中...",
-                enable: "启用 Autopilot (签名)",
-                disabling: "关闭中...",
-                disable: "关闭 Autopilot",
-                renterOnlyHint: "仅当前租户可签名 Operator Permit。",
-                toast: {
-                    invalidOperatorAddress: "Operator 地址格式无效",
-                    selectOperatorExpiry: "请选择 Operator 过期时间",
-                    expiryFutureRequired: "Operator 过期时间必须晚于当前时间",
-                    enabledSuccess: "Autopilot 已启用",
-                    enableFailed: "启用 Autopilot 失败",
-                    disabledSuccess: "Autopilot 已关闭",
-                    disableFailed: "关闭 Autopilot 失败",
-                    unknownError: "未知错误",
-                    txPrefix: "交易",
-                },
-            },
-        }
-        : {
-            errorLoadAgent: "Failed to load agent on-chain data.",
-            goAgentDetail: "Go to Agent Detail",
-            openDocs: "Open Docs",
-            nextStepTitle: "What to do next",
-            nextStepConnect: "Connect wallet first, then reopen this console.",
-            nextStepRent: "Rent or extend first on Agent Detail, then come back to Console.",
-            nextStepPathConnect: "/me -> connect wallet -> back to console",
-            nextStepPathRentPrefix: "Path: ",
-            agentDetail: "Agent Detail",
-            currentRole: "Current Role",
-            roleHintOwner: "You can inspect history and disable autopilot, but only active renter can sign enable permit.",
-            roleHintRenter: "You can simulate, execute, and enable autopilot with signature.",
-            roleHintGuest: "Switch to owner/renter wallet or rent this agent first.",
-            autopilot: {
-                title: "Autopilot",
-                nonce: "Nonce",
-                onchainOperator: "On-chain operator",
-                operatorExpires: "Operator expires",
-                notSet: "not set",
-                operatorAddress: "Operator Address",
-                useDefaultRunner: "Use default runner operator",
-                operatorExpiresInput: "Operator Expires",
-                hint: "Tip: operator should be the runner address. Expiry should not exceed your rental period.",
-                enabling: "Enabling...",
-                enable: "Enable Autopilot (Sign)",
-                disabling: "Disabling...",
-                disable: "Disable Autopilot",
-                renterOnlyHint: "Only active renter can sign operator permit.",
-                toast: {
-                    invalidOperatorAddress: "Invalid operator address",
-                    selectOperatorExpiry: "Please select operator expiry",
-                    expiryFutureRequired: "Operator expiry must be in the future",
-                    enabledSuccess: "Autopilot enabled",
-                    enableFailed: "Enable autopilot failed",
-                    disabledSuccess: "Autopilot disabled",
-                    disableFailed: "Disable autopilot failed",
-                    unknownError: "Unknown error",
-                    txPrefix: "Tx",
-                },
-            },
+            ? ui.roleLabels.renter
+            : ui.roleLabels.guest;
+
+    const nowSec = Math.floor(Date.now() / 1000);
+    const hasRenter = !!agent && agent.renter.toLowerCase() !== zeroAddress.toLowerCase();
+    const leaseStatus: LeaseStatus = !hasRenter
+        ? "NOT_RENTED"
+        : (agent?.expires || 0) > nowSec
+            ? "RENTED_ACTIVE"
+            : "RENTED_EXPIRED";
+    const isRentedActive = leaseStatus === "RENTED_ACTIVE";
+    const isInteractiveConsole = isRenter && isRentedActive;
+    const readOnlyMessage = ui.readOnlyMessage;
+
+    const packStatus: PackStatus = useMemo(() => {
+        if (!agent?.metadata?.vaultURI) return "PACK_NONE";
+        if (capabilityPack.isLoading) return "PACK_LOADING";
+        if (capabilityPack.error) return "PACK_INVALID";
+        if (capabilityPack.isHashValid === false) return "PACK_INVALID";
+        if (capabilityPack.manifest) return "PACK_VALID";
+        return "PACK_INVALID";
+    }, [
+        agent?.metadata?.vaultURI,
+        capabilityPack.error,
+        capabilityPack.isHashValid,
+        capabilityPack.isLoading,
+        capabilityPack.manifest,
+    ]);
+
+    const runnerMode: RunnerMode = useMemo(() => {
+        const mode = capabilityPack.capabilities?.runnerMode || "manual";
+        if (mode === "managed" || mode === "external") return mode;
+        return "manual";
+    }, [capabilityPack.capabilities?.runnerMode]);
+
+    const enabledTemplates = useMemo<TemplateKey[]>(() => {
+        const normalizeTemplate = (value: string): TemplateKey | null => {
+            const key = value.toLowerCase();
+            if (key.includes("swap")) return "swap";
+            if (key.includes("repay")) return "repay";
+            if (key === "raw") return "raw";
+            return null;
         };
+
+        if (packStatus !== "PACK_VALID") {
+            return ["swap", "repay", "raw"];
+        }
+
+        const templates = (capabilityPack.capabilities?.consoleTemplates || [])
+            .map(normalizeTemplate)
+            .filter((item): item is TemplateKey => item !== null);
+
+        const deduped = Array.from(new Set(templates));
+        if (!deduped.includes("raw")) deduped.push("raw");
+        return deduped.length > 0 ? deduped : ["swap", "repay", "raw"];
+    }, [capabilityPack.capabilities?.consoleTemplates, packStatus]);
+
+    const autopilotBlockedByPack = packStatus === "PACK_INVALID";
 
     // Simulation State Management
     const [simAction, setSimAction] = useState<Action | null>(null);
@@ -148,15 +134,24 @@ export default function ConsolePage() {
         operator: onchainOperator,
         operatorExpires,
         nonce: operatorNonce,
+        enableState,
         isSubmitting: isEnablingAutopilot,
         isClearingAutopilot,
     } = useAutopilot({ tokenId, renter: agent?.renter, nfaAddress });
+    const {
+        data: runnerStatus,
+        isLoading: isRunnerStatusLoading,
+    } = useAutopilotStatus(tokenId, nfaAddress, refreshKey);
     const [autopilotOperator, setAutopilotOperator] = useState<string>(
         process.env.NEXT_PUBLIC_RUNNER_OPERATOR || ""
     );
     const [autopilotExpiresAt, setAutopilotExpiresAt] = useState<string>("");
 
     const handleSimulate = (action: Action) => {
+        if (!isInteractiveConsole) {
+            toast.error(readOnlyMessage);
+            return;
+        }
         setSimAction(action);
         setTimeout(() => {
             simulate();
@@ -164,6 +159,10 @@ export default function ConsolePage() {
     };
 
     const handleExecute = (action: Action) => {
+        if (!isInteractiveConsole) {
+            toast.error(readOnlyMessage);
+            return;
+        }
         executeAction(tokenId, action);
     };
 
@@ -180,6 +179,18 @@ export default function ConsolePage() {
 
     const handleEnableAutopilot = async () => {
         if (!agent) return;
+        if (!isInteractiveConsole) {
+            toast.error(readOnlyMessage);
+            return;
+        }
+        if (runnerMode !== "managed") {
+            toast.error(ui.autopilot.modeManagedOnlyHint);
+            return;
+        }
+        if (autopilotBlockedByPack) {
+            toast.error(ui.autopilot.blockedByPackHint);
+            return;
+        }
         if (!/^0x[a-fA-F0-9]{40}$/.test(autopilotOperator)) {
             toast.error(ui.autopilot.toast.invalidOperatorAddress);
             return;
@@ -240,9 +251,10 @@ export default function ConsolePage() {
     }, [isExecuteSuccess, executeHash]);
 
     useEffect(() => {
-        if (!agent) return;
+        const leaseExpires = agent?.expires;
+        if (!leaseExpires) return;
         const now = Math.floor(Date.now() / 1000);
-        const defaultExpires = Math.min(agent.expires || now + 3600, now + 7 * 24 * 3600);
+        const defaultExpires = Math.min(leaseExpires, now + 7 * 24 * 3600);
         setAutopilotExpiresAt(formatLocalInput(defaultExpires));
     }, [agent?.expires]);
 
@@ -381,6 +393,35 @@ export default function ConsolePage() {
                     </div>
                 </div>
 
+                <StatusCard
+                    tokenId={tokenId}
+                    leaseStatus={leaseStatus}
+                    leaseExpires={agent?.expires}
+                    packStatus={packStatus}
+                    vaultURI={agent?.metadata?.vaultURI}
+                    vaultHash={agent?.metadata?.vaultHash as `0x${string}` | undefined}
+                    runnerMode={runnerMode}
+                    policySummary={{
+                        maxDeadlineWindow: agent?.policy.maxDeadlineWindow ?? 0,
+                        maxPathLength: agent?.policy.maxPathLength ?? 0,
+                        allowedTokens: agent?.policy.allowedTokens.length ?? 0,
+                        allowedSpenders: agent?.policy.allowedSpenders.length ?? 0,
+                    }}
+                    ui={ui.status}
+                />
+
+                {!isInteractiveConsole && (
+                    <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                        {readOnlyMessage}
+                    </div>
+                )}
+
+                {autopilotBlockedByPack && (
+                    <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        {ui.packInvalidPolicyHint}
+                    </div>
+                )}
+
                 <ActionBuilder
                     onSimulate={handleSimulate}
                     onExecute={handleExecute}
@@ -389,82 +430,36 @@ export default function ConsolePage() {
                     simulationResult={simulationResult}
                     simulationError={simulationError}
                     agentAccount={agentAccount}
+                    enabledTemplates={enabledTemplates}
+                    renterAddress={agent?.renter}
+                    readOnly={!isInteractiveConsole}
+                    readOnlyMessage={readOnlyMessage}
                 />
 
-                <div className="rounded-xl border bg-card p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-semibold">{ui.autopilot.title}</h2>
-                        <span className="text-xs text-muted-foreground">
-                            {ui.autopilot.nonce}: {operatorNonce.toString()}
-                        </span>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                        {ui.autopilot.onchainOperator}: {onchainOperator || ui.autopilot.notSet}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                        {ui.autopilot.operatorExpires}:{" "}
-                        {operatorExpires > BigInt(0)
-                            ? new Date(Number(operatorExpires) * 1000).toLocaleString()
-                            : ui.autopilot.notSet}
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                            <label className="text-sm font-medium">{ui.autopilot.operatorAddress}</label>
-                            <input
-                                className="w-full rounded-md border px-3 py-2 text-sm font-mono"
-                                value={autopilotOperator}
-                                onChange={(e) => setAutopilotOperator(e.target.value)}
-                                placeholder="0x..."
-                            />
-                            {runnerOperatorDefault && (
-                                <button
-                                    type="button"
-                                    onClick={() => setAutopilotOperator(runnerOperatorDefault)}
-                                    className="text-xs text-[var(--color-burgundy)] hover:underline"
-                                >
-                                    {ui.autopilot.useDefaultRunner}
-                                </button>
-                            )}
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-sm font-medium">{ui.autopilot.operatorExpiresInput}</label>
-                            <input
-                                type="datetime-local"
-                                className="w-full rounded-md border px-3 py-2 text-sm"
-                                value={autopilotExpiresAt}
-                                onChange={(e) => setAutopilotExpiresAt(e.target.value)}
-                            />
-                        </div>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                        {ui.autopilot.hint}
-                    </div>
-                    <button
-                        type="button"
-                        onClick={handleEnableAutopilot}
-                        disabled={!isRenter || isEnablingAutopilot || !agent}
-                        className="inline-flex items-center rounded-md bg-[var(--color-burgundy)] text-white px-4 py-2 text-sm disabled:opacity-50"
-                    >
-                        {isEnablingAutopilot
-                            ? ui.autopilot.enabling
-                            : ui.autopilot.enable}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleDisableAutopilot}
-                        disabled={isClearingAutopilot || !isOwner && !isRenter}
-                        className="inline-flex items-center rounded-md border px-4 py-2 text-sm disabled:opacity-50"
-                    >
-                        {isClearingAutopilot
-                            ? ui.autopilot.disabling
-                            : ui.autopilot.disable}
-                    </button>
-                    {!isRenter && (
-                        <div className="text-xs text-muted-foreground">
-                            {ui.autopilot.renterOnlyHint}
-                        </div>
-                    )}
-                </div>
+                <AutopilotCard
+                    ui={ui.autopilot}
+                    runnerMode={runnerMode}
+                    enableState={enableState}
+                    operatorNonce={operatorNonce}
+                    onchainOperator={onchainOperator}
+                    operatorExpires={operatorExpires}
+                    leaseExpires={agent?.expires}
+                    autopilotOperator={autopilotOperator}
+                    autopilotExpiresAt={autopilotExpiresAt}
+                    runnerOperatorDefault={runnerOperatorDefault}
+                    runnerStatus={runnerStatus}
+                    runnerStatusLoading={isRunnerStatusLoading}
+                    blockedByPack={autopilotBlockedByPack}
+                    isInteractiveConsole={isInteractiveConsole}
+                    isRenter={isRenter}
+                    isOwner={isOwner}
+                    isEnablingAutopilot={isEnablingAutopilot}
+                    isClearingAutopilot={isClearingAutopilot}
+                    onSetAutopilotOperator={setAutopilotOperator}
+                    onSetAutopilotExpiresAt={setAutopilotExpiresAt}
+                    onEnableAutopilot={handleEnableAutopilot}
+                    onDisableAutopilot={handleDisableAutopilot}
+                />
 
                 <VaultPanel
                     agentAccount={agentAccount}
@@ -472,9 +467,11 @@ export default function ConsolePage() {
                     isOwner={isOwner}
                     tokenId={tokenId}
                     refreshKey={refreshKey}
+                    readOnly={!isInteractiveConsole}
+                    allowWithdraw={false}
                 />
 
-                <TransactionHistory tokenId={tokenId} refreshKey={refreshKey} />
+                <TransactionHistory tokenId={tokenId} nfaAddress={nfaAddress} refreshKey={refreshKey} />
             </div>
         </AppShell>
     );

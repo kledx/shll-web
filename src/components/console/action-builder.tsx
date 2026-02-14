@@ -6,19 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Play, Terminal, ArrowRightLeft, Banknote, ShieldAlert } from "lucide-react";
+import { Loader2, Play, Terminal, ShieldAlert } from "lucide-react";
 import { Address, Hex, isAddress, isHex } from "viem";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SwapTemplate } from "./swap-template";
-import { RepayTemplate } from "./repay-template";
 import { useTranslation } from "@/hooks/useTranslation";
 import { usePolicyPreflight } from "@/hooks/usePolicyPreflight";
-
-export interface Action {
-    target: Address;
-    value: bigint;
-    data: Hex;
-}
+import { Action, TemplateKey } from "./action-types";
+import { TemplatesPanel } from "./templates-panel";
+import { toast } from "sonner";
 
 interface ActionBuilderProps {
     onSimulate: (action: Action) => void;
@@ -28,6 +22,10 @@ interface ActionBuilderProps {
     simulationResult: { success: boolean, data: Hex } | null;
     simulationError?: string | null;
     agentAccount?: Address;
+    enabledTemplates?: TemplateKey[];
+    renterAddress?: string;
+    readOnly?: boolean;
+    readOnlyMessage?: string;
 }
 
 export function ActionBuilder({
@@ -37,9 +35,13 @@ export function ActionBuilder({
     isExecuting,
     simulationResult,
     simulationError,
-    agentAccount
+    agentAccount,
+    enabledTemplates,
+    renterAddress,
+    readOnly = false,
+    readOnlyMessage,
 }: ActionBuilderProps) {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
     const [target, setTarget] = useState<string>("");
     const [value, setValue] = useState<string>("0");
     const [data, setData] = useState<string>("0x");
@@ -76,34 +78,88 @@ export function ActionBuilder({
 
     const getPolicyHint = (raw?: string | null) => {
         if (!raw) return null;
+        const zh = language === "zh";
         if (/Target not allowed/i.test(raw)) {
-            return "策略未授权目标合约，请让管理员在 PolicyGuard 白名单中放行该 token/router。";
+            return zh
+                ? "策略未授权目标合约，请让管理员在 PolicyGuard 白名单中放行该 token/router。"
+                : "Target contract is not allowed. Ask admin to add token/router to PolicyGuard allowlist.";
         }
         if (/Selector not allowed/i.test(raw)) {
-            return "策略未授权该函数选择器，请更新 PolicyGuard 的 selector 白名单。";
+            return zh
+                ? "策略未授权该函数选择器，请更新 PolicyGuard 的 selector 白名单。"
+                : "Function selector is not allowed. Update PolicyGuard selector allowlist.";
         }
         if (/Token not allowed/i.test(raw)) {
-            return "策略未授权该 token，请更新 PolicyGuard token allowlist。";
+            return zh
+                ? "策略未授权该 token，请更新 PolicyGuard token allowlist。"
+                : "Token is not allowed. Update PolicyGuard token allowlist.";
         }
         if (/Spender not allowed/i.test(raw)) {
-            return "策略未授权该 spender，请更新 token->spender 白名单。";
+            return zh
+                ? "策略未授权该 spender，请更新 token->spender 白名单。"
+                : "Spender is not allowed. Update token->spender allowlist.";
         }
         if (/PolicyViolation/i.test(raw)) {
-            return "策略校验未通过，请检查 PolicyGuard 配置。";
+            return zh
+                ? "策略校验未通过，请检查 PolicyGuard 配置。"
+                : "Policy validation failed. Check PolicyGuard configuration.";
         }
         if (/amountOutMin is zero/i.test(raw)) {
-            return "滑点保护：最小输出金额不能为零，请设置合理的 amountOutMin。";
+            return zh
+                ? "滑点保护：最小输出金额不能为零，请设置合理的 amountOutMin。"
+                : "Slippage guard: amountOutMin cannot be zero. Set a valid minimum output.";
         }
         if (/Slippage exceeds/i.test(raw)) {
-            return "滑点超出上限，当前策略限制最大滑点为 3%。请调整交易参数。";
+            return zh
+                ? "滑点超出上限，当前策略限制最大滑点为 3%。请调整交易参数。"
+                : "Slippage exceeds policy limit (max 3%). Adjust trade parameters.";
         }
         if (/Quote unavailable/i.test(raw)) {
-            return "链上报价失败，交易对可能不存在或路径无效。";
+            return zh
+                ? "链上报价失败，交易对可能不存在或路径无效。"
+                : "On-chain quote unavailable. Pair may not exist or route is invalid.";
         }
         return null;
     };
 
+    const preflightUi = language === "zh"
+        ? {
+            issuesFound: (count: number) => `策略预检发现 ${count} 项缺失`,
+            copyFix: "复制修复命令",
+            copyAllFix: (count: number) => `批量复制所有修复命令 (${count} 条)`,
+            copySuccess: "修复命令已复制",
+            copyAllSuccess: (count: number) => `已复制 ${count} 条修复命令`,
+            copyFailed: "复制失败，请手动复制",
+            continueHint: "您仍可继续模拟，但链上执行大概率会被 PolicyGuard 拒绝。",
+            checking: "正在预检策略...",
+        }
+        : {
+            issuesFound: (count: number) => `Preflight found ${count} policy issue(s)`,
+            copyFix: "Copy Fix Command",
+            copyAllFix: (count: number) => `Copy All Fix Commands (${count})`,
+            copySuccess: "Fix command copied",
+            copyAllSuccess: (count: number) => `${count} fix commands copied`,
+            copyFailed: "Copy failed. Please copy manually.",
+            continueHint: "You can still simulate, but on-chain execution will likely be rejected by PolicyGuard.",
+            checking: "Checking policy preflight...",
+        };
+
+    const handleCopyText = async (text: string, successMessage: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            toast.success(successMessage);
+        } catch {
+            toast.error(preflightUi.copyFailed);
+        }
+    };
+
     const policyHint = getPolicyHint(simulationError);
+    const templateOrder: TemplateKey[] = ["swap", "repay", "raw"];
+    const effectiveTemplates = (
+        enabledTemplates && enabledTemplates.length > 0 ? enabledTemplates : templateOrder
+    )
+        .filter((item, index, arr): item is TemplateKey => templateOrder.includes(item) && arr.indexOf(item) === index);
+    const defaultTemplate = effectiveTemplates[0] || "raw";
 
     return (
         <div className="space-y-6">
@@ -120,28 +176,13 @@ export function ActionBuilder({
                 </CardHeader>
                 <CardContent className="space-y-6">
 
-                    <Tabs defaultValue="swap" className="w-full">
-                        <TabsList className="grid w-full grid-cols-3 mb-4">
-                            <TabsTrigger value="swap" className="gap-2"><ArrowRightLeft className="w-4 h-4" /> {t.agent.console.builder.tabs.swap}</TabsTrigger>
-                            <TabsTrigger value="repay" className="gap-2"><Banknote className="w-4 h-4" /> {t.agent.console.builder.tabs.repay}</TabsTrigger>
-                            <TabsTrigger value="raw" className="gap-2"><Terminal className="w-4 h-4" /> {t.agent.console.builder.tabs.raw}</TabsTrigger>
-                        </TabsList>
-
-                        <TabsContent value="swap">
-                            <SwapTemplate onActionGenerated={handleActionGenerated} agentAccount={agentAccount} />
-                        </TabsContent>
-
-                        <TabsContent value="repay">
-                            {/* TODO: Pass real renter address */}
-                            <RepayTemplate onActionGenerated={handleActionGenerated} renterAddress="0xYourAddress" />
-                        </TabsContent>
-
-                        <TabsContent value="raw">
-                            <div className="p-4 border rounded-lg bg-[var(--color-paper)]/50 text-sm text-muted-foreground text-center">
-                                {t.agent.console.builder.manual}
-                            </div>
-                        </TabsContent>
-                    </Tabs>
+                    <TemplatesPanel
+                        defaultTemplate={defaultTemplate}
+                        effectiveTemplates={effectiveTemplates}
+                        agentAccount={agentAccount}
+                        renterAddress={renterAddress}
+                        onActionGenerated={handleActionGenerated}
+                    />
 
                     <div className="space-y-4 border-t pt-4">
                         <div className="flex items-center justify-between">
@@ -190,27 +231,23 @@ export function ActionBuilder({
                         <div className="mt-4 p-4 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700">
                             <div className="flex items-center gap-2 mb-2 text-amber-700 dark:text-amber-400 font-semibold text-sm">
                                 <ShieldAlert className="w-4 h-4" />
-                                策略预检发现 {violations.length} 项缺失
+                                {preflightUi.issuesFound(violations.length)}
                             </div>
                             <ul className="space-y-2">
                                 {violations.map((v, i) => (
                                     <li key={i} className="text-sm">
                                         <div className="flex items-start gap-1.5 text-amber-800 dark:text-amber-300">
                                             <span className="mt-0.5">⚠</span>
-                                            <span>{v.messageZh}</span>
+                                            <span>{language === "zh" ? v.messageZh : v.messageEn}</span>
                                         </div>
                                         {v.fixCommand && (
                                             <div className="mt-2 ml-5 space-y-1">
                                                 <div className="flex items-center gap-2">
                                                     <button
-                                                        onClick={() => {
-                                                            navigator.clipboard.writeText(v.fixCommand!);
-                                                            // Simple toast fallback
-                                                            alert('修复命令已复制到剪贴板');
-                                                        }}
+                                                        onClick={() => void handleCopyText(v.fixCommand!, preflightUi.copySuccess)}
                                                         className="px-2 py-1 text-xs bg-amber-600 hover:bg-amber-700 text-white rounded transition-colors"
                                                     >
-                                                        📋 复制修复命令
+                                                        {preflightUi.copyFix}
                                                     </button>
                                                 </div>
                                                 <code className="block text-xs bg-amber-100 dark:bg-amber-900/50 p-2 rounded font-mono overflow-x-auto">
@@ -227,37 +264,42 @@ export function ActionBuilder({
                                 <div className="mt-3 pt-3 border-t border-amber-300 dark:border-amber-700">
                                     <button
                                         onClick={() => {
+                                            const commandsCount = violations.filter(v => v.fixCommand).length;
                                             const allCommands = violations
                                                 .map(v => v.fixCommand)
                                                 .filter(Boolean)
                                                 .join('\n\n');
-                                            navigator.clipboard.writeText(allCommands);
-                                            alert(`已复制 ${violations.filter(v => v.fixCommand).length} 条修复命令`);
+                                            void handleCopyText(allCommands, preflightUi.copyAllSuccess(commandsCount));
                                         }}
                                         className="w-full px-3 py-2 text-sm bg-amber-600 hover:bg-amber-700 text-white rounded transition-colors font-medium"
                                     >
-                                        📋 批量复制所有修复命令 ({violations.filter(v => v.fixCommand).length} 条)
+                                        {preflightUi.copyAllFix(violations.filter(v => v.fixCommand).length)}
                                     </button>
                                 </div>
                             )}
 
                             <div className="mt-2 text-sm text-amber-600 dark:text-amber-500">
-                                您仍可继续模拟，但链上执行大概率会被 PolicyGuard 拒绝。
+                                {preflightUi.continueHint}
                             </div>
                         </div>
                     )}
                     {isPreflightChecking && isValid && (
                         <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
                             <Loader2 className="w-3 h-3 animate-spin" />
-                            正在预检策略...
+                            {preflightUi.checking}
+                        </div>
+                    )}
+                    {readOnly && (
+                        <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                            {readOnlyMessage || "Console is currently in read-only mode."}
                         </div>
                     )}
 
-                    <div className="flex gap-4 pt-2">
+                    <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-2 sm:gap-4">
                         <Button
                             variant="secondary"
                             onClick={handleSimulate}
-                            disabled={!isValid || isSimulating || isExecuting}
+                            disabled={readOnly || !isValid || isSimulating || isExecuting}
                             className="flex-1"
                         >
                             {isSimulating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Play className="w-4 h-4 mr-2" />}
@@ -266,7 +308,7 @@ export function ActionBuilder({
 
                         <Button
                             onClick={handleExecute}
-                            disabled={!isValid || isSimulating || isExecuting || !simulationResult?.success}
+                            disabled={readOnly || !isValid || isSimulating || isExecuting || !simulationResult?.success}
                             className="flex-1 bg-[var(--color-burgundy)] hover:bg-[var(--color-burgundy)]/90"
                         >
                             {isExecuting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
