@@ -11,3 +11,12 @@ services:
       - PORT=3000
       - HOSTNAME=0.0.0.0
       - PONDER_URL=http://shll-indexer:42069
+      - RUNNER_URL=http://shll-agent-runner:8787
+      - RUNNER_API_KEY=${RUNNER_API_KEY:-}
+      - API_KEY=${API_KEY:-}
+    networks:
+      - dokploy-network
+
+networks:
+  dokploy-network:
+    external: true
