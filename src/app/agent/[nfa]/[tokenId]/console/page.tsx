@@ -19,7 +19,7 @@ import { Address } from "viem";
 import Link from "next/link";
 
 export default function ConsolePage() {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
     const params = useParams();
     const tokenId = params.tokenId as string;
     const nfaAddress = params.nfa as string;
@@ -41,7 +41,96 @@ export default function ConsolePage() {
     const isOwner = !!address && !!agent && address.toLowerCase() === agent.owner.toLowerCase();
     const isRenter = !!address && !!agent && address.toLowerCase() === agent.renter.toLowerCase();
     const hasAccess = isOwner || isRenter;
-    const roleLabel = isOwner ? "Owner" : isRenter ? "Active Renter" : "No Access";
+    const roleLabel = isOwner
+        ? (language === "zh" ? "所有者" : "Owner")
+        : isRenter
+            ? (language === "zh" ? "当前租户" : "Active Renter")
+            : (language === "zh" ? "无权限" : "No Access");
+    const ui = language === "zh"
+        ? {
+            errorLoadAgent: "加载 Agent 链上数据失败。",
+            goAgentDetail: "返回 Agent 详情",
+            openDocs: "打开文档",
+            nextStepTitle: "下一步建议",
+            nextStepConnect: "先连接钱包，再重新进入控制台。",
+            nextStepRent: "请先在 Agent 详情页完成租用/续租，再返回控制台。",
+            nextStepPathConnect: "/me -> 连接钱包 -> 返回控制台",
+            nextStepPathRentPrefix: "路径: ",
+            agentDetail: "Agent 详情",
+            currentRole: "当前角色",
+            roleHintOwner: "你可以查看记录和关闭 Autopilot，但只有当前租户可以签名开启。",
+            roleHintRenter: "你可以模拟、执行，并通过签名开启 Autopilot。",
+            roleHintGuest: "请切换到所有者/租户钱包，或先完成租用。",
+            autopilot: {
+                title: "Autopilot",
+                nonce: "Nonce",
+                onchainOperator: "链上 Operator",
+                operatorExpires: "Operator 过期时间",
+                notSet: "未设置",
+                operatorAddress: "Operator 地址",
+                useDefaultRunner: "使用默认 Runner 地址",
+                operatorExpiresInput: "Operator 过期时间",
+                hint: "提示: operator 应填写 Runner 地址，过期时间不要超过租期。",
+                enabling: "启用中...",
+                enable: "启用 Autopilot (签名)",
+                disabling: "关闭中...",
+                disable: "关闭 Autopilot",
+                renterOnlyHint: "仅当前租户可签名 Operator Permit。",
+                toast: {
+                    invalidOperatorAddress: "Operator 地址格式无效",
+                    selectOperatorExpiry: "请选择 Operator 过期时间",
+                    expiryFutureRequired: "Operator 过期时间必须晚于当前时间",
+                    enabledSuccess: "Autopilot 已启用",
+                    enableFailed: "启用 Autopilot 失败",
+                    disabledSuccess: "Autopilot 已关闭",
+                    disableFailed: "关闭 Autopilot 失败",
+                    unknownError: "未知错误",
+                    txPrefix: "交易",
+                },
+            },
+        }
+        : {
+            errorLoadAgent: "Failed to load agent on-chain data.",
+            goAgentDetail: "Go to Agent Detail",
+            openDocs: "Open Docs",
+            nextStepTitle: "What to do next",
+            nextStepConnect: "Connect wallet first, then reopen this console.",
+            nextStepRent: "Rent or extend first on Agent Detail, then come back to Console.",
+            nextStepPathConnect: "/me -> connect wallet -> back to console",
+            nextStepPathRentPrefix: "Path: ",
+            agentDetail: "Agent Detail",
+            currentRole: "Current Role",
+            roleHintOwner: "You can inspect history and disable autopilot, but only active renter can sign enable permit.",
+            roleHintRenter: "You can simulate, execute, and enable autopilot with signature.",
+            roleHintGuest: "Switch to owner/renter wallet or rent this agent first.",
+            autopilot: {
+                title: "Autopilot",
+                nonce: "Nonce",
+                onchainOperator: "On-chain operator",
+                operatorExpires: "Operator expires",
+                notSet: "not set",
+                operatorAddress: "Operator Address",
+                useDefaultRunner: "Use default runner operator",
+                operatorExpiresInput: "Operator Expires",
+                hint: "Tip: operator should be the runner address. Expiry should not exceed your rental period.",
+                enabling: "Enabling...",
+                enable: "Enable Autopilot (Sign)",
+                disabling: "Disabling...",
+                disable: "Disable Autopilot",
+                renterOnlyHint: "Only active renter can sign operator permit.",
+                toast: {
+                    invalidOperatorAddress: "Invalid operator address",
+                    selectOperatorExpiry: "Please select operator expiry",
+                    expiryFutureRequired: "Operator expiry must be in the future",
+                    enabledSuccess: "Autopilot enabled",
+                    enableFailed: "Enable autopilot failed",
+                    disabledSuccess: "Autopilot disabled",
+                    disableFailed: "Disable autopilot failed",
+                    unknownError: "Unknown error",
+                    txPrefix: "Tx",
+                },
+            },
+        };
 
     // Simulation State Management
     const [simAction, setSimAction] = useState<Action | null>(null);
@@ -92,11 +181,11 @@ export default function ConsolePage() {
     const handleEnableAutopilot = async () => {
         if (!agent) return;
         if (!/^0x[a-fA-F0-9]{40}$/.test(autopilotOperator)) {
-            toast.error("Invalid operator address");
+            toast.error(ui.autopilot.toast.invalidOperatorAddress);
             return;
         }
         if (!autopilotExpiresAt) {
-            toast.error("Please select operator expiry");
+            toast.error(ui.autopilot.toast.selectOperatorExpiry);
             return;
         }
 
@@ -104,7 +193,7 @@ export default function ConsolePage() {
             new Date(autopilotExpiresAt).getTime() / 1000
         );
         if (!Number.isFinite(expiresSec) || expiresSec <= Math.floor(Date.now() / 1000)) {
-            toast.error("Operator expiry must be in the future");
+            toast.error(ui.autopilot.toast.expiryFutureRequired);
             return;
         }
 
@@ -115,15 +204,15 @@ export default function ConsolePage() {
                 expires: BigInt(expiresSec),
                 deadline,
             });
-            toast.success("Autopilot enabled", {
-                description: `Tx: ${result.txHash.slice(0, 10)}...`,
+            toast.success(ui.autopilot.toast.enabledSuccess, {
+                description: `${ui.autopilot.toast.txPrefix}: ${result.txHash.slice(0, 10)}...`,
             });
         } catch (err) {
-            toast.error("Enable autopilot failed", {
+            toast.error(ui.autopilot.toast.enableFailed, {
                 description:
                     err instanceof Error
                         ? err.message.slice(0, 140)
-                        : "Unknown error",
+                        : ui.autopilot.toast.unknownError,
             });
         }
     };
@@ -131,15 +220,15 @@ export default function ConsolePage() {
     const handleDisableAutopilot = async () => {
         try {
             const result = await clearAutopilot();
-            toast.success("Autopilot disabled", {
-                description: `Tx: ${result.txHash.slice(0, 10)}...`,
+            toast.success(ui.autopilot.toast.disabledSuccess, {
+                description: `${ui.autopilot.toast.txPrefix}: ${result.txHash.slice(0, 10)}...`,
             });
         } catch (err) {
-            toast.error("Disable autopilot failed", {
+            toast.error(ui.autopilot.toast.disableFailed, {
                 description:
                     err instanceof Error
                         ? err.message.slice(0, 140)
-                        : "Unknown error",
+                        : ui.autopilot.toast.unknownError,
             });
         }
     };
@@ -177,7 +266,7 @@ export default function ConsolePage() {
                         {t.agent.console.page.title}
                     </h2>
                     <p className="text-muted-foreground">
-                        {"Failed to load agent on-chain data."}
+                        {ui.errorLoadAgent}
                     </p>
                     <p className="text-xs text-muted-foreground font-mono break-all">
                         {agentError.message}
@@ -187,13 +276,13 @@ export default function ConsolePage() {
                             href={detailPath}
                             className="inline-flex items-center rounded-md border px-3 py-2 text-sm hover:bg-muted"
                         >
-                            {"Go to Agent Detail"}
+                            {ui.goAgentDetail}
                         </Link>
                         <Link
                             href="/docs"
                             className="inline-flex items-center rounded-md border px-3 py-2 text-sm hover:bg-muted"
                         >
-                            {"Open Docs"}
+                            {ui.openDocs}
                         </Link>
                     </div>
                 </div>
@@ -216,14 +305,16 @@ export default function ConsolePage() {
                             : (t.agent.console.page.noAccess || "You must be the owner or active renter of this agent to use the console.")}
                     </p>
                     <div className="rounded-lg border bg-muted/30 px-4 py-3 text-left text-xs text-muted-foreground">
-                        <div className="font-medium text-foreground">{"What to do next"}</div>
+                        <div className="font-medium text-foreground">{ui.nextStepTitle}</div>
                         <div className="pt-1">
                             {!address
-                                ? "Connect wallet first, then reopen this console."
-                                : "Rent or extend first on Agent Detail, then come back to Console."}
+                                ? ui.nextStepConnect
+                                : ui.nextStepRent}
                         </div>
                         <div className="pt-1 font-mono break-all">
-                            {!address ? "/me -> connect wallet -> back to console" : `${detailPath} -> rent/extend -> ${consolePath}`}
+                            {!address
+                                ? ui.nextStepPathConnect
+                                : `${ui.nextStepPathRentPrefix}${detailPath} -> rent/extend -> ${consolePath}`}
                         </div>
                     </div>
                     <div className="flex justify-center gap-2 pt-2">
@@ -231,7 +322,7 @@ export default function ConsolePage() {
                             href={detailPath}
                             className="inline-flex items-center rounded-md border px-3 py-2 text-sm hover:bg-muted"
                         >
-                            {"Go to Agent Detail"}
+                            {ui.goAgentDetail}
                         </Link>
                         <Link
                             href="/me"
@@ -254,7 +345,7 @@ export default function ConsolePage() {
                     </Link>
                     <ChevronRight className="h-3 w-3" />
                     <Link href={detailPath} className="hover:text-foreground">
-                        {"Agent Detail"}
+                        {ui.agentDetail}
                     </Link>
                     <ChevronRight className="h-3 w-3" />
                     <span className="text-foreground">{t.agent.detail.tabs.console}</span>
@@ -278,15 +369,15 @@ export default function ConsolePage() {
 
                 <div className="rounded-lg border bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
                     <div>
-                        <span className="font-medium text-foreground">{"Current Role: "}</span>
+                        <span className="font-medium text-foreground">{ui.currentRole}: </span>
                         {roleLabel}
                     </div>
                     <div className="pt-1">
                         {isRenter
-                            ? "You can simulate, execute, and enable autopilot with signature."
+                            ? ui.roleHintRenter
                             : isOwner
-                                ? "You can inspect history and disable autopilot, but only active renter can sign enable permit."
-                                : "Switch to owner/renter wallet or rent this agent first."}
+                                ? ui.roleHintOwner
+                                : ui.roleHintGuest}
                     </div>
                 </div>
 
@@ -302,23 +393,23 @@ export default function ConsolePage() {
 
                 <div className="rounded-xl border bg-card p-4 space-y-3">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-semibold">Autopilot</h2>
+                        <h2 className="text-lg font-semibold">{ui.autopilot.title}</h2>
                         <span className="text-xs text-muted-foreground">
-                            Nonce: {operatorNonce.toString()}
+                            {ui.autopilot.nonce}: {operatorNonce.toString()}
                         </span>
                     </div>
                     <div className="text-xs text-muted-foreground">
-                        On-chain operator: {onchainOperator || "not set"}
+                        {ui.autopilot.onchainOperator}: {onchainOperator || ui.autopilot.notSet}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                        Operator expires:{" "}
+                        {ui.autopilot.operatorExpires}:{" "}
                         {operatorExpires > BigInt(0)
                             ? new Date(Number(operatorExpires) * 1000).toLocaleString()
-                            : "not set"}
+                            : ui.autopilot.notSet}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div className="space-y-1">
-                            <label className="text-sm font-medium">Operator Address</label>
+                            <label className="text-sm font-medium">{ui.autopilot.operatorAddress}</label>
                             <input
                                 className="w-full rounded-md border px-3 py-2 text-sm font-mono"
                                 value={autopilotOperator}
@@ -331,12 +422,12 @@ export default function ConsolePage() {
                                     onClick={() => setAutopilotOperator(runnerOperatorDefault)}
                                     className="text-xs text-[var(--color-burgundy)] hover:underline"
                                 >
-                                    {"Use default runner operator"}
+                                    {ui.autopilot.useDefaultRunner}
                                 </button>
                             )}
                         </div>
                         <div className="space-y-1">
-                            <label className="text-sm font-medium">Operator Expires</label>
+                            <label className="text-sm font-medium">{ui.autopilot.operatorExpiresInput}</label>
                             <input
                                 type="datetime-local"
                                 className="w-full rounded-md border px-3 py-2 text-sm"
@@ -346,7 +437,7 @@ export default function ConsolePage() {
                         </div>
                     </div>
                     <div className="text-xs text-muted-foreground">
-                        {"Tip: operator should be the runner address. Expiry should not exceed your rental period."}
+                        {ui.autopilot.hint}
                     </div>
                     <button
                         type="button"
@@ -354,7 +445,9 @@ export default function ConsolePage() {
                         disabled={!isRenter || isEnablingAutopilot || !agent}
                         className="inline-flex items-center rounded-md bg-[var(--color-burgundy)] text-white px-4 py-2 text-sm disabled:opacity-50"
                     >
-                        {isEnablingAutopilot ? "Enabling..." : "Enable Autopilot (Sign)"}
+                        {isEnablingAutopilot
+                            ? ui.autopilot.enabling
+                            : ui.autopilot.enable}
                     </button>
                     <button
                         type="button"
@@ -362,11 +455,13 @@ export default function ConsolePage() {
                         disabled={isClearingAutopilot || !isOwner && !isRenter}
                         className="inline-flex items-center rounded-md border px-4 py-2 text-sm disabled:opacity-50"
                     >
-                        {isClearingAutopilot ? "Disabling..." : "Disable Autopilot"}
+                        {isClearingAutopilot
+                            ? ui.autopilot.disabling
+                            : ui.autopilot.disable}
                     </button>
                     {!isRenter && (
                         <div className="text-xs text-muted-foreground">
-                            Only active renter can sign operator permit.
+                            {ui.autopilot.renterOnlyHint}
                         </div>
                     )}
                 </div>
