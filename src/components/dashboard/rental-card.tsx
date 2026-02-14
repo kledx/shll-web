@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Address } from "viem";
+import { useTranslation } from "@/hooks/useTranslation";
 
 // Tokens available for deposit (must match PolicyGuard config)
 const DEPOSIT_TOKENS = [
@@ -27,6 +28,7 @@ interface RentalCardProps {
 }
 
 export function RentalCard({ rental }: RentalCardProps) {
+    const { t } = useTranslation();
     const { account: agentAccount } = useAgentAccount(rental.tokenId.toString(), rental.nfa);
     const tokenId = rental.tokenId.toString();
 
@@ -81,13 +83,24 @@ export function RentalCard({ rental }: RentalCardProps) {
 
     const selectedToken = DEPOSIT_TOKENS.find(t => t.name === depositAsset);
     const isERC20 = selectedToken && !selectedToken.isNative;
+    const statusText = isExpired && !rental.isOwner
+        ? t.dashboard.card.statusExpired
+        : t.dashboard.card.statusActive;
+    const rentalTimeText = rental.isOwner && !rental.isRenter
+        ? t.dashboard.card.ownThisAgent
+        : isExpired
+            ? t.dashboard.card.expiredOn.replace(
+                "{date}",
+                new Date(Number(rental.expires) * 1000).toLocaleDateString()
+            )
+            : t.dashboard.card.expiresIn.replace("{days}", String(daysLeft));
 
     return (
         <Card className={`border ${isExpired && !rental.isOwner ? 'border-gray-200 opacity-70' : 'border-[var(--color-burgundy)]/20'}`}>
             <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                     <div>
-                        <CardTitle className="text-lg">Agent #{tokenId}</CardTitle>
+                        <CardTitle className="text-lg">{t.dashboard.card.agentLabel} #{tokenId}</CardTitle>
                         <CardDescription className="text-xs font-mono mt-1">
                             {formatAddress(rental.agentAccount)}
                         </CardDescription>
@@ -95,11 +108,11 @@ export function RentalCard({ rental }: RentalCardProps) {
                     <div className="flex flex-col items-end gap-1">
                         {rental.isOwner && (
                             <Chip variant="default" className="bg-yellow-100 text-yellow-800 border-yellow-200 text-[10px] px-1.5 py-0 h-4">
-                                OWNER
+                                {t.dashboard.card.ownerBadge}
                             </Chip>
                         )}
                         <Chip variant={isExpired && !rental.isOwner ? "default" : "burgundy"}>
-                            {isExpired && !rental.isOwner ? "Expired" : "Active"}
+                            {statusText}
                         </Chip>
                     </div>
                 </div>
@@ -107,14 +120,7 @@ export function RentalCard({ rental }: RentalCardProps) {
             <CardContent className="pb-3">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
                     <Clock className="w-4 h-4" />
-                    <span>
-                        {rental.isOwner && !rental.isRenter
-                            ? "You own this agent"
-                            : isExpired
-                                ? `Expired on ${new Date(Number(rental.expires) * 1000).toLocaleDateString()}`
-                                : `Expires in ${daysLeft} days`
-                        }
-                    </span>
+                    <span>{rentalTimeText}</span>
                 </div>
                 {!rental.isOwner && (
                     <div className="h-1 bg-gray-100 rounded overflow-hidden">
@@ -130,33 +136,33 @@ export function RentalCard({ rental }: RentalCardProps) {
                             variant="outline"
                             className="flex-1 gap-2 border-[var(--color-burgundy)]/20 hover:bg-[var(--color-burgundy)]/5 text-[var(--color-burgundy)]"
                         >
-                            <ArrowDownToLine className="w-4 h-4" /> Deposit
+                            <ArrowDownToLine className="w-4 h-4" /> {t.dashboard.card.deposit}
                         </Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Deposit to Agent #{tokenId}</DialogTitle>
+                            <DialogTitle>{t.dashboard.card.depositDialog.title.replace("{tokenId}", tokenId)}</DialogTitle>
                             <DialogDescription>
-                                Send tokens to the Agent&apos;s vault.
+                                {t.dashboard.card.depositDialog.desc}
                                 {agentAccount && (
                                     <span className="block mt-1 font-mono text-xs">
-                                        Account: {formatAddress(agentAccount)}
+                                        {t.dashboard.card.depositDialog.account}: {formatAddress(agentAccount)}
                                     </span>
                                 )}
                             </DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label className="text-right">Token</Label>
+                                <Label className="text-right">{t.dashboard.card.depositDialog.token}</Label>
                                 <PopoutWrapper>
                                     <Select onValueChange={setDepositAsset} defaultValue={depositAsset}>
                                         <SelectTrigger className="col-span-3">
-                                            <SelectValue placeholder="Select token" />
+                                            <SelectValue placeholder={t.dashboard.card.depositDialog.selectToken} />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {DEPOSIT_TOKENS.map(token => (
                                                 <SelectItem key={token.name} value={token.name}>
-                                                    {token.symbol} {token.isNative ? "(Native)" : ""}
+                                                    {token.symbol} {token.isNative ? t.dashboard.card.depositDialog.nativeTag : ""}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -164,7 +170,7 @@ export function RentalCard({ rental }: RentalCardProps) {
                                 </PopoutWrapper>
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label className="text-right">Amount</Label>
+                                <Label className="text-right">{t.dashboard.card.depositDialog.amount}</Label>
                                 <Input
                                     type="number"
                                     value={depositAmount}
@@ -181,17 +187,20 @@ export function RentalCard({ rental }: RentalCardProps) {
                                 <>
                                     <Button onClick={handleDeposit} disabled={isDepositing || !depositAmount} variant="outline">
                                         {isDepositing && depositStep === "approving" ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
-                                        1. Approve
+                                        {t.dashboard.card.depositDialog.approve}
                                     </Button>
                                     <Button onClick={handleDepositAfterApprove} disabled={isDepositing || !depositAmount}>
                                         {isDepositing && depositStep === "depositing" ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
-                                        2. Deposit
+                                        {t.dashboard.card.depositDialog.depositStep}
                                     </Button>
                                 </>
                             ) : (
                                 <Button onClick={handleDeposit} disabled={isDepositing || !depositAmount}>
                                     {isDepositing ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
-                                    Deposit BNB
+                                    {t.dashboard.card.depositDialog.depositNative.replace(
+                                        "{symbol}",
+                                        selectedToken?.symbol ?? "BNB"
+                                    )}
                                 </Button>
                             )}
                         </DialogFooter>
@@ -200,7 +209,7 @@ export function RentalCard({ rental }: RentalCardProps) {
 
                 <Link href={`/agent/${rental.nfa}/${rental.tokenId}/console`} className="flex-1">
                     <Button variant={isExpired && !rental.isOwner ? "outline" : "default"} className="w-full group">
-                        Manage
+                        {t.dashboard.card.manage}
                         <ExternalLink className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                     </Button>
                 </Link>

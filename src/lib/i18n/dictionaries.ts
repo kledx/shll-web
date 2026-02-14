@@ -154,6 +154,45 @@ export const en = {
             unlimited: "Unlimited",
         }
     },
+    dashboard: {
+        page: {
+            title: "My Dashboard",
+            subtitle: "Manage your rented agents and view your history.",
+        },
+        tabs: {
+            owned: "My Agents",
+            active: "Active Rentals",
+            history: "History",
+        },
+        empty: {
+            owned: "You don't own any agents yet.",
+            active: "No active rentals found.",
+            history: "No expired rentals found.",
+        },
+        card: {
+            agentLabel: "Agent",
+            ownerBadge: "OWNER",
+            statusExpired: "Expired",
+            statusActive: "Active",
+            ownThisAgent: "You own this agent",
+            expiredOn: "Expired on {date}",
+            expiresIn: "Expires in {days} days",
+            deposit: "Deposit",
+            manage: "Manage",
+            depositDialog: {
+                title: "Deposit to Agent #{tokenId}",
+                desc: "Send tokens to the Agent's vault.",
+                account: "Account",
+                token: "Token",
+                selectToken: "Select token",
+                amount: "Amount",
+                approve: "1. Approve",
+                depositStep: "2. Deposit",
+                depositNative: "Deposit {symbol}",
+                nativeTag: "(Native)",
+            },
+        },
+    },
     docs: {
         title: "Documentation & Guides",
         subtitle: "Learn how to use SHLL and understand its core architecture.",
@@ -472,6 +511,45 @@ export const zh: Dictionary = {
             whitelist: "代币白名单",
             unlimited: "无限制",
         }
+    },
+    dashboard: {
+        page: {
+            title: "\u6211\u7684\u63a7\u5236\u53f0",
+            subtitle: "\u7ba1\u7406\u4f60\u79df\u7528\u7684 Agent \u5e76\u67e5\u770b\u5386\u53f2\u8bb0\u5f55\u3002",
+        },
+        tabs: {
+            owned: "\u6211\u7684 Agent",
+            active: "\u5f53\u524d\u79df\u7528",
+            history: "\u5386\u53f2\u8bb0\u5f55",
+        },
+        empty: {
+            owned: "\u4f60\u8fd8\u6ca1\u6709\u62e5\u6709\u4efb\u4f55 Agent\u3002",
+            active: "\u6682\u65e0\u8fdb\u884c\u4e2d\u7684\u79df\u7528\u3002",
+            history: "\u6682\u65e0\u5df2\u8fc7\u671f\u7684\u79df\u7528\u8bb0\u5f55\u3002",
+        },
+        card: {
+            agentLabel: "Agent",
+            ownerBadge: "\u6240\u6709\u8005",
+            statusExpired: "\u5df2\u8fc7\u671f",
+            statusActive: "\u8fdb\u884c\u4e2d",
+            ownThisAgent: "\u4f60\u62e5\u6709\u8fd9\u4e2a Agent",
+            expiredOn: "\u5df2\u4e8e {date} \u5230\u671f",
+            expiresIn: "\u8fd8\u6709 {days} \u5929\u5230\u671f",
+            deposit: "\u5b58\u5165",
+            manage: "\u7ba1\u7406",
+            depositDialog: {
+                title: "\u5411 Agent #{tokenId} \u5b58\u5165",
+                desc: "\u5411 Agent \u91d1\u5e93\u8f6c\u5165\u8d44\u4ea7\u3002",
+                account: "\u8d26\u6237",
+                token: "\u4ee3\u5e01",
+                selectToken: "\u9009\u62e9\u4ee3\u5e01",
+                amount: "\u6570\u91cf",
+                approve: "1. \u6388\u6743",
+                depositStep: "2. \u5b58\u5165",
+                depositNative: "\u5b58\u5165 {symbol}",
+                nativeTag: "\uff08\u539f\u751f\uff09",
+            },
+        },
     },
     docs: {
         title: "文档与指南",

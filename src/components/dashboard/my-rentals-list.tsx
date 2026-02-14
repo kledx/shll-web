@@ -4,9 +4,11 @@ import { useMyRentals } from "@/hooks/useMyRentals";
 import { RentalCard } from "./rental-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function MyRentalsList() {
     const { rentals, isLoading } = useMyRentals();
+    const { t } = useTranslation();
 
     if (isLoading) {
         return <div className="flex justify-center p-10"><Loader2 className="animate-spin text-[var(--color-burgundy)]" /></div>;
@@ -19,15 +21,15 @@ export function MyRentalsList() {
     return (
         <Tabs defaultValue="owned" className="w-full">
             <TabsList className="mb-6">
-                <TabsTrigger value="owned">My Agents ({myAgents.length})</TabsTrigger>
-                <TabsTrigger value="active">Active Rentals ({activeRentals.length})</TabsTrigger>
-                <TabsTrigger value="history">History ({expiredRentals.length})</TabsTrigger>
+                <TabsTrigger value="owned">{t.dashboard.tabs.owned} ({myAgents.length})</TabsTrigger>
+                <TabsTrigger value="active">{t.dashboard.tabs.active} ({activeRentals.length})</TabsTrigger>
+                <TabsTrigger value="history">{t.dashboard.tabs.history} ({expiredRentals.length})</TabsTrigger>
             </TabsList>
 
             <TabsContent value="owned">
                 {myAgents.length === 0 ? (
                     <div className="text-center py-12 border-2 border-dashed rounded-xl opacity-50">
-                        <p>You don't own any agents yet.</p>
+                        <p>{t.dashboard.empty.owned}</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -41,7 +43,7 @@ export function MyRentalsList() {
             <TabsContent value="active">
                 {activeRentals.length === 0 ? (
                     <div className="text-center py-12 border-2 border-dashed rounded-xl opacity-50">
-                        <p>No active rentals found.</p>
+                        <p>{t.dashboard.empty.active}</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -55,7 +57,7 @@ export function MyRentalsList() {
             <TabsContent value="history">
                 {expiredRentals.length === 0 ? (
                     <div className="text-center py-12 border-2 border-dashed rounded-xl opacity-50">
-                        <p>No expired rentals found.</p>
+                        <p>{t.dashboard.empty.history}</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
