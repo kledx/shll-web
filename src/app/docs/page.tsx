@@ -1,274 +1,558 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import { Check, ArrowRight, ExternalLink } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
+import { useState } from "react";
+import { ArrowRight, AlertTriangle, CircleHelp, ExternalLink, Rocket, ShieldCheck, Workflow } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { AppShell } from "@/components/ui/app-shell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function DocsPage() {
     const { t } = useTranslation();
-    const thread = t.docs.thread;
-    const guide = t.docs.guide;
-    const [activeTab, setActiveTab] = useState("guide");
-
-    // Helper to render content for architecture thread
-    const renderContent = (content: string[] | string, id: number) => {
-        if (typeof content === 'string') return <p>{content}</p>;
-
-        if (id === 3) {
-            const [intro, nfa, account, items, market] = content;
-            return (
-                <>
-                    <p className="mb-4">{intro}</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <ContractCard text={nfa} icon="1️⃣" />
-                        <ContractCard text={account} icon="2️⃣" />
-                        <ContractCard text={items} icon="3️⃣" />
-                        <ContractCard text={market} icon="4️⃣" />
-                    </div>
-                </>
-            );
-        }
-
-        if (id === 6) {
-            return (
-                <>
-                    <p className="font-bold text-lg">{content[0]}</p>
-                    <p className="mt-2 text-[15px]">{parseMarkdown(content[1])}</p>
-                    <div className="mt-4 space-y-3 text-[15px]">
-                        <CheckItem text={content[2]} />
-                        <CheckItem text={content[3]} />
-                        <CheckItem text={content[4]} bold />
-                    </div>
-                    <p className="mt-4 text-sm opacity-80">{parseMarkdown(content[5])}</p>
-                </>
-            );
-        }
-
-        if (id === 8) {
-            return (
-                <>
-                    <p className="font-bold text-lg">{parseMarkdown(content[0])}</p>
-                    <p className="mt-2 text-sm opacity-80">{content[1]}</p>
-                    <ol className="list-decimal list-inside mt-4 space-y-3 opacity-90 text-[15px]">
-                        <li>{parseMarkdown(content[2])}</li>
-                        <li className="pl-2 border-l-2 border-green-500/30">{content[3]}</li>
-                        <li className="pl-2 border-l-2 border-green-500/30">{parseMarkdown(content[4])}</li>
-                        <li className="pl-2 border-l-2 border-green-500/30">{content[5]}</li>
-                        <li className="pl-2 border-l-2 border-green-500/30">{parseMarkdown(content[6])}</li>
-                        <li>{content[7]}</li>
-                        <li>{content[8]}</li>
-                    </ol>
-                </>
-            );
-        }
-
-        if (id === 10) {
-            return (
-                <>
-                    <p className="font-bold text-lg">{parseMarkdown(content[0])}</p>
-                    <div className="mt-4 space-y-3">
-                        <VisionItem emoji="🖥️" text={content[1]} />
-                        <VisionItem emoji="📈" text={content[2]} />
-                        <VisionItem emoji="🤖" text={content[3]} />
-                    </div>
-                    <p className="mt-6 font-serif italic text-lg text-center text-[var(--color-burgundy)]">
-                        {content[4].replace('> ', '').replace(/'/g, '"')}
-                    </p>
-                </>
-            )
-        }
-
-        if (id === 11) {
-            return (
-                <>
-                    <p className="font-bold text-lg">{parseMarkdown(content[0])}</p>
-                    <p className="mt-2 text-[15px]">{content[1]}</p>
-                    <div className="flex gap-4 mt-6 justify-center">
-                        <Link href="/">
-                            <Button className="bg-[var(--color-burgundy)] hover:bg-[var(--color-burgundy)]/90 font-bold">
-                                {content[2]}
-                            </Button>
-                        </Link>
-                    </div>
-                </>
-            )
-        }
-
-        return (
-            <div className="space-y-3">
-                {content.map((line, idx) => {
-                    if (line.startsWith("- ")) {
-                        return <li key={idx} className="list-disc list-inside opacity-90 text-[15px]">{parseMarkdown(line.substring(2))}</li>;
-                    }
-                    if (line.startsWith("> ")) {
-                        return <p key={idx} className="border-l-2 border-[var(--color-burgundy)] pl-4 italic opacity-80">{parseMarkdown(line.substring(2))}</p>;
-                    }
-                    if (idx === 0 && id !== 1) {
-                        return <p key={idx} className="font-bold text-lg">{parseMarkdown(line)}</p>
-                    }
-                    return <p key={idx} className={idx === 0 ? "" : "text-[15px]"}>{parseMarkdown(line)}</p>;
-                })}
-            </div>
-        );
-    };
+    const [activeTab, setActiveTab] = useState("quickstart");
+    const docs = t.docs;
 
     return (
         <AppShell>
-            <div className="container max-w-4xl mx-auto py-12 px-4">
-                <div className="text-center mb-12">
-                    <h1 className="text-4xl font-serif font-bold text-[var(--color-burgundy)] mb-4">{t.docs.title}</h1>
-                    <p className="text-lg text-muted-foreground">{t.docs.subtitle}</p>
+            <div className="container max-w-6xl mx-auto py-12 px-4">
+                <div className="text-center mb-10">
+                    <h1 className="text-4xl font-serif font-bold text-[var(--color-burgundy)] mb-3">{docs.title}</h1>
+                    <p className="text-lg text-muted-foreground max-w-3xl mx-auto">{docs.subtitle}</p>
                 </div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 mb-12 max-w-md mx-auto">
-                        <TabsTrigger value="guide">{t.docs.tabs?.guide || "User Guide"}</TabsTrigger>
-                        <TabsTrigger value="architecture">{t.docs.tabs?.architecture || "Architecture"}</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-8 max-w-3xl mx-auto">
+                        <TabsTrigger value="quickstart">{docs.tabs.quickstart}</TabsTrigger>
+                        <TabsTrigger value="runtime">{docs.tabs.runtime}</TabsTrigger>
+                        <TabsTrigger value="security">{docs.tabs.security}</TabsTrigger>
+                        <TabsTrigger value="faq">{docs.tabs.faq}</TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="guide" className="space-y-8 animate-in fade-in-50 duration-500">
-                        <div className="text-center max-w-2xl mx-auto mb-12">
-                            <p className="text-muted-foreground text-lg">{guide?.intro}</p>
+                    <TabsContent value="quickstart" className="animate-in fade-in-50 duration-300">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                            <Card className="lg:col-span-2 border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2 text-[var(--color-burgundy)]">
+                                        <Rocket className="w-5 h-5" />
+                                        {docs.quickstart.intro}
+                                    </CardTitle>
+                                </CardHeader>
+                            </Card>
+                            <Card className="border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                                <CardHeader>
+                                    <CardTitle className="text-[var(--color-burgundy)]">{docs.quickstart.prerequisitesTitle}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <ul className="space-y-2 text-sm text-muted-foreground">
+                                        {docs.quickstart.prerequisites.map((item, idx) => (
+                                            <li key={idx}>• {item}</li>
+                                        ))}
+                                    </ul>
+                                </CardContent>
+                            </Card>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {guide?.steps.map((step, index) => (
-                                <Card key={index} className="flex flex-col h-full border-[var(--color-burgundy)]/10 hover:border-[var(--color-burgundy)]/30 transition-colors bg-[var(--color-paper)]/50 backdrop-blur-sm">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            {docs.quickstart.steps.map((step, index) => (
+                                <Card key={index} className="flex flex-col h-full border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/50">
                                     <CardHeader>
-                                        <CardTitle className="text-xl text-[var(--color-burgundy)] font-serif">{step.title}</CardTitle>
+                                        <CardTitle className="text-xl font-serif text-[var(--color-burgundy)]">{step.title}</CardTitle>
                                     </CardHeader>
                                     <CardContent className="flex-1">
-                                        <p className="text-muted-foreground min-h-[3rem]">{parseMarkdown(step.desc)}</p>
+                                        <p className="text-muted-foreground">{step.desc}</p>
                                     </CardContent>
-                                    <CardFooter>
-                                        {step.url ? (
-                                            step.url === "#architecture" ? (
-                                                <Button
-                                                    onClick={() => setActiveTab("architecture")}
-                                                    className="w-full gap-2 bg-[var(--color-burgundy)] hover:bg-[var(--color-burgundy)]/90"
-                                                >
-                                                    {step.action} <ArrowRight className="w-4 h-4" />
-                                                </Button>
-                                            ) : step.url.startsWith('http') ? (
-                                                <a href={step.url} target="_blank" rel="noopener noreferrer" className="w-full">
-                                                    <Button variant="outline" className="w-full gap-2">
-                                                        {step.action} <ExternalLink className="w-4 h-4" />
-                                                    </Button>
-                                                </a>
-                                            ) : (
-                                                <Link href={step.url} className="w-full">
-                                                    <Button className="w-full gap-2 bg-[var(--color-burgundy)] hover:bg-[var(--color-burgundy)]/90">
-                                                        {step.action} <ArrowRight className="w-4 h-4" />
-                                                    </Button>
-                                                </Link>
-                                            )
-                                        ) : (
-                                            <Button variant="ghost" disabled className="w-full gap-2 opacity-50 cursor-not-allowed">
-                                                {step.action}
-                                            </Button>
-                                        )}
-                                    </CardFooter>
+                                    <CardContent>
+                                        <DocActionButton label={step.action} url={step.url} onAnchor={setActiveTab} />
+                                    </CardContent>
                                 </Card>
                             ))}
                         </div>
+
+                        <Card className="border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                            <CardHeader>
+                                <CardTitle className="text-[var(--color-burgundy)]">{docs.quickstart.pathsTitle}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <ul className="space-y-2 font-mono text-sm text-muted-foreground">
+                                    {docs.quickstart.paths.map((path, idx) => (
+                                        <li key={idx}>{path}</li>
+                                    ))}
+                                </ul>
+                            </CardContent>
+                        </Card>
                     </TabsContent>
 
-                    <TabsContent value="architecture" className="animate-in fade-in-50 duration-500">
-                        <div className="relative mt-8">
-                            <div className="absolute left-[20px] top-4 bottom-4 w-0.5 bg-[var(--color-burgundy)]/20 md:left-1/2 md:-ml-px"></div>
+                    <TabsContent value="runtime" className="animate-in fade-in-50 duration-300">
+                        <Card className="mb-6 border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-[var(--color-burgundy)]">
+                                    <Workflow className="w-5 h-5" />
+                                    {docs.runtime.intro}
+                                </CardTitle>
+                            </CardHeader>
+                        </Card>
 
-                            <div className="space-y-12">
-                                {thread.map((item, index) => (
-                                    <div key={item.id} className={cn(
-                                        "relative flex items-start md:items-center",
-                                        index % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"
-                                    )}>
-                                        <div className="absolute left-[11px] top-0 w-5 h-5 rounded-full border-4 border-[var(--color-paper)] bg-[var(--color-burgundy)] md:left-1/2 md:-ml-2.5 md:top-6 z-10 shrink-0 shadow-sm"></div>
-
-                                        <div className={cn(
-                                            "ml-12 md:ml-0 md:w-1/2 px-4",
-                                            index % 2 === 0 ? "md:pr-12 md:text-right" : "md:pl-12 md:text-left"
-                                        )}>
-                                            <div className={cn(
-                                                "bg-[var(--color-paper)]/60 backdrop-blur-md p-6 rounded-lg border border-[var(--color-burgundy)]/10 shadow-sm hover:shadow-md transition-all duration-200",
-                                                "text-left"
-                                            )}>
-                                                <div className="text-xs font-bold text-[var(--color-burgundy)]/60 mb-2 uppercase tracking-wide flex items-center gap-2">
-                                                    <span>Part {item.id}/11</span>
-                                                    <span className="h-px bg-[var(--color-burgundy)]/20 flex-1"></span>
-                                                </div>
-                                                <h3 className="text-lg font-bold text-[var(--color-burgundy)] mb-3">{item.title}</h3>
-                                                <div className="text-[var(--color-dark-text)] leading-relaxed text-[15px]">
-                                                    {renderContent(item.content, item.id)}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="hidden md:block md:w-1/2"></div>
+                        <Card className="mb-6 border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                            <CardHeader>
+                                <CardTitle className="text-[var(--color-burgundy)]">{docs.runtime.actorsTitle}</CardTitle>
+                            </CardHeader>
+                            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {docs.runtime.actors.map((actor, idx) => (
+                                    <div key={idx} className="rounded-md border border-[var(--color-burgundy)]/20 p-4">
+                                        <h3 className="font-semibold text-[var(--color-burgundy)] mb-2">{actor.name}</h3>
+                                        <p className="text-sm mb-2">{actor.responsibility}</p>
+                                        <p className="text-xs text-muted-foreground">{actor.boundary}</p>
                                     </div>
                                 ))}
-                            </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="mb-6 border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                            <CardHeader>
+                                <CardTitle className="text-[var(--color-burgundy)]">{docs.runtime.conceptsTitle}</CardTitle>
+                            </CardHeader>
+                            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {docs.runtime.concepts.map((item, idx) => (
+                                    <div key={idx} className="rounded-md border border-[var(--color-burgundy)]/20 p-4">
+                                        <h3 className="font-semibold text-[var(--color-burgundy)] mb-2">{item.name}</h3>
+                                        <p className="text-sm mb-2">{item.desc}</p>
+                                        <p className="text-xs text-muted-foreground">{item.detail}</p>
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                            <Card className="border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                                <CardHeader>
+                                    <CardTitle className="text-[var(--color-burgundy)]">{docs.runtime.actionFieldsTitle}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <ul className="space-y-2 text-sm">
+                                        {docs.runtime.actionFields.map((item, idx) => (
+                                            <li key={idx}>• {item}</li>
+                                        ))}
+                                    </ul>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                                <CardHeader>
+                                    <CardTitle className="text-[var(--color-burgundy)]">{docs.runtime.mappingTitle}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <ol className="space-y-2 text-sm">
+                                        {docs.runtime.mapping.map((item, idx) => (
+                                            <li key={idx}>{item}</li>
+                                        ))}
+                                    </ol>
+                                </CardContent>
+                            </Card>
                         </div>
 
-                        <div className="text-center mt-20 text-sm text-muted-foreground pb-12">
-                            <p>© 2026 SHLL Protocol</p>
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <Card className="lg:col-span-2 border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                                <CardHeader>
+                                    <CardTitle className="text-[var(--color-burgundy)]">{docs.runtime.flowTitle}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <ol className="space-y-2 text-sm">
+                                        {docs.runtime.flow.map((step, idx) => (
+                                            <li key={idx}>{step}</li>
+                                        ))}
+                                    </ol>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                                <CardHeader>
+                                    <CardTitle className="text-[var(--color-burgundy)]">{docs.runtime.multiTenantTitle}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <ul className="space-y-2 text-sm text-muted-foreground">
+                                        {docs.runtime.multiTenant.map((item, idx) => (
+                                            <li key={idx}>• {item}</li>
+                                        ))}
+                                    </ul>
+                                </CardContent>
+                            </Card>
                         </div>
+
+                        <Card className="mt-6 border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                            <CardHeader>
+                                <CardTitle className="text-[var(--color-burgundy)]">{docs.runtime.failureTitle}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <ul className="space-y-2 text-sm">
+                                    {docs.runtime.failures.map((item, idx) => (
+                                        <li key={idx}>• {item}</li>
+                                    ))}
+                                </ul>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="security" className="animate-in fade-in-50 duration-300">
+                        <Card className="mb-6 border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-[var(--color-burgundy)]">
+                                    <ShieldCheck className="w-5 h-5" />
+                                    {docs.security.intro}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="text-sm text-muted-foreground">
+                                {docs.security.promise}
+                            </CardContent>
+                        </Card>
+
+                        <Card className="mb-6 border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                            <CardHeader>
+                                <CardTitle className="text-[var(--color-burgundy)]">{docs.security.diagramsTitle}</CardTitle>
+                            </CardHeader>
+                            <CardContent className="text-sm text-muted-foreground mb-3">
+                                {docs.security.diagramsDesc}
+                            </CardContent>
+                            <CardContent className="grid grid-cols-1 gap-4">
+                                <div className="rounded-md border border-[var(--color-burgundy)]/20 p-3 bg-white">
+                                    <div className="flex items-center justify-between gap-3 mb-2">
+                                        <p className="text-sm font-semibold text-[var(--color-burgundy)]">{docs.security.executionDiagramTitle}</p>
+                                        <a
+                                            href="/docs/security-execution-flow.svg"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-xs underline text-[var(--color-burgundy)] hover:opacity-80"
+                                        >
+                                            Open Original
+                                        </a>
+                                    </div>
+                                    <Image
+                                        src="/docs/security-execution-flow.svg"
+                                        alt={docs.security.executionDiagramAlt}
+                                        width={1200}
+                                        height={680}
+                                        className="w-full h-auto rounded-sm"
+                                    />
+                                </div>
+                                <div className="rounded-md border border-[var(--color-burgundy)]/20 p-3 bg-white">
+                                    <div className="flex items-center justify-between gap-3 mb-2">
+                                        <p className="text-sm font-semibold text-[var(--color-burgundy)]">{docs.security.architectureDiagramTitle}</p>
+                                        <a
+                                            href="/docs/security-architecture-layers.svg"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-xs underline text-[var(--color-burgundy)] hover:opacity-80"
+                                        >
+                                            Open Original
+                                        </a>
+                                    </div>
+                                    <Image
+                                        src="/docs/security-architecture-layers.svg"
+                                        alt={docs.security.architectureDiagramAlt}
+                                        width={1200}
+                                        height={900}
+                                        className="w-full h-auto rounded-sm"
+                                    />
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <Card className="border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                                <CardHeader>
+                                    <CardTitle className="text-[var(--color-burgundy)]">{docs.security.problemsTitle}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <ul className="space-y-2 text-sm">
+                                        {docs.security.problems.map((item, idx) => (
+                                            <li key={idx}>• {item}</li>
+                                        ))}
+                                    </ul>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                                <CardHeader>
+                                    <CardTitle className="text-[var(--color-burgundy)]">{docs.security.actorsTitle}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <ul className="space-y-2 text-sm">
+                                        {docs.security.actors.map((item, idx) => (
+                                            <li key={idx}>• {item}</li>
+                                        ))}
+                                    </ul>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        <Card className="mt-6 border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                            <CardHeader>
+                                <CardTitle className="text-[var(--color-burgundy)]">{docs.security.architectureTitle}</CardTitle>
+                            </CardHeader>
+                            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {docs.security.architecture.map((layer, idx) => (
+                                    <div key={idx} className="rounded-md border border-[var(--color-burgundy)]/20 p-4">
+                                        <h3 className="font-semibold text-[var(--color-burgundy)] mb-2">{layer.title}</h3>
+                                        <ul className="space-y-1 text-sm text-muted-foreground">
+                                            {layer.points.map((point, pointIdx) => (
+                                                <li key={pointIdx}>• {point}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+
+                        <Card className="mt-6 border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                            <CardHeader>
+                                <CardTitle className="text-[var(--color-burgundy)]">{docs.security.bapTitle}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <ul className="space-y-2 text-sm">
+                                    {docs.security.bap.map((item, idx) => (
+                                        <li key={idx}>• {item}</li>
+                                    ))}
+                                </ul>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="mt-6 border-green-300/40 bg-green-50/60">
+                            <CardHeader>
+                                <CardTitle className="text-green-800">{docs.security.invariantTitle}</CardTitle>
+                            </CardHeader>
+                            <CardContent className="font-mono text-sm text-green-900">{docs.security.invariant}</CardContent>
+                        </Card>
+
+                        <Card className="mt-6 border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                            <CardHeader>
+                                <CardTitle className="text-[var(--color-burgundy)]">{docs.security.executionTitle}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <ol className="space-y-2 text-sm">
+                                    {docs.security.execution.map((item, idx) => (
+                                        <li key={idx}>{item}</li>
+                                    ))}
+                                </ol>
+                            </CardContent>
+                        </Card>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                            <Card className="border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                                <CardHeader>
+                                    <CardTitle className="text-[var(--color-burgundy)]">{docs.security.allowlistTitle}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <ul className="space-y-2 text-sm">
+                                        {docs.security.allowlist.map((item, idx) => (
+                                            <li key={idx}>• {item}</li>
+                                        ))}
+                                    </ul>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                                <CardHeader>
+                                    <CardTitle className="text-[var(--color-burgundy)]">{docs.security.constraintsTitle}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <ul className="space-y-2 text-sm">
+                                        {docs.security.constraints.map((item, idx) => (
+                                            <li key={idx}>• {item}</li>
+                                        ))}
+                                    </ul>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        <Card className="mt-6 border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                            <CardHeader>
+                                <CardTitle className="text-[var(--color-burgundy)]">{docs.security.runnerTitle}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <ul className="space-y-2 text-sm">
+                                    {docs.security.runner.map((item, idx) => (
+                                        <li key={idx}>• {item}</li>
+                                    ))}
+                                </ul>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="mt-6 border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                            <CardHeader>
+                                <CardTitle className="text-[var(--color-burgundy)]">{docs.security.comparisonTitle}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm border-collapse">
+                                        <thead>
+                                            <tr className="border-b border-[var(--color-burgundy)]/20 text-left">
+                                                <th className="py-2 pr-3">{docs.security.comparisonColumns.dimension}</th>
+                                                <th className="py-2 px-3">{docs.security.comparisonColumns.baseline}</th>
+                                                <th className="py-2 pl-3">{docs.security.comparisonColumns.shll}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {docs.security.comparison.map((row, idx) => (
+                                                <tr key={idx} className="border-b border-[var(--color-burgundy)]/10 align-top">
+                                                    <td className="py-2 pr-3 font-medium">{row.dimension}</td>
+                                                    <td className="py-2 px-3 text-muted-foreground">{row.baseline}</td>
+                                                    <td className="py-2 pl-3">{row.shll}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                            <Card className="border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                                <CardHeader>
+                                    <CardTitle className="text-[var(--color-burgundy)]">{docs.security.defendTitle}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <ul className="space-y-2 text-sm">
+                                        {docs.security.defend.map((item, idx) => (
+                                            <li key={idx}>• {item}</li>
+                                        ))}
+                                    </ul>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                                <CardHeader>
+                                    <CardTitle className="text-[var(--color-burgundy)]">{docs.security.limitsTitle}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <ul className="space-y-2 text-sm">
+                                        {docs.security.limits.map((item, idx) => (
+                                            <li key={idx}>• {item}</li>
+                                        ))}
+                                    </ul>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                            <Card className="border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                                <CardHeader>
+                                    <CardTitle className="text-[var(--color-burgundy)]">{docs.security.userGuideTitle}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <ul className="space-y-2 text-sm">
+                                        {docs.security.userGuide.map((item, idx) => (
+                                            <li key={idx}>• {item}</li>
+                                        ))}
+                                    </ul>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                                <CardHeader>
+                                    <CardTitle className="text-[var(--color-burgundy)]">{docs.security.developerGuideTitle}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <ol className="space-y-2 text-sm">
+                                        {docs.security.developerGuide.map((item, idx) => (
+                                            <li key={idx}>{item}</li>
+                                        ))}
+                                    </ol>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        <Card className="mt-6 border-amber-400/40 bg-amber-50/70">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-amber-800">
+                                    <AlertTriangle className="w-5 h-5" />
+                                    {docs.security.warningTitle}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="text-sm text-amber-900">{docs.security.warning}</CardContent>
+                        </Card>
+
+                        <Card className="mt-6 border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/70">
+                            <CardContent className="pt-6 text-sm text-[var(--color-burgundy)] font-medium">
+                                {docs.security.promise}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="faq" className="animate-in fade-in-50 duration-300">
+                        <Card className="border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/60">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-[var(--color-burgundy)]">
+                                    <CircleHelp className="w-5 h-5" />
+                                    {docs.tabs.faq}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {docs.faq.items.map((item, idx) => (
+                                    <div key={idx} className="rounded-md border border-[var(--color-burgundy)]/20 p-4">
+                                        <h3 className="font-semibold mb-2">{item.q}</h3>
+                                        <p className="text-sm text-muted-foreground">{item.a}</p>
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
                     </TabsContent>
                 </Tabs>
+
+                <Card className="mt-8 border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/70">
+                    <CardHeader>
+                        <CardTitle className="text-[var(--color-burgundy)]">{docs.cta.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <p className="text-muted-foreground text-sm md:max-w-2xl">{docs.cta.desc}</p>
+                        <div className="flex gap-3">
+                            <DocActionButton label={docs.cta.primaryAction} url={docs.cta.primaryUrl} onAnchor={setActiveTab} />
+                            <DocActionButton label={docs.cta.secondaryAction} url={docs.cta.secondaryUrl} onAnchor={setActiveTab} variant="outline" />
+                        </div>
+                    </CardContent>
+                </Card>
+
             </div>
         </AppShell>
     );
 }
 
-// --- Components & Helpers ---
+function DocActionButton({
+    label,
+    url,
+    onAnchor,
+    variant = "default",
+}: {
+    label: string;
+    url: string;
+    onAnchor: (id: string) => void;
+    variant?: "default" | "outline";
+}) {
+    if (url.startsWith("#")) {
+        return (
+            <Button
+                variant={variant}
+                onClick={() => onAnchor(url.replace("#", ""))}
+                className={variant === "default" ? "gap-2 bg-[var(--color-burgundy)] hover:bg-[var(--color-burgundy)]/90" : "gap-2"}
+            >
+                {label}
+                <ArrowRight className="w-4 h-4" />
+            </Button>
+        );
+    }
 
-function parseMarkdown(text: string) {
-    if (!text) return text;
-    const parts = text.split(/(\*\*.*?\*\*|`.*?`)/g);
-    return parts.map((part, index) => {
-        if (part.startsWith('**') && part.endsWith('**')) {
-            return <strong key={index}>{part.slice(2, -2)}</strong>;
-        }
-        if (part.startsWith('`') && part.endsWith('`')) {
-            return <code key={index}>{part.slice(1, -1)}</code>;
-        }
-        return part;
-    });
-}
+    if (url.startsWith("http")) {
+        return (
+            <a href={url} target="_blank" rel="noopener noreferrer">
+                <Button variant={variant} className="gap-2">
+                    {label}
+                    <ExternalLink className="w-4 h-4" />
+                </Button>
+            </a>
+        );
+    }
 
-function ContractCard({ text, icon }: { text: string, icon: string }) {
-    const [title, subtitle] = text.split('\n');
     return (
-        <div className="bg-[var(--color-paper)] border border-[var(--color-burgundy)]/20 p-4 rounded shadow-sm hover:border-[var(--color-burgundy)]/40 transition-colors">
-            <div className="font-bold text-[var(--color-burgundy)] mb-1">{icon} {title.replace(/\*\*/g, '')}</div>
-            <div className="text-sm font-medium">{subtitle}</div>
-        </div>
-    )
-}
-
-function CheckItem({ text, bold }: { text: string, bold?: boolean }) {
-    return (
-        <div className={cn("flex items-start gap-2", bold && "font-bold text-[var(--color-burgundy)]")}>
-            <Check className="w-5 h-5 text-green-600 shrink-0" />
-            <span>{parseMarkdown(text)}</span>
-        </div>
-    )
-}
-
-function VisionItem({ emoji, text }: { emoji: string, text: string }) {
-    const [title, desc] = text.split(': ');
-    return (
-        <div className="flex gap-3 items-start">
-            <span className="text-xl shrink-0">{emoji}</span>
-            <div>
-                <span className="font-bold block">{parseMarkdown(title)}</span>
-                <span className="text-sm opacity-70">{desc}</span>
-            </div>
-        </div>
-    )
+        <Link href={url}>
+            <Button className={variant === "default" ? "gap-2 bg-[var(--color-burgundy)] hover:bg-[var(--color-burgundy)]/90" : "gap-2"} variant={variant}>
+                {label}
+                <ArrowRight className="w-4 h-4" />
+            </Button>
+        </Link>
+    );
 }

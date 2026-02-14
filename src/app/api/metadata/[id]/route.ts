@@ -3,11 +3,58 @@ import { createPublicClient, http, Address } from 'viem';
 import { bscTestnet } from 'viem/chains';
 import { CONTRACTS } from '@/config/contracts';
 
+interface AgentMetadataResult {
+    persona?: string;
+    experience?: string;
+    voiceHash?: string;
+    animationURI?: string;
+    vaultURI?: string;
+    vaultHash?: string;
+}
+
+interface PersonaJson {
+    name?: string;
+    description?: string;
+}
+
 // Using a reliable public RPC for the backend API
 const client = createPublicClient({
     chain: bscTestnet,
     transport: http('https://bsc-testnet.publicnode.com'),
 });
+
+function parsePersona(personaRaw: string | undefined, tokenId: string): PersonaJson {
+    if (!personaRaw) {
+        return { name: `Agent #${tokenId}`, description: "A ShellAgent AI entity." };
+    }
+    try {
+        const parsed = JSON.parse(personaRaw) as PersonaJson;
+        return {
+            name: parsed.name || `Agent #${tokenId}`,
+            description: parsed.description || "A ShellAgent AI entity.",
+        };
+    } catch (error) {
+        console.error("Failed to parse persona JSON", error);
+        return { name: `Agent #${tokenId}`, description: "A ShellAgent AI entity." };
+    }
+}
+
+function getErrorMessage(error: unknown): string {
+    if (error instanceof Error) return error.message;
+    return "Unknown error";
+}
+
+function getErrorStatus(error: unknown): number {
+    if (
+        typeof error === "object" &&
+        error !== null &&
+        "name" in error &&
+        (error as { name?: unknown }).name === "ContractFunctionExecutionError"
+    ) {
+        return 404;
+    }
+    return 500;
+}
 
 export async function GET(
     request: NextRequest,
@@ -22,17 +69,8 @@ export async function GET(
             abi: CONTRACTS.AgentNFA.abi,
             functionName: 'getAgentMetadata',
             args: [BigInt(tokenId)],
-        }) as any;
-
-        // result: { persona, experience, voiceHash, animationURI, vaultURI, vaultHash }
-        let persona = { name: `Agent #${tokenId}`, description: "A ShellAgent AI entity." };
-        try {
-            if (result.persona) {
-                persona = JSON.parse(result.persona);
-            }
-        } catch (e) {
-            console.error("Failed to parse persona JSON", e);
-        }
+        }) as AgentMetadataResult;
+        const persona = parsePersona(result.persona, tokenId);
 
         // 2. Construct standard ERC-721 Metadata
         // Note: NFAScan and others look for 'name', 'description', 'image', and 'attributes'
@@ -59,15 +97,15 @@ export async function GET(
                 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
             },
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(`[Metadata API] Error fetching for ID ${tokenId}:`, error);
         return NextResponse.json(
             {
                 error: "Agent fetch failed",
-                message: error.message || "Unknown error",
+                message: getErrorMessage(error),
                 tokenId
             },
-            { status: error.name === 'ContractFunctionExecutionError' ? 404 : 500 }
+            { status: getErrorStatus(error) }
         );
     }
 }

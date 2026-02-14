@@ -9,10 +9,11 @@ import { useMemo } from "react";
 const SWAP_EXACT_TOKENS: Hex = "0x38ed1739";
 const SWAP_EXACT_ETH: Hex = "0x7ff36ab5";
 const APPROVE: Hex = "0x095ea7b3";
-const REPAY_BORROW_BEHALF: Hex = "0x2608f818";
 
 // Slippage limit key
 const KEY_MAX_SLIPPAGE_BPS = keccak256(toBytes("MAX_SLIPPAGE_BPS"));
+
+type GuardFunctionName = "targetAllowed" | "selectorAllowed" | "tokenAllowed" | "spenderAllowed" | "limits";
 
 export interface PreflightViolation {
     code: string;
@@ -88,12 +89,21 @@ export function usePolicyPreflight(action: { target: Address; value: bigint; dat
     const guardAbi = CONTRACTS.PolicyGuard.abi;
 
     // Parse action parameters
-    const selector = action ? extractSelector(action.data) : ("0x00000000" as Hex);
+    const selector = useMemo(
+        () => (action ? extractSelector(action.data) : ("0x00000000" as Hex)),
+        [action]
+    );
     const isSwap = selector === SWAP_EXACT_TOKENS;
     const isSwapETH = selector === SWAP_EXACT_ETH;
     const isApprove = selector === APPROVE;
-    const swapPath = action && isSwap ? parseSwapPath(action.data) : [];
-    const approveSpender = action && isApprove ? parseApproveSpender(action.data) : null;
+    const swapPath = useMemo(() => {
+        if (!action || !isSwap) return [];
+        return parseSwapPath(action.data);
+    }, [action, isSwap]);
+    const approveSpender = useMemo(() => {
+        if (!action || !isApprove) return null;
+        return parseApproveSpender(action.data);
+    }, [action, isApprove]);
 
     // Build multicall contracts array
     const contracts = useMemo(() => {
@@ -102,8 +112,8 @@ export function usePolicyPreflight(action: { target: Address; value: bigint; dat
         const calls: Array<{
             address: Address;
             abi: typeof guardAbi;
-            functionName: string;
-            args: unknown[];
+            functionName: GuardFunctionName;
+            args: readonly unknown[];
         }> = [];
 
         // 0: targetAllowed(action.target)
@@ -155,9 +165,8 @@ export function usePolicyPreflight(action: { target: Address; value: bigint; dat
         return calls;
     }, [action, guardAddress, guardAbi, selector, isSwap, isSwapETH, isApprove, swapPath, approveSpender]);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: results, isLoading } = useReadContracts({
-        contracts: contracts as any,
+        contracts,
         query: {
             enabled: contracts.length > 0,
             staleTime: 30_000,      // 30 seconds - don't refetch within this time
@@ -204,15 +213,17 @@ export function usePolicyPreflight(action: { target: Address; value: bigint; dat
 
         // Token checks
         for (let i = 0; i < swapPath.length; i++) {
+            const token = swapPath[i];
+            if (!token) continue;
             if (results[idx] && results[idx].result === false) {
                 v.push({
                     code: "TOKEN_NOT_ALLOWED",
-                    messageZh: `代币 ${swapPath[i].slice(0, 10)}... 不在白名单`,
-                    messageEn: `Token ${swapPath[i].slice(0, 10)}... not in allowlist`,
-                    fixCommand: `forge script script/ApplyPolicy.s.sol --sig "addToken(address)" ${swapPath[i]} --rpc-url $RPC_URL --broadcast`,
+                    messageZh: `代币 ${token.slice(0, 10)}... 不在白名单`,
+                    messageEn: `Token ${token.slice(0, 10)}... not in allowlist`,
+                    fixCommand: `forge script script/ApplyPolicy.s.sol --sig "addToken(address)" ${token} --rpc-url $RPC_URL --broadcast`,
                     fixAction: {
                         type: 'add_token',
-                        params: { address: swapPath[i] },
+                        params: { address: token },
                     },
                 });
             }

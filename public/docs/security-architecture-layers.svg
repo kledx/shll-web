@@ -1,0 +1,64 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="1200" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff9f5"/>
+      <stop offset="1" stop-color="#fff1e8"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8b2f4a"/>
+    </marker>
+    <style>
+      .title { font: 700 28px Arial, sans-serif; fill: #7b1f3a; }
+      .subtitle { font: 400 14px Arial, sans-serif; fill: #4b5563; }
+      .layer { stroke: #c56b7d; stroke-width: 2.2; rx: 14; }
+      .h { font: 700 19px Arial, sans-serif; fill: #7b1f3a; }
+      .t { font: 400 13px Arial, sans-serif; fill: #374151; }
+      .tag { font: 700 13px Arial, sans-serif; fill: #7b1f3a; }
+      .line { stroke: #8b2f4a; stroke-width: 2.2; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect width="1200" height="900" fill="url(#bg2)"/>
+  <text x="44" y="56" class="title">SHLL Four-Layer Security Architecture</text>
+  <text x="44" y="80" class="subtitle">Each layer defines responsibility, checks, outputs, and fail behavior.</text>
+
+  <rect x="56" y="108" width="1088" height="145" class="layer" fill="#fff7fb" rx="14"/>
+  <text x="80" y="136" class="h">Layer 1: AgentNFA (Identity Layer)</text>
+  <text x="80" y="160" class="t">Responsibility: ERC-721 + ERC-4907 + BAP-578 identity, userOf lease state, permission routing.</text>
+  <text x="80" y="183" class="t">Checks: caller role, lease validity, pause/terminate flags, token binding.</text>
+  <text x="80" y="206" class="t">Output: validated execute intent forwarded to PolicyGuard.</text>
+  <text x="80" y="229" class="t">Fail behavior: revert before any vault interaction.</text>
+
+  <rect x="56" y="283" width="1088" height="145" class="layer" fill="#fff" rx="14"/>
+  <text x="80" y="311" class="h">Layer 2: AgentAccount (Vault Layer)</text>
+  <text x="80" y="335" class="t">Responsibility: hold funds in isolated per-tokenId vault.</text>
+  <text x="80" y="358" class="t">Checks: only bound AgentNFA can call executeCall; withdraw destination must match caller pattern.</text>
+  <text x="80" y="381" class="t">Output: controlled external protocol call from vault context.</text>
+  <text x="80" y="404" class="t">Fail behavior: reject unauthorized caller and invalid withdraw path.</text>
+
+  <rect x="56" y="458" width="1088" height="145" class="layer" fill="#fff7fb" rx="14"/>
+  <text x="80" y="486" class="h">Layer 3: PolicyGuard (On-chain Firewall)</text>
+  <text x="80" y="510" class="t">Responsibility: validate target + selector + parameter constraints for every action.</text>
+  <text x="80" y="533" class="t">Checks: allowlist, amount caps, deadline window, path/token/spender constraints, destination safety.</text>
+  <text x="80" y="556" class="t">Output: explicit pass/fail gate result consumed by execution pipeline.</text>
+  <text x="80" y="579" class="t">Fail behavior: revert with policy violation before external side effects.</text>
+
+  <rect x="56" y="633" width="1088" height="145" class="layer" fill="#fff" rx="14"/>
+  <text x="80" y="661" class="h">Layer 4: ListingManager (Market Layer)</text>
+  <text x="80" y="685" class="t">Responsibility: listing, rent, extend, and rental lifecycle state transitions.</text>
+  <text x="80" y="708" class="t">Checks: authorized role for userOf assignment and market state transitions.</text>
+  <text x="80" y="731" class="t">Output: canonical renter state used by AgentNFA permission checks.</text>
+  <text x="80" y="754" class="t">Fail behavior: blocks unauthorized renter overwrite and invalid lease transitions.</text>
+
+  <line class="line" x1="600" y1="253" x2="600" y2="283"/>
+  <line class="line" x1="600" y1="428" x2="600" y2="458"/>
+  <line class="line" x1="600" y1="603" x2="600" y2="633"/>
+
+  <rect x="704" y="20" width="440" height="54" rx="10" fill="#ecfdf5" stroke="#34d399" stroke-width="2"/>
+  <text x="724" y="43" class="tag">Invariant: AgentNFA -&gt; PolicyGuard -&gt; AgentAccount</text>
+  <text x="724" y="62" class="tag">Any failed check stops execution before fund movement.</text>
+
+  <rect x="56" y="805" width="1088" height="66" rx="12" fill="#fff" stroke="#c56b7d" stroke-width="2"/>
+  <text x="80" y="834" class="t">Operational note: Runner may trigger actions, but cannot bypass the layered on-chain gates above.</text>
+  <text x="80" y="856" class="t">Design goal: least privilege + explicit validation + isolated blast radius.</text>
+</svg>

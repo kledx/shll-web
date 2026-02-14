@@ -58,9 +58,9 @@ export function useListings() {
   const metadataContracts = (data || []).map((item) => ({
     address: item.nfa as Address,
     abi: CONTRACTS.AgentNFA.abi,
-    functionName: "getAgentMetadata",
-    args: [BigInt(item.tokenId)],
-  })) as any;
+    functionName: "getAgentMetadata" as const,
+    args: [BigInt(item.tokenId)] as const,
+  }));
 
   const { data: metadataResults } = useReadContracts({
     contracts: metadataContracts,
@@ -71,9 +71,9 @@ export function useListings() {
   const renterContracts = (data || []).map((item) => ({
     address: item.nfa as Address,
     abi: CONTRACTS.AgentNFA.abi,
-    functionName: "userOf",
-    args: [BigInt(item.tokenId)],
-  })) as any;
+    functionName: "userOf" as const,
+    args: [BigInt(item.tokenId)] as const,
+  }));
 
   const { data: renterResults } = useReadContracts({
     contracts: renterContracts,

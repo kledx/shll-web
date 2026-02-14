@@ -1,0 +1,92 @@
+<svg width="1200" height="680" viewBox="0 0 1200 680" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="680" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fffaf6"/>
+      <stop offset="1" stop-color="#fff3ea"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8b2f4a"/>
+    </marker>
+    <style>
+      .title { font: 700 26px Arial, sans-serif; fill: #7b1f3a; }
+      .label { font: 700 16px Arial, sans-serif; fill: #7b1f3a; }
+      .desc  { font: 400 12px Arial, sans-serif; fill: #4b5563; }
+      .sub   { font: 400 13px Arial, sans-serif; fill: #4b5563; }
+      .step  { fill: #fff; stroke: #c56b7d; stroke-width: 2; rx: 12; }
+      .note  { fill: #ecfdf5; stroke: #34d399; stroke-width: 2; rx: 12; }
+      .deny  { fill: #fff1f2; stroke: #ef4444; stroke-width: 2; rx: 12; }
+      .line  { stroke: #8b2f4a; stroke-width: 2.4; marker-end: url(#arrow); }
+      .denyline { stroke: #ef4444; stroke-width: 2; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect width="1200" height="680" fill="url(#bg)"/>
+  <text x="44" y="50" class="title">SHLL Security Execution Flow</text>
+  <text x="44" y="72" class="sub">Each step defines input, gate checks, output, and reject path.</text>
+
+  <rect class="step" x="24" y="104" width="180" height="132" rx="12"/>
+  <text x="40" y="132" class="label">1. Renter Console</text>
+  <text x="40" y="155" class="desc">Input: strategy params</text>
+  <text x="40" y="175" class="desc">Check: renter intent</text>
+  <text x="40" y="195" class="desc">Output: action draft</text>
+  <text x="40" y="215" class="desc">Fail: client-side block</text>
+
+  <rect class="step" x="216" y="104" width="182" height="132" rx="12"/>
+  <text x="232" y="132" class="label">2. Build Action</text>
+  <text x="232" y="155" class="desc">Input: target/value/data</text>
+  <text x="232" y="175" class="desc">Check: local schema</text>
+  <text x="232" y="195" class="desc">Output: calldata + simulate</text>
+  <text x="232" y="215" class="desc">Fail: invalid payload</text>
+
+  <rect class="step" x="410" y="104" width="182" height="132" rx="12"/>
+  <text x="426" y="132" class="label">3. AgentNFA</text>
+  <text x="426" y="155" class="desc">Check: role + lease + state</text>
+  <text x="426" y="175" class="desc">Check: token binding</text>
+  <text x="426" y="195" class="desc">Output: validate request</text>
+  <text x="426" y="215" class="desc">Fail: revert unauthorized</text>
+
+  <rect class="step" x="604" y="104" width="182" height="132" rx="12"/>
+  <text x="620" y="132" class="label">4. PolicyGuard</text>
+  <text x="620" y="155" class="desc">Check: allowlist target/selector</text>
+  <text x="620" y="175" class="desc">Check: params/deadline/path</text>
+  <text x="620" y="195" class="desc">Output: pass/fail gate</text>
+  <text x="620" y="215" class="desc">Fail: policy violation revert</text>
+
+  <rect class="step" x="798" y="104" width="182" height="132" rx="12"/>
+  <text x="814" y="132" class="label">5. AgentAccount</text>
+  <text x="814" y="155" class="desc">Check: caller == AgentNFA</text>
+  <text x="814" y="175" class="desc">Check: withdraw rules</text>
+  <text x="814" y="195" class="desc">Output: executeCall</text>
+  <text x="814" y="215" class="desc">Fail: reject direct access</text>
+
+  <rect class="step" x="992" y="104" width="184" height="132" rx="12"/>
+  <text x="1008" y="132" class="label">6. Protocol Call</text>
+  <text x="1008" y="155" class="desc">Allowed DEX/lending targets</text>
+  <text x="1008" y="175" class="desc">Output stays in vault loop</text>
+  <text x="1008" y="195" class="desc">Activity is indexed</text>
+  <text x="1008" y="215" class="desc">Fail: external revert surfaced</text>
+
+  <line class="line" x1="204" y1="170" x2="216" y2="170"/>
+  <line class="line" x1="398" y1="170" x2="410" y2="170"/>
+  <line class="line" x1="592" y1="170" x2="604" y2="170"/>
+  <line class="line" x1="786" y1="170" x2="798" y2="170"/>
+  <line class="line" x1="980" y1="170" x2="992" y2="170"/>
+
+  <rect class="deny" x="410" y="300" width="380" height="94" rx="12"/>
+  <text x="430" y="332" class="label" fill="#b91c1c">Reject path (any failed gate)</text>
+  <text x="430" y="354" class="desc">Revert tx + return explicit violation reason</text>
+  <text x="430" y="374" class="desc">No vault state mutation and no external call</text>
+
+  <line class="denyline" x1="500" y1="236" x2="500" y2="300"/>
+  <line class="denyline" x1="694" y1="236" x2="694" y2="300"/>
+
+  <rect class="note" x="24" y="434" width="1152" height="206" rx="12"/>
+  <text x="48" y="468" class="label">Non-bypassable invariant</text>
+  <text x="48" y="492" class="desc">All renter execution must follow:</text>
+  <text x="48" y="515" class="desc">AgentNFA -&gt; PolicyGuard.validate -&gt; AgentAccount.executeCall</text>
+  <text x="48" y="542" class="desc">Operational meaning:</text>
+  <text x="48" y="563" class="desc">- Runner can trigger execution cadence, but cannot bypass on-chain checks.</text>
+  <text x="48" y="584" class="desc">- Policy failure stops execution before fund movement.</text>
+  <text x="48" y="605" class="desc">- Vault isolation keeps blast radius bounded per tokenId.</text>
+  <text x="48" y="626" class="desc">- Every path remains auditable through preflight/execution/activity traces.</text>
+</svg>
