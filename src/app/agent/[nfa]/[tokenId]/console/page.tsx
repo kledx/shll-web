@@ -12,16 +12,20 @@ import { useAccount } from "wagmi";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
-import { ShieldAlert } from "lucide-react";
+import { ChevronRight, ShieldAlert } from "lucide-react";
 import { useAutopilot } from "@/hooks/useAutopilot";
 import { toast } from "sonner";
 import { Address } from "viem";
+import Link from "next/link";
 
 export default function ConsolePage() {
     const { t } = useTranslation();
     const params = useParams();
     const tokenId = params.tokenId as string;
     const nfaAddress = params.nfa as string;
+    const detailPath = `/agent/${nfaAddress}/${tokenId}`;
+    const consolePath = `${detailPath}/console`;
+    const runnerOperatorDefault = process.env.NEXT_PUBLIC_RUNNER_OPERATOR || "";
 
     const { address } = useAccount();
     const { data: agent, isLoading: isAgentLoading, error: agentError } = useAgent(tokenId, nfaAddress);
@@ -37,6 +41,7 @@ export default function ConsolePage() {
     const isOwner = !!address && !!agent && address.toLowerCase() === agent.owner.toLowerCase();
     const isRenter = !!address && !!agent && address.toLowerCase() === agent.renter.toLowerCase();
     const hasAccess = isOwner || isRenter;
+    const roleLabel = isOwner ? "Owner" : isRenter ? "Active Renter" : "No Access";
 
     // Simulation State Management
     const [simAction, setSimAction] = useState<Action | null>(null);
@@ -177,6 +182,20 @@ export default function ConsolePage() {
                     <p className="text-xs text-muted-foreground font-mono break-all">
                         {agentError.message}
                     </p>
+                    <div className="flex justify-center gap-2 pt-2">
+                        <Link
+                            href={detailPath}
+                            className="inline-flex items-center rounded-md border px-3 py-2 text-sm hover:bg-muted"
+                        >
+                            {"Go to Agent Detail"}
+                        </Link>
+                        <Link
+                            href="/docs"
+                            className="inline-flex items-center rounded-md border px-3 py-2 text-sm hover:bg-muted"
+                        >
+                            {"Open Docs"}
+                        </Link>
+                    </div>
                 </div>
             </AppShell>
         );
@@ -196,6 +215,31 @@ export default function ConsolePage() {
                             ? (t.agent.console.page.connectWallet || "Please connect your wallet to access the console.")
                             : (t.agent.console.page.noAccess || "You must be the owner or active renter of this agent to use the console.")}
                     </p>
+                    <div className="rounded-lg border bg-muted/30 px-4 py-3 text-left text-xs text-muted-foreground">
+                        <div className="font-medium text-foreground">{"What to do next"}</div>
+                        <div className="pt-1">
+                            {!address
+                                ? "Connect wallet first, then reopen this console."
+                                : "Rent or extend first on Agent Detail, then come back to Console."}
+                        </div>
+                        <div className="pt-1 font-mono break-all">
+                            {!address ? "/me -> connect wallet -> back to console" : `${detailPath} -> rent/extend -> ${consolePath}`}
+                        </div>
+                    </div>
+                    <div className="flex justify-center gap-2 pt-2">
+                        <Link
+                            href={detailPath}
+                            className="inline-flex items-center rounded-md border px-3 py-2 text-sm hover:bg-muted"
+                        >
+                            {"Go to Agent Detail"}
+                        </Link>
+                        <Link
+                            href="/me"
+                            className="inline-flex items-center rounded-md border px-3 py-2 text-sm hover:bg-muted"
+                        >
+                            {t.common.nav.me}
+                        </Link>
+                    </div>
                 </div>
             </AppShell>
         );
@@ -204,6 +248,17 @@ export default function ConsolePage() {
     return (
         <AppShell>
             <div className="max-w-3xl mx-auto space-y-6">
+                <nav className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Link href="/" className="hover:text-foreground">
+                        {t.common.nav.market}
+                    </Link>
+                    <ChevronRight className="h-3 w-3" />
+                    <Link href={detailPath} className="hover:text-foreground">
+                        {"Agent Detail"}
+                    </Link>
+                    <ChevronRight className="h-3 w-3" />
+                    <span className="text-foreground">{t.agent.detail.tabs.console}</span>
+                </nav>
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-serif font-bold text-[var(--color-burgundy)]">
@@ -218,6 +273,20 @@ export default function ConsolePage() {
                         <div className="text-xs text-muted-foreground font-mono">
                             {agentAccount || (isAccountLoading ? t.agent.detail.loading : t.agent.console.page.unknown)}
                         </div>
+                    </div>
+                </div>
+
+                <div className="rounded-lg border bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
+                    <div>
+                        <span className="font-medium text-foreground">{"Current Role: "}</span>
+                        {roleLabel}
+                    </div>
+                    <div className="pt-1">
+                        {isRenter
+                            ? "You can simulate, execute, and enable autopilot with signature."
+                            : isOwner
+                                ? "You can inspect history and disable autopilot, but only active renter can sign enable permit."
+                                : "Switch to owner/renter wallet or rent this agent first."}
                     </div>
                 </div>
 
@@ -256,6 +325,15 @@ export default function ConsolePage() {
                                 onChange={(e) => setAutopilotOperator(e.target.value)}
                                 placeholder="0x..."
                             />
+                            {runnerOperatorDefault && (
+                                <button
+                                    type="button"
+                                    onClick={() => setAutopilotOperator(runnerOperatorDefault)}
+                                    className="text-xs text-[var(--color-burgundy)] hover:underline"
+                                >
+                                    {"Use default runner operator"}
+                                </button>
+                            )}
                         </div>
                         <div className="space-y-1">
                             <label className="text-sm font-medium">Operator Expires</label>
@@ -267,10 +345,13 @@ export default function ConsolePage() {
                             />
                         </div>
                     </div>
+                    <div className="text-xs text-muted-foreground">
+                        {"Tip: operator should be the runner address. Expiry should not exceed your rental period."}
+                    </div>
                     <button
                         type="button"
                         onClick={handleEnableAutopilot}
-                        disabled={!isRenter || isEnablingAutopilot}
+                        disabled={!isRenter || isEnablingAutopilot || !agent}
                         className="inline-flex items-center rounded-md bg-[var(--color-burgundy)] text-white px-4 py-2 text-sm disabled:opacity-50"
                     >
                         {isEnablingAutopilot ? "Enabling..." : "Enable Autopilot (Sign)"}
