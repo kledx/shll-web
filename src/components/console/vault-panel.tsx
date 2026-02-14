@@ -133,8 +133,8 @@ export function VaultPanel({
         }
     };
 
-    const canDeposit = !readOnly && (isRenter || isOwner);
-    const canWithdraw = allowWithdraw && !readOnly && (isRenter || isOwner);
+    const canDeposit = !readOnly && isRenter;
+    const canWithdraw = allowWithdraw && !readOnly && isRenter;
     const selectedDepositToken = DEPOSIT_TOKENS.find(t => t.name === depositAsset);
     const isERC20Deposit = selectedDepositToken && !selectedDepositToken.isNative;
     const effectiveSelectedAsset = selectedAsset || assets[0]?.name || "";
@@ -155,90 +155,97 @@ export function VaultPanel({
                             {ui.safeModeHint}
                         </div>
                     )}
+                    {!readOnly && isOwner && !isRenter && (
+                        <div className="text-xs text-muted-foreground">
+                            Owner cannot operate vault directly; only active renter can deposit/withdraw.
+                        </div>
+                    )}
                 </div>
                 <div className="flex gap-2">
                     {/* Deposit Dialog */}
-                    <Dialog open={isDepositOpen} onOpenChange={setIsDepositOpen}>
-                        <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="gap-2" disabled={!canDeposit}>
-                                <ArrowDownToLine className="w-4 h-4" /> {t.agent.vault.deposit}
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>{ui.depositDialogTitle}</DialogTitle>
-                                <DialogDescription>
-                                    {ui.depositDialogDesc}
-                                    {agentAccount && (
-                                        <span className="block mt-1 font-mono text-xs">
-                                            {ui.accountLabel}: {agentAccount.slice(0, 8)}...{agentAccount.slice(-6)}
-                                        </span>
+                    {canDeposit && (
+                        <Dialog open={isDepositOpen} onOpenChange={setIsDepositOpen}>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" size="sm" className="gap-2">
+                                    <ArrowDownToLine className="w-4 h-4" /> {t.agent.vault.deposit}
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>{ui.depositDialogTitle}</DialogTitle>
+                                    <DialogDescription>
+                                        {ui.depositDialogDesc}
+                                        {agentAccount && (
+                                            <span className="block mt-1 font-mono text-xs">
+                                                {ui.accountLabel}: {agentAccount.slice(0, 8)}...{agentAccount.slice(-6)}
+                                            </span>
+                                        )}
+                                    </DialogDescription>
+                                </DialogHeader>
+
+                                <div className="grid gap-4 py-4">
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                        <Label className="text-right">{ui.tokenLabel}</Label>
+                                        <Select onValueChange={setDepositAsset} defaultValue={depositAsset}>
+                                            <SelectTrigger className="col-span-3">
+                                                <SelectValue placeholder={ui.selectToken} />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {DEPOSIT_TOKENS.map(token => (
+                                                    <SelectItem key={token.name} value={token.name}>
+                                                        {token.symbol} {token.isNative ? ui.nativeTag : ""}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                        <Label className="text-right">{ui.amountLabel}</Label>
+                                        <Input
+                                            type="number"
+                                            value={depositAmount}
+                                            onChange={e => setDepositAmount(e.target.value)}
+                                            className="col-span-3"
+                                            placeholder="0.0"
+                                            step="0.001"
+                                            min="0"
+                                        />
+                                    </div>
+                                </div>
+
+                                <DialogFooter className="flex gap-2">
+                                    {isERC20Deposit ? (
+                                        <>
+                                            <Button
+                                                onClick={handleDeposit}
+                                                disabled={isDepositing || !depositAmount}
+                                                variant="outline"
+                                            >
+                                                {isDepositing && depositStep === "approving" ? (
+                                                    <Loader2 className="animate-spin w-4 h-4 mr-2" />
+                                                ) : null}
+                                                {ui.approveStep}
+                                            </Button>
+                                            <Button
+                                                onClick={handleDepositAfterApprove}
+                                                disabled={isDepositing || !depositAmount}
+                                            >
+                                                {isDepositing && depositStep === "depositing" ? (
+                                                    <Loader2 className="animate-spin w-4 h-4 mr-2" />
+                                                ) : null}
+                                                {ui.depositStep}
+                                            </Button>
+                                        </>
+                                    ) : (
+                                        <Button onClick={handleDeposit} disabled={isDepositing || !depositAmount}>
+                                            {isDepositing ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
+                                            {ui.depositNative}
+                                        </Button>
                                     )}
-                                </DialogDescription>
-                            </DialogHeader>
-
-                            <div className="grid gap-4 py-4">
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label className="text-right">{ui.tokenLabel}</Label>
-                                    <Select onValueChange={setDepositAsset} defaultValue={depositAsset}>
-                                        <SelectTrigger className="col-span-3">
-                                            <SelectValue placeholder={ui.selectToken} />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {DEPOSIT_TOKENS.map(token => (
-                                                <SelectItem key={token.name} value={token.name}>
-                                                    {token.symbol} {token.isNative ? ui.nativeTag : ""}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label className="text-right">{ui.amountLabel}</Label>
-                                    <Input
-                                        type="number"
-                                        value={depositAmount}
-                                        onChange={e => setDepositAmount(e.target.value)}
-                                        className="col-span-3"
-                                        placeholder="0.0"
-                                        step="0.001"
-                                        min="0"
-                                    />
-                                </div>
-                            </div>
-
-                            <DialogFooter className="flex gap-2">
-                                {isERC20Deposit ? (
-                                    <>
-                                        <Button
-                                            onClick={handleDeposit}
-                                            disabled={!canDeposit || isDepositing || !depositAmount}
-                                            variant="outline"
-                                        >
-                                            {isDepositing && depositStep === "approving" ? (
-                                                <Loader2 className="animate-spin w-4 h-4 mr-2" />
-                                            ) : null}
-                                            {ui.approveStep}
-                                        </Button>
-                                        <Button
-                                            onClick={handleDepositAfterApprove}
-                                            disabled={!canDeposit || isDepositing || !depositAmount}
-                                        >
-                                            {isDepositing && depositStep === "depositing" ? (
-                                                <Loader2 className="animate-spin w-4 h-4 mr-2" />
-                                            ) : null}
-                                            {ui.depositStep}
-                                        </Button>
-                                    </>
-                                ) : (
-                                    <Button onClick={handleDeposit} disabled={!canDeposit || isDepositing || !depositAmount}>
-                                        {isDepositing ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
-                                        {ui.depositNative}
-                                    </Button>
-                                )}
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                    )}
 
                     {/* Withdraw Dialog */}
                     {allowWithdraw && (

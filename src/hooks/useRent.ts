@@ -35,6 +35,13 @@ export function useRent() {
         if (isConfirmed) {
             toast.success("Rental confirmed! You are now the renter.");
             void queryClient.invalidateQueries({ queryKey: ["listings"] });
+            // Refresh wagmi read caches once after confirmation (no continuous polling).
+            void queryClient.invalidateQueries({
+                predicate: (query) => {
+                    const key0 = Array.isArray(query.queryKey) ? query.queryKey[0] : null;
+                    return key0 === "readContract" || key0 === "readContracts";
+                },
+            });
         }
     }, [isConfirmed, queryClient]);
 

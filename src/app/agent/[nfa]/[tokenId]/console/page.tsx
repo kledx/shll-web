@@ -7,7 +7,6 @@ import { useAgentAccount } from "@/hooks/useAgentAccount";
 import { useAgent } from "@/hooks/useAgent";
 import { useExecute } from "@/hooks/useExecute";
 import { TransactionHistory } from "@/components/console/transaction-history";
-import { VaultPanel } from "@/components/console/vault-panel";
 import { StatusCard, LeaseStatus, PackStatus, RunnerMode } from "@/components/console/status-card";
 import { AutopilotCard } from "@/components/console/autopilot-card";
 import { useSimulate } from "@/hooks/useSimulate";
@@ -20,6 +19,8 @@ import { useAutopilot } from "@/hooks/useAutopilot";
 import { useCapabilityPack } from "@/hooks/useCapabilityPack";
 import { useAutopilotStatus } from "@/hooks/useAutopilotStatus";
 import { getConsoleCopy } from "@/lib/console/console-copy";
+import { VaultPanel } from "@/components/console/vault-panel";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Address, zeroAddress } from "viem";
 import Link from "next/link";
@@ -95,16 +96,21 @@ export default function ConsolePage() {
     }, [capabilityPack.capabilities?.runnerMode]);
 
     const enabledTemplates = useMemo<TemplateKey[]>(() => {
+        const templateMap: Record<string, TemplateKey> = {
+            "swap": "swap",
+            "swap.pancakev2": "swap",
+            "repay": "repay",
+            "repay.venus": "repay",
+            "raw": "raw",
+        };
+
         const normalizeTemplate = (value: string): TemplateKey | null => {
-            const key = value.toLowerCase();
-            if (key.includes("swap")) return "swap";
-            if (key.includes("repay")) return "repay";
-            if (key === "raw") return "raw";
-            return null;
+            const key = value.trim().toLowerCase();
+            return templateMap[key] ?? null;
         };
 
         if (packStatus !== "PACK_VALID") {
-            return ["swap", "repay", "raw"];
+            return [];
         }
 
         const templates = (capabilityPack.capabilities?.consoleTemplates || [])
@@ -112,11 +118,8 @@ export default function ConsolePage() {
             .filter((item): item is TemplateKey => item !== null);
 
         const deduped = Array.from(new Set(templates));
-        if (!deduped.includes("raw")) deduped.push("raw");
-        return deduped.length > 0 ? deduped : ["swap", "repay", "raw"];
+        return deduped;
     }, [capabilityPack.capabilities?.consoleTemplates, packStatus]);
-
-    const autopilotBlockedByPack = packStatus === "PACK_INVALID";
 
     // Simulation State Management
     const [simAction, setSimAction] = useState<Action | null>(null);
@@ -142,10 +145,93 @@ export default function ConsolePage() {
         data: runnerStatus,
         isLoading: isRunnerStatusLoading,
     } = useAutopilotStatus(tokenId, nfaAddress, refreshKey);
+    const isAutopilotOn = runnerStatus?.autopilot?.enabled === true;
+    const executeDisabledByAutopilot = isAutopilotOn;
+    const strictPackValid = packStatus === "PACK_VALID";
+    const isManualMode = runnerMode === "manual";
+    const allowBuilderByMode = isManualMode || isAutopilotOn;
+    const showActionBuilder =
+        strictPackValid && allowBuilderByMode && enabledTemplates.length > 0 && isInteractiveConsole;
+    const actionBuilderHiddenHint = !strictPackValid
+        ? (language === "zh"
+            ? "能力包校验失败，交易构建器已隐藏。"
+            : "Capability pack validation failed. Transaction builder is hidden.")
+        : !allowBuilderByMode
+            ? (language === "zh"
+                ? "当前为托管模式。启用 Autopilot 后可使用 Simulate，手动 Execute 会禁用。"
+                : "Managed mode: enable Autopilot to use Simulate. Manual Execute stays disabled.")
+            : enabledTemplates.length === 0
+                ? (language === "zh"
+                    ? "能力包未声明可用模板。"
+                    : "No supported console templates in capability pack.")
+                : null;
+    const autopilotBlockedByPack = !strictPackValid;
     const [autopilotOperator, setAutopilotOperator] = useState<string>(
         process.env.NEXT_PUBLIC_RUNNER_OPERATOR || ""
     );
     const [autopilotExpiresAt, setAutopilotExpiresAt] = useState<string>("");
+    const runnerOperatorLocked = (runnerStatus?.runnerOperator || runnerOperatorDefault || "").trim();
+    const leaseExpiryLockedSec = agent?.expires ?? 0;
+
+    const mapEnableAutopilotError = (error: unknown): string => {
+        const raw =
+            error instanceof Error
+                ? error.message
+                : typeof error === "string"
+                    ? error
+                    : ui.autopilot.toast.unknownError;
+        const lower = raw.toLowerCase();
+
+        if (lower.includes("tokenid not allowed by runner")) {
+            return language === "zh"
+                ? "Runner 未放行该 Agent。请在 runner 配置 `ALLOWED_TOKEN_IDS` 中加入当前 tokenId。"
+                : "Runner has not allowed this agent. Add the tokenId to runner `ALLOWED_TOKEN_IDS`.";
+        }
+        if (
+            lower.includes("gas required exceeds allowance") ||
+            lower.includes("insufficient funds")
+        ) {
+            return language === "zh"
+                ? "Runner 操作地址 gas 不足。请给 Runner Operator 地址充值测试 BNB 后重试。"
+                : "Runner operator has insufficient gas. Fund the runner operator address and retry.";
+        }
+        if (lower.includes("request took too long") || lower.includes("timeout")) {
+            return language === "zh"
+                ? "RPC 请求超时。请切换到更稳定的 RPC 节点并重试。"
+                : "RPC request timed out. Switch to a more stable RPC endpoint and retry.";
+        }
+        if (lower.includes("permit.operator must equal runner operator address")) {
+            return language === "zh"
+                ? "Permit 中的 operator 与 Runner 实际地址不一致，请使用 Runner 当前地址。"
+                : "Permit operator does not match runner operator address. Use the current runner operator.";
+        }
+        if (lower.includes("chainid mismatch")) {
+            return language === "zh"
+                ? "链 ID 不匹配，请确认前端、Runner、钱包都在同一网络。"
+                : "Chain ID mismatch. Ensure frontend, runner, and wallet are on the same network.";
+        }
+        if (lower.includes("nfaaddress mismatch")) {
+            return language === "zh"
+                ? "AgentNFA 地址不匹配，请检查前端与 Runner 合约配置。"
+                : "AgentNFA address mismatch. Check frontend and runner contract configuration.";
+        }
+        return raw.slice(0, 160);
+    };
+    const actionScopeHint =
+        language === "zh"
+            ? "动作模板用于让你声明本 Agent 可使用的动作/权限边界；并非放权。所有链上执行仍会被 PolicyGuard 二次校验。"
+            : "Action templates define this agent's allowed action/permission boundary. They do not bypass controls. Every on-chain execution is still enforced by PolicyGuard.";
+    const sectionLabels = language === "zh"
+        ? {
+            control: "控制",
+            vault: "金库",
+            history: "历史",
+        }
+        : {
+            control: "Control",
+            vault: "Vault",
+            history: "History",
+        };
 
     const handleSimulate = (action: Action) => {
         if (!isInteractiveConsole) {
@@ -161,6 +247,10 @@ export default function ConsolePage() {
     const handleExecute = (action: Action) => {
         if (!isInteractiveConsole) {
             toast.error(readOnlyMessage);
+            return;
+        }
+        if (executeDisabledByAutopilot) {
+            toast.error(ui.executeDisabledByAutopilot);
             return;
         }
         executeAction(tokenId, action);
@@ -191,19 +281,11 @@ export default function ConsolePage() {
             toast.error(ui.autopilot.blockedByPackHint);
             return;
         }
-        if (!/^0x[a-fA-F0-9]{40}$/.test(autopilotOperator)) {
+        if (!/^0x[a-fA-F0-9]{40}$/.test(runnerOperatorLocked)) {
             toast.error(ui.autopilot.toast.invalidOperatorAddress);
             return;
         }
-        if (!autopilotExpiresAt) {
-            toast.error(ui.autopilot.toast.selectOperatorExpiry);
-            return;
-        }
-
-        const expiresSec = Math.floor(
-            new Date(autopilotExpiresAt).getTime() / 1000
-        );
-        if (!Number.isFinite(expiresSec) || expiresSec <= Math.floor(Date.now() / 1000)) {
+        if (!Number.isFinite(leaseExpiryLockedSec) || leaseExpiryLockedSec <= Math.floor(Date.now() / 1000)) {
             toast.error(ui.autopilot.toast.expiryFutureRequired);
             return;
         }
@@ -211,8 +293,8 @@ export default function ConsolePage() {
         try {
             const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
             const result = await enableAutopilot({
-                operator: autopilotOperator as Address,
-                expires: BigInt(expiresSec),
+                operator: runnerOperatorLocked as Address,
+                expires: BigInt(leaseExpiryLockedSec),
                 deadline,
             });
             toast.success(ui.autopilot.toast.enabledSuccess, {
@@ -220,10 +302,7 @@ export default function ConsolePage() {
             });
         } catch (err) {
             toast.error(ui.autopilot.toast.enableFailed, {
-                description:
-                    err instanceof Error
-                        ? err.message.slice(0, 140)
-                        : ui.autopilot.toast.unknownError,
+                description: mapEnableAutopilotError(err),
             });
         }
     };
@@ -253,10 +332,13 @@ export default function ConsolePage() {
     useEffect(() => {
         const leaseExpires = agent?.expires;
         if (!leaseExpires) return;
-        const now = Math.floor(Date.now() / 1000);
-        const defaultExpires = Math.min(leaseExpires, now + 7 * 24 * 3600);
-        setAutopilotExpiresAt(formatLocalInput(defaultExpires));
+        setAutopilotExpiresAt(formatLocalInput(leaseExpires));
     }, [agent?.expires]);
+
+    useEffect(() => {
+        if (!runnerOperatorLocked) return;
+        setAutopilotOperator(runnerOperatorLocked);
+    }, [runnerOperatorLocked]);
 
     // Show loading while fetching agent data
     if (isAgentLoading) {
@@ -422,56 +504,99 @@ export default function ConsolePage() {
                     </div>
                 )}
 
-                <ActionBuilder
-                    onSimulate={handleSimulate}
-                    onExecute={handleExecute}
-                    isSimulating={isSimulating}
-                    isExecuting={isExecuting}
-                    simulationResult={simulationResult}
-                    simulationError={simulationError}
-                    agentAccount={agentAccount}
-                    enabledTemplates={enabledTemplates}
-                    renterAddress={agent?.renter}
-                    readOnly={!isInteractiveConsole}
-                    readOnlyMessage={readOnlyMessage}
-                />
+                <Tabs defaultValue="control" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3 h-12 rounded-xl border border-[var(--color-burgundy)]/25 bg-[var(--color-burgundy)]/10 p-1">
+                        <TabsTrigger
+                            value="control"
+                            className="text-sm font-semibold data-[state=active]:bg-[var(--color-burgundy)] data-[state=active]:text-white data-[state=active]:shadow hover:bg-white/60"
+                        >
+                            {sectionLabels.control}
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="vault"
+                            className="text-sm font-semibold data-[state=active]:bg-[var(--color-burgundy)] data-[state=active]:text-white data-[state=active]:shadow hover:bg-white/60"
+                        >
+                            {sectionLabels.vault}
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="history"
+                            className="text-sm font-semibold data-[state=active]:bg-[var(--color-burgundy)] data-[state=active]:text-white data-[state=active]:shadow hover:bg-white/60"
+                        >
+                            {sectionLabels.history}
+                        </TabsTrigger>
+                    </TabsList>
 
-                <AutopilotCard
-                    ui={ui.autopilot}
-                    runnerMode={runnerMode}
-                    enableState={enableState}
-                    operatorNonce={operatorNonce}
-                    onchainOperator={onchainOperator}
-                    operatorExpires={operatorExpires}
-                    leaseExpires={agent?.expires}
-                    autopilotOperator={autopilotOperator}
-                    autopilotExpiresAt={autopilotExpiresAt}
-                    runnerOperatorDefault={runnerOperatorDefault}
-                    runnerStatus={runnerStatus}
-                    runnerStatusLoading={isRunnerStatusLoading}
-                    blockedByPack={autopilotBlockedByPack}
-                    isInteractiveConsole={isInteractiveConsole}
-                    isRenter={isRenter}
-                    isOwner={isOwner}
-                    isEnablingAutopilot={isEnablingAutopilot}
-                    isClearingAutopilot={isClearingAutopilot}
-                    onSetAutopilotOperator={setAutopilotOperator}
-                    onSetAutopilotExpiresAt={setAutopilotExpiresAt}
-                    onEnableAutopilot={handleEnableAutopilot}
-                    onDisableAutopilot={handleDisableAutopilot}
-                />
+                    <TabsContent value="control" className="mt-4 space-y-4">
+                        <AutopilotCard
+                            ui={ui.autopilot}
+                            runnerMode={runnerMode}
+                            enableState={enableState}
+                            operatorNonce={operatorNonce}
+                            onchainOperator={onchainOperator}
+                            operatorExpires={operatorExpires}
+                            leaseExpires={agent?.expires}
+                            autopilotOperator={autopilotOperator}
+                            autopilotExpiresAt={autopilotExpiresAt}
+                            runnerOperatorDefault={runnerOperatorDefault}
+                            runnerStatus={runnerStatus}
+                            runnerStatusLoading={isRunnerStatusLoading}
+                            lockOperatorInput
+                            lockExpiryInput
+                            blockedByPack={autopilotBlockedByPack}
+                            isInteractiveConsole={isInteractiveConsole}
+                            isRenter={isRenter}
+                            isOwner={isOwner}
+                            isEnablingAutopilot={isEnablingAutopilot}
+                            isClearingAutopilot={isClearingAutopilot}
+                            onSetAutopilotOperator={setAutopilotOperator}
+                            onSetAutopilotExpiresAt={setAutopilotExpiresAt}
+                            onEnableAutopilot={handleEnableAutopilot}
+                            onDisableAutopilot={handleDisableAutopilot}
+                        />
 
-                <VaultPanel
-                    agentAccount={agentAccount}
-                    isRenter={isRenter}
-                    isOwner={isOwner}
-                    tokenId={tokenId}
-                    refreshKey={refreshKey}
-                    readOnly={!isInteractiveConsole}
-                    allowWithdraw={false}
-                />
+                        <div className="rounded-lg border bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
+                            {actionScopeHint}
+                        </div>
 
-                <TransactionHistory tokenId={tokenId} nfaAddress={nfaAddress} refreshKey={refreshKey} />
+                        {showActionBuilder ? (
+                            <ActionBuilder
+                                onSimulate={handleSimulate}
+                                onExecute={handleExecute}
+                                isSimulating={isSimulating}
+                                isExecuting={isExecuting}
+                                simulationResult={simulationResult}
+                                simulationError={simulationError}
+                                agentAccount={agentAccount}
+                                enabledTemplates={enabledTemplates}
+                                renterAddress={agent?.renter}
+                                readOnly={!isInteractiveConsole}
+                                readOnlyMessage={readOnlyMessage}
+                                executeDisabled={executeDisabledByAutopilot}
+                                executeDisabledMessage={ui.executeDisabledByAutopilot}
+                                templateBoundaryHint={ui.templateBoundaryHint}
+                            />
+                        ) : actionBuilderHiddenHint ? (
+                            <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                                {actionBuilderHiddenHint}
+                            </div>
+                        ) : null}
+                    </TabsContent>
+
+                    <TabsContent value="vault" className="mt-4">
+                        <VaultPanel
+                            agentAccount={agentAccount}
+                            isRenter={isRenter}
+                            isOwner={isOwner}
+                            tokenId={tokenId}
+                            refreshKey={refreshKey}
+                            readOnly={!isInteractiveConsole}
+                        />
+                    </TabsContent>
+
+                    <TabsContent value="history" className="mt-4">
+                        <TransactionHistory tokenId={tokenId} nfaAddress={nfaAddress} refreshKey={refreshKey} />
+                    </TabsContent>
+                </Tabs>
             </div>
         </AppShell>
     );

@@ -25,6 +25,7 @@ interface ActionPanelProps {
 export function ActionPanel({ nfaAddress, tokenId, isActive, isOwner, isRenter, pricePerDay, pricePerDayRaw, minDays, listingId }: ActionPanelProps) {
     const { rentAgent, isLoading: isRenting } = useRent();
     const { t } = useTranslation();
+    const canRent = isActive && !isOwner && !isRenter;
 
     const handleRent = async (days: number) => {
         if (!listingId) {
@@ -44,13 +45,28 @@ export function ActionPanel({ nfaAddress, tokenId, isActive, isOwner, isRenter, 
             </TabsList>
 
             <TabsContent value="rent">
-                <RentForm
-                    pricePerDay={pricePerDay}
-                    minDays={minDays}
-                    paymentToken="BNB"
-                    onRent={handleRent}
-                    isRenting={isRenting}
-                />
+                {canRent ? (
+                    <RentForm
+                        pricePerDay={pricePerDay}
+                        minDays={minDays}
+                        paymentToken="BNB"
+                        onRent={handleRent}
+                        isRenting={isRenting}
+                    />
+                ) : (
+                    <Card className="border-dashed border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/50">
+                        <CardHeader>
+                            <CardTitle>{t.agent.detail.tabs.rent}</CardTitle>
+                            <CardDescription>
+                                {isRenter
+                                    ? "You are the active renter of this agent."
+                                    : isOwner
+                                        ? "Owner wallet cannot rent this agent."
+                                        : "This listing is not currently rentable."}
+                            </CardDescription>
+                        </CardHeader>
+                    </Card>
+                )}
             </TabsContent>
 
             <TabsContent value="console">

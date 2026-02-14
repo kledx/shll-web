@@ -132,15 +132,31 @@ export function useCapabilityPack(tokenId: bigint | undefined, nfaAddress?: stri
         isLoading: isManifestLoading,
         error: manifestError,
     } = useQuery<CapabilityPack | null>({
-        queryKey: ["capabilityPack", metadata?.vaultURI],
+        queryKey: ["capabilityPack", metadata?.vaultURI, metadata?.vaultHash],
         queryFn: async () => {
             if (!metadata?.vaultURI) return null;
 
             try {
-                const response = await fetch(metadata.vaultURI);
+                const proxyUrl = `/api/capability-pack?uri=${encodeURIComponent(metadata.vaultURI)}&hash=${encodeURIComponent(metadata.vaultHash || "")}`;
+                const response = await fetch(proxyUrl, { cache: "no-store" });
 
                 if (!response.ok) {
-                    throw new Error(`Failed to fetch manifest: ${response.statusText}`);
+                    let detail = "";
+                    try {
+                        const body = (await response.json()) as Record<string, unknown>;
+                        detail = body.message
+                            ? String(body.message)
+                            : body.error
+                                ? String(body.error)
+                                : "";
+                    } catch {
+                        // ignore parse error, fallback to status text only
+                    }
+                    throw new Error(
+                        `Failed to fetch manifest: ${response.status} ${response.statusText}${
+                            detail ? ` (${detail})` : ""
+                        }`
+                    );
                 }
 
                 const data = await response.json();

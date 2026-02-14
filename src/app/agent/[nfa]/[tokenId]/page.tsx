@@ -116,12 +116,15 @@ export default function AgentDetailPage() {
                             </div>
 
                             {/* Vault Summary in Overview */}
-                            <VaultPanel
-                                agentAccount={agentAccount}
-                                isRenter={isRenter}
-                                isOwner={isOwner}
-                                tokenId={tokenId}
-                            />
+                            {(isOwner || isRenter) && (
+                                <VaultPanel
+                                    agentAccount={agentAccount}
+                                    isRenter={isRenter}
+                                    isOwner={isOwner}
+                                    tokenId={tokenId}
+                                    readOnly
+                                />
+                            )}
 
                             <PolicySummary rules={agent.policy} />
                         </TabsContent>

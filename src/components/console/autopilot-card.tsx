@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Chip } from "@/components/ui/chip";
 import { RunnerMode } from "@/components/console/status-card";
 import { EnableState } from "@/hooks/useAutopilot";
@@ -24,6 +25,7 @@ interface AutopilotUiText {
     runnerOperator: string;
     runnerEnabled: string;
     runnerReason: string;
+    zeroBalanceHint: string;
     modeManagedOnlyHint: string;
     blockedByPackHint: string;
     runnerModeLabels: {
@@ -62,6 +64,8 @@ interface AutopilotCardProps {
     runnerOperatorDefault?: string;
     runnerStatus: RunnerAutopilotStatus | null;
     runnerStatusLoading: boolean;
+    lockOperatorInput?: boolean;
+    lockExpiryInput?: boolean;
     blockedByPack: boolean;
     isInteractiveConsole: boolean;
     isRenter: boolean;
@@ -112,6 +116,8 @@ export function AutopilotCard({
     runnerOperatorDefault,
     runnerStatus,
     runnerStatusLoading,
+    lockOperatorInput = false,
+    lockExpiryInput = false,
     blockedByPack,
     isInteractiveConsole,
     isRenter,
@@ -124,6 +130,19 @@ export function AutopilotCard({
     onDisableAutopilot,
 }: AutopilotCardProps) {
     const runnerEnabled = runnerStatus?.autopilot?.enabled === true;
+    const nowSec = Math.floor(Date.now() / 1000);
+    const onchainValid =
+        !!onchainOperator &&
+        onchainOperator.toLowerCase() !== "0x0000000000000000000000000000000000000000";
+    const operatorExpired = operatorExpires > BigInt(0) && Number(operatorExpires) <= nowSec;
+    const leaseExpired =
+        typeof leaseExpires === "number" && leaseExpires > 0 && leaseExpires <= nowSec;
+    const displayEnableState: EnableState =
+        enableState !== "IDLE"
+            ? enableState
+            : runnerEnabled && onchainValid && !operatorExpired && !leaseExpired
+                ? "ONCHAIN_CONFIRMED"
+                : "IDLE";
     const runnerStateLabel = runtimeAutopilotState({
         enableState,
         runnerEnabled,
@@ -133,6 +152,16 @@ export function AutopilotCard({
     });
     const modeLabel = ui.runnerModeLabels[runnerMode];
     const managedMode = runnerMode === "managed";
+    const lastReason = runnerStatus?.autopilot?.lastReason || "";
+    const balanceZeroBlocked = /agent account balance is zero|balance is zero|insufficient balance/i.test(
+        lastReason
+    );
+    const ownerEmergencyMode = isOwner && !isRenter;
+    const [ownerConfirmingDisable, setOwnerConfirmingDisable] = useState(false);
+    const [ownerDisableConfirmText, setOwnerDisableConfirmText] = useState("");
+    const ownerDisablePhrase = "DISABLE";
+    const ownerCanDisable =
+        ownerDisableConfirmText.trim().toUpperCase() === ownerDisablePhrase;
 
     return (
         <div className="rounded-xl border bg-card p-4 space-y-3">
@@ -141,8 +170,8 @@ export function AutopilotCard({
                 <div className="flex items-center gap-2">
                     <Chip variant="sticker">{modeLabel}</Chip>
                     <Chip variant={runnerEnabled ? "burgundy" : "outline"}>{ui.runtimeStateLabels[runnerStateLabel]}</Chip>
-                    <Chip variant={enableState === "ERROR" ? "destructive" : "outline"}>
-                        {ui.enableStateLabels[enableState]}
+                    <Chip variant={displayEnableState === "ERROR" ? "destructive" : "outline"}>
+                        {ui.enableStateLabels[displayEnableState]}
                     </Chip>
                 </div>
             </div>
@@ -164,9 +193,14 @@ export function AutopilotCard({
                 <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
                     <div>{ui.runnerOperator}: {runnerStatus?.runnerOperator || "-"}</div>
                     <div>{ui.runnerEnabled}: {runnerEnabled ? ui.boolTrue : ui.boolFalse}</div>
-                    {runnerStatus?.autopilot?.lastReason && (
-                        <div className="truncate">{ui.runnerReason}: {runnerStatus.autopilot.lastReason}</div>
+                    {lastReason && (
+                        <div className="truncate">{ui.runnerReason}: {lastReason}</div>
                     )}
+                </div>
+            )}
+            {balanceZeroBlocked && (
+                <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                    {ui.zeroBalanceHint}
                 </div>
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -177,8 +211,10 @@ export function AutopilotCard({
                         value={autopilotOperator}
                         onChange={(e) => onSetAutopilotOperator(e.target.value)}
                         placeholder="0x..."
+                        disabled={lockOperatorInput}
+                        readOnly={lockOperatorInput}
                     />
-                    {runnerOperatorDefault && (
+                    {!lockOperatorInput && runnerOperatorDefault && (
                         <button
                             type="button"
                             onClick={() => onSetAutopilotOperator(runnerOperatorDefault)}
@@ -195,6 +231,8 @@ export function AutopilotCard({
                         className="w-full rounded-md border px-3 py-2 text-sm"
                         value={autopilotExpiresAt}
                         onChange={(e) => onSetAutopilotExpiresAt(e.target.value)}
+                        disabled={lockExpiryInput}
+                        readOnly={lockExpiryInput}
                     />
                 </div>
             </div>
@@ -211,7 +249,7 @@ export function AutopilotCard({
                     {ui.blockedByPackHint}
                 </div>
             )}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
                 <button
                     type="button"
                     onClick={onEnableAutopilot}
@@ -222,18 +260,68 @@ export function AutopilotCard({
                         ? ui.enabling
                         : ui.enable}
                 </button>
-                <button
-                    type="button"
-                    onClick={onDisableAutopilot}
-                    disabled={isClearingAutopilot || (!isOwner && !isRenter)}
-                    className="inline-flex items-center rounded-md border px-4 py-2 text-sm disabled:opacity-50"
-                >
-                    {isClearingAutopilot
-                        ? ui.disabling
-                        : ui.disable}
-                </button>
+                {isRenter && (
+                    <button
+                        type="button"
+                        onClick={onDisableAutopilot}
+                        disabled={isClearingAutopilot}
+                        className="inline-flex items-center rounded-md border px-4 py-2 text-sm disabled:opacity-50"
+                    >
+                        {isClearingAutopilot
+                            ? ui.disabling
+                            : ui.disable}
+                    </button>
+                )}
+                {ownerEmergencyMode && !ownerConfirmingDisable && (
+                    <button
+                        type="button"
+                        onClick={() => setOwnerConfirmingDisable(true)}
+                        disabled={isClearingAutopilot}
+                        className="inline-flex items-center rounded-md border border-red-300 text-red-700 px-4 py-2 text-sm disabled:opacity-50"
+                    >
+                        Emergency Disable (Owner)
+                    </button>
+                )}
             </div>
-            {!isRenter && (
+            {ownerEmergencyMode && ownerConfirmingDisable && (
+                <div className="rounded-md border border-red-200 bg-red-50 p-3 space-y-2">
+                    <div className="text-xs text-red-700">
+                        Owner emergency action. Type <span className="font-mono font-semibold">{ownerDisablePhrase}</span> to confirm.
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <input
+                            className="min-w-48 rounded-md border px-3 py-2 text-sm font-mono"
+                            placeholder={ownerDisablePhrase}
+                            value={ownerDisableConfirmText}
+                            onChange={(e) => setOwnerDisableConfirmText(e.target.value)}
+                        />
+                        <button
+                            type="button"
+                            onClick={onDisableAutopilot}
+                            disabled={isClearingAutopilot || !ownerCanDisable}
+                            className="inline-flex items-center rounded-md border border-red-300 bg-white px-3 py-2 text-sm text-red-700 disabled:opacity-50"
+                        >
+                            {isClearingAutopilot ? ui.disabling : ui.disable}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setOwnerConfirmingDisable(false);
+                                setOwnerDisableConfirmText("");
+                            }}
+                            className="inline-flex items-center rounded-md border px-3 py-2 text-sm"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            )}
+            {!isRenter && ownerEmergencyMode && (
+                <div className="text-xs text-muted-foreground">
+                    Renter can disable directly. Owner disable is emergency-only with confirmation.
+                </div>
+            )}
+            {!isRenter && !ownerEmergencyMode && (
                 <div className="text-xs text-muted-foreground">
                     {ui.renterOnlyHint}
                 </div>

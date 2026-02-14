@@ -26,6 +26,9 @@ interface ActionBuilderProps {
     renterAddress?: string;
     readOnly?: boolean;
     readOnlyMessage?: string;
+    executeDisabled?: boolean;
+    executeDisabledMessage?: string;
+    templateBoundaryHint?: string;
 }
 
 export function ActionBuilder({
@@ -40,6 +43,9 @@ export function ActionBuilder({
     renterAddress,
     readOnly = false,
     readOnlyMessage,
+    executeDisabled = false,
+    executeDisabledMessage,
+    templateBoundaryHint,
 }: ActionBuilderProps) {
     const { t, language } = useTranslation();
     const [target, setTarget] = useState<string>("");
@@ -184,6 +190,18 @@ export function ActionBuilder({
                         onActionGenerated={handleActionGenerated}
                     />
 
+                    {templateBoundaryHint && (
+                        <div className="rounded-lg border border-sky-300 bg-sky-50 px-3 py-2 text-sm text-sky-900">
+                            {templateBoundaryHint}
+                        </div>
+                    )}
+
+                    {executeDisabled && executeDisabledMessage && (
+                        <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                            {executeDisabledMessage}
+                        </div>
+                    )}
+
                     <div className="space-y-4 border-t pt-4">
                         <div className="flex items-center justify-between">
                             <Label className="text-muted-foreground">{t.agent.console.builder.preview}</Label>
@@ -308,7 +326,7 @@ export function ActionBuilder({
 
                         <Button
                             onClick={handleExecute}
-                            disabled={readOnly || !isValid || isSimulating || isExecuting || !simulationResult?.success}
+                            disabled={readOnly || executeDisabled || !isValid || isSimulating || isExecuting || !simulationResult?.success}
                             className="flex-1 bg-[var(--color-burgundy)] hover:bg-[var(--color-burgundy)]/90"
                         >
                             {isExecuting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}

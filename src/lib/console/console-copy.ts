@@ -18,6 +18,8 @@ export interface ConsoleCopy {
     roleHintRenter: string;
     roleHintGuest: string;
     readOnlyMessage: string;
+    executeDisabledByAutopilot: string;
+    templateBoundaryHint: string;
     packInvalidPolicyHint: string;
     status: {
         title: string;
@@ -70,6 +72,7 @@ export interface ConsoleCopy {
         runnerOperator: string;
         runnerEnabled: string;
         runnerReason: string;
+        zeroBalanceHint: string;
         modeManagedOnlyHint: string;
         blockedByPackHint: string;
         runnerModeLabels: {
@@ -151,6 +154,8 @@ export function getConsoleCopy(language: string): ConsoleCopy {
             roleHintRenter: "你可以模拟、执行，并通过签名开启 Autopilot。",
             roleHintGuest: "请切换到所有者/租户钱包，或先完成租用。",
             readOnlyMessage: "当前为只读模式。仅当前租户且租期有效时可执行模拟/交易。",
+            executeDisabledByAutopilot: "Autopilot 已开启：当前仅允许 Simulate，手动 Execute 已禁用。",
+            templateBoundaryHint: "模板用于定义可执行动作边界，不代表可绕过风控。每次执行都仍会被 PolicyGuard 校验。",
             packInvalidPolicyHint: "能力包哈希校验失败。根据 PRD 规则，Autopilot 已禁用。",
             status: {
                 title: "状态概览",
@@ -203,6 +208,7 @@ export function getConsoleCopy(language: string): ConsoleCopy {
                 runnerOperator: "Runner Operator",
                 runnerEnabled: "Runner 已启用",
                 runnerReason: "最近原因",
+                zeroBalanceHint: "Agent 账户余额为 0，Autopilot 暂无法执行。请先在本页金库面板完成入金。",
                 modeManagedOnlyHint: "当前能力包不是 managed 模式，不能启用托管。",
                 blockedByPackHint: "能力包校验失败，已阻止托管启用。",
                 runnerModeLabels: {
@@ -283,6 +289,8 @@ export function getConsoleCopy(language: string): ConsoleCopy {
         roleHintRenter: "You can simulate, execute, and enable autopilot with signature.",
         roleHintGuest: "Switch to owner/renter wallet or rent this agent first.",
         readOnlyMessage: "Read-only mode. Simulation and execution require active renter with valid lease.",
+        executeDisabledByAutopilot: "Autopilot is ON: only Simulate is allowed and manual Execute is disabled.",
+        templateBoundaryHint: "Templates define executable action boundaries only. Every execution is still enforced by PolicyGuard.",
         packInvalidPolicyHint: "Capability pack hash validation failed. Autopilot is disabled by policy.",
         status: {
             title: "Status Overview",
@@ -335,6 +343,7 @@ export function getConsoleCopy(language: string): ConsoleCopy {
             runnerOperator: "Runner Operator",
             runnerEnabled: "Runner Enabled",
             runnerReason: "Last Reason",
+            zeroBalanceHint: "Agent account balance is zero. Autopilot cannot execute yet. Deposit funds in the Vault panel first.",
             modeManagedOnlyHint: "Current capability pack is not managed mode. Enable is disabled.",
             blockedByPackHint: "Capability pack validation failed. Autopilot enable is blocked.",
             runnerModeLabels: {

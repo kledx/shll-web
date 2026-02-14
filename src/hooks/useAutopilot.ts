@@ -151,7 +151,17 @@ export function useAutopilot({ tokenId, renter, nfaAddress }: UseAutopilotOption
             });
             const body = await response.json();
             if (!response.ok || !body?.txHash) {
-                throw new Error(body?.error || "Autopilot enable failed");
+                const details = body?.details as Record<string, unknown> | undefined;
+                const detailError =
+                    typeof details?.error === "string"
+                        ? details.error
+                        : typeof details?.message === "string"
+                            ? details.message
+                            : typeof details?.raw === "string"
+                                ? details.raw
+                                : "";
+                const message = [body?.error, detailError].filter(Boolean).join(" | ");
+                throw new Error(message || "Autopilot enable failed");
             }
 
             setLastTxHash(body.txHash);

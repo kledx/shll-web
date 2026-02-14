@@ -58,6 +58,7 @@ export function RentalCard({ rental }: RentalCardProps) {
     }, []);
 
     const handleDeposit = () => {
+        if (!canDeposit) return;
         if (!agentAccount || !depositAmount || parseFloat(depositAmount) <= 0) return;
         const token = DEPOSIT_TOKENS.find(t => t.name === depositAsset);
         if (!token) return;
@@ -70,6 +71,7 @@ export function RentalCard({ rental }: RentalCardProps) {
     };
 
     const handleDepositAfterApprove = () => {
+        if (!canDeposit) return;
         if (!agentAccount || !depositAmount) return;
         const token = DEPOSIT_TOKENS.find(t => t.name === depositAsset);
         if (!token || token.isNative) return;
@@ -77,6 +79,7 @@ export function RentalCard({ rental }: RentalCardProps) {
     };
 
     const isExpired = !rental.isActive;
+    const canDeposit = rental.isRenter && rental.isActive;
     const daysLeft = nowSec === null ? 0 : Math.ceil((Number(rental.expires) - nowSec) / 86400);
 
     const formatAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -130,82 +133,84 @@ export function RentalCard({ rental }: RentalCardProps) {
             </CardContent>
             <CardFooter className="gap-2">
                 {/* Deposit Dialog */}
-                <Dialog open={isDepositOpen} onOpenChange={setIsDepositOpen}>
-                    <DialogTrigger asChild>
-                        <Button
-                            variant="outline"
-                            className="flex-1 gap-2 border-[var(--color-burgundy)]/20 hover:bg-[var(--color-burgundy)]/5 text-[var(--color-burgundy)]"
-                        >
-                            <ArrowDownToLine className="w-4 h-4" /> {t.dashboard.card.deposit}
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>{t.dashboard.card.depositDialog.title.replace("{tokenId}", tokenId)}</DialogTitle>
-                            <DialogDescription>
-                                {t.dashboard.card.depositDialog.desc}
-                                {agentAccount && (
-                                    <span className="block mt-1 font-mono text-xs">
-                                        {t.dashboard.card.depositDialog.account}: {formatAddress(agentAccount)}
-                                    </span>
-                                )}
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label className="text-right">{t.dashboard.card.depositDialog.token}</Label>
-                                <PopoutWrapper>
-                                    <Select onValueChange={setDepositAsset} defaultValue={depositAsset}>
-                                        <SelectTrigger className="col-span-3">
-                                            <SelectValue placeholder={t.dashboard.card.depositDialog.selectToken} />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {DEPOSIT_TOKENS.map(token => (
-                                                <SelectItem key={token.name} value={token.name}>
-                                                    {token.symbol} {token.isNative ? t.dashboard.card.depositDialog.nativeTag : ""}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </PopoutWrapper>
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label className="text-right">{t.dashboard.card.depositDialog.amount}</Label>
-                                <Input
-                                    type="number"
-                                    value={depositAmount}
-                                    onChange={e => setDepositAmount(e.target.value)}
-                                    className="col-span-3"
-                                    placeholder="0.0"
-                                    step="0.001"
-                                    min="0"
-                                />
-                            </div>
-                        </div>
-                        <DialogFooter className="flex gap-2">
-                            {isERC20 ? (
-                                <>
-                                    <Button onClick={handleDeposit} disabled={isDepositing || !depositAmount} variant="outline">
-                                        {isDepositing && depositStep === "approving" ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
-                                        {t.dashboard.card.depositDialog.approve}
-                                    </Button>
-                                    <Button onClick={handleDepositAfterApprove} disabled={isDepositing || !depositAmount}>
-                                        {isDepositing && depositStep === "depositing" ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
-                                        {t.dashboard.card.depositDialog.depositStep}
-                                    </Button>
-                                </>
-                            ) : (
-                                <Button onClick={handleDeposit} disabled={isDepositing || !depositAmount}>
-                                    {isDepositing ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
-                                    {t.dashboard.card.depositDialog.depositNative.replace(
-                                        "{symbol}",
-                                        selectedToken?.symbol ?? "BNB"
+                {canDeposit && (
+                    <Dialog open={isDepositOpen} onOpenChange={setIsDepositOpen}>
+                        <DialogTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className="flex-1 gap-2 border-[var(--color-burgundy)]/20 hover:bg-[var(--color-burgundy)]/5 text-[var(--color-burgundy)]"
+                            >
+                                <ArrowDownToLine className="w-4 h-4" /> {t.dashboard.card.deposit}
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>{t.dashboard.card.depositDialog.title.replace("{tokenId}", tokenId)}</DialogTitle>
+                                <DialogDescription>
+                                    {t.dashboard.card.depositDialog.desc}
+                                    {agentAccount && (
+                                        <span className="block mt-1 font-mono text-xs">
+                                            {t.dashboard.card.depositDialog.account}: {formatAddress(agentAccount)}
+                                        </span>
                                     )}
-                                </Button>
-                            )}
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label className="text-right">{t.dashboard.card.depositDialog.token}</Label>
+                                    <PopoutWrapper>
+                                        <Select onValueChange={setDepositAsset} defaultValue={depositAsset}>
+                                            <SelectTrigger className="col-span-3">
+                                                <SelectValue placeholder={t.dashboard.card.depositDialog.selectToken} />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {DEPOSIT_TOKENS.map(token => (
+                                                    <SelectItem key={token.name} value={token.name}>
+                                                        {token.symbol} {token.isNative ? t.dashboard.card.depositDialog.nativeTag : ""}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </PopoutWrapper>
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label className="text-right">{t.dashboard.card.depositDialog.amount}</Label>
+                                    <Input
+                                        type="number"
+                                        value={depositAmount}
+                                        onChange={e => setDepositAmount(e.target.value)}
+                                        className="col-span-3"
+                                        placeholder="0.0"
+                                        step="0.001"
+                                        min="0"
+                                    />
+                                </div>
+                            </div>
+                            <DialogFooter className="flex gap-2">
+                                {isERC20 ? (
+                                    <>
+                                        <Button onClick={handleDeposit} disabled={isDepositing || !depositAmount} variant="outline">
+                                            {isDepositing && depositStep === "approving" ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
+                                            {t.dashboard.card.depositDialog.approve}
+                                        </Button>
+                                        <Button onClick={handleDepositAfterApprove} disabled={isDepositing || !depositAmount}>
+                                            {isDepositing && depositStep === "depositing" ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
+                                            {t.dashboard.card.depositDialog.depositStep}
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <Button onClick={handleDeposit} disabled={isDepositing || !depositAmount}>
+                                        {isDepositing ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
+                                        {t.dashboard.card.depositDialog.depositNative.replace(
+                                            "{symbol}",
+                                            selectedToken?.symbol ?? "BNB"
+                                        )}
+                                    </Button>
+                                )}
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                )}
 
                 <Link href={`/agent/${rental.nfa}/${rental.tokenId}/console`} className="flex-1">
                     <Button variant={isExpired && !rental.isOwner ? "outline" : "default"} className="w-full group">
