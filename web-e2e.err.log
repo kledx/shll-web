@@ -1,9 +1,0 @@
-=http://127.0.0.1:8787 : ÎŞ·¨½«¡°=http://127.0.0.1:8787¡±ÏîÊ¶±ğÎª cmdlet¡¢º¯Êı¡¢½Å±¾ÎÄ¼ş»ò¿ÉÔËĞĞ³ÌĞòµÄÃû³Æ¡£Çë¼ì²éÃû³Æ
-µÄÆ´Ğ´£¬Èç¹û°üÀ¨Â·¾¶£¬ÇëÈ·±£Â·¾¶ÕıÈ·£¬È»ºóÔÙÊÔÒ»´Î¡£
-ËùÔÚÎ»ÖÃ ĞĞ:1 ×Ö·û: 1
-+ ='http://127.0.0.1:8787'; npm run dev -- --port 3100
-+ ~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : ObjectNotFound: (=http://127.0.0.1:8787:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-â¨¯ Unable to acquire lock at E:\work_space\shll\repos\shll-web\.next\dev\lock, is another instance of next dev running?
