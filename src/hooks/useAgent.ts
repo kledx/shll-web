@@ -71,10 +71,15 @@ interface ParsedPersona {
 }
 
 export function useAgent(tokenId: string, nfaAddressInput?: string) {
-    const tokenIdBigInt = BigInt(tokenId || "0");
     const nfaAddress = (nfaAddressInput || CONTRACTS.AgentNFA.address) as Address;
     const listingManagerAddress = CONTRACTS.ListingManager.address;
     const policyGuardAddress = CONTRACTS.PolicyGuard.address;
+    const isValidTokenId = /^\d+$/.test(tokenId || "");
+    const isValidNfaAddress = /^0x[a-fA-F0-9]{40}$/.test(nfaAddress);
+    const isValidListingManager = /^0x[a-fA-F0-9]{40}$/.test(listingManagerAddress);
+    const isValidPolicyGuard = /^0x[a-fA-F0-9]{40}$/.test(policyGuardAddress);
+    const canQuery = isValidTokenId && isValidNfaAddress && isValidListingManager && isValidPolicyGuard;
+    const tokenIdBigInt = canQuery ? BigInt(tokenId) : BigInt(0);
 
     const { data: reads, isLoading, error } = useReadContracts({
         contracts: [
@@ -156,6 +161,9 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
                 args: [KEY_MAX_REPAY],
             },
         ],
+        query: {
+            enabled: canQuery,
+        }
     });
 
     // Special handling for Listing (need listingId first)
@@ -172,8 +180,28 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
         }
     });
 
-    if (isLoading || !reads) {
-        return { data: null, isLoading: true };
+    if (!canQuery) {
+        return {
+            data: null,
+            isLoading: false,
+            error: new Error("Invalid tokenId or contract address"),
+        };
+    }
+
+    if (isLoading) {
+        return { data: null, isLoading: true, error };
+    }
+
+    if (error) {
+        return { data: null, isLoading: false, error };
+    }
+
+    if (!reads) {
+        return {
+            data: null,
+            isLoading: false,
+            error: new Error("No on-chain data returned"),
+        };
     }
 
     const owner = reads[0].result as Address;

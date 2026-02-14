@@ -24,7 +24,7 @@ export default function ConsolePage() {
     const nfaAddress = params.nfa as string;
 
     const { address } = useAccount();
-    const { data: agent, isLoading: isAgentLoading } = useAgent(tokenId, nfaAddress);
+    const { data: agent, isLoading: isAgentLoading, error: agentError } = useAgent(tokenId, nfaAddress);
     const { account: agentAccount, isLoading: isAccountLoading } = useAgentAccount(tokenId, nfaAddress);
     const {
         executeAction,
@@ -158,6 +158,25 @@ export default function ConsolePage() {
             <AppShell>
                 <div className="flex justify-center p-20">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-burgundy)]"></div>
+                </div>
+            </AppShell>
+        );
+    }
+
+    if (agentError) {
+        return (
+            <AppShell>
+                <div className="max-w-lg mx-auto text-center py-20 space-y-4">
+                    <ShieldAlert className="w-12 h-12 text-[var(--color-burgundy)] mx-auto" />
+                    <h2 className="text-2xl font-serif font-bold text-[var(--color-burgundy)]">
+                        {t.agent.console.page.title}
+                    </h2>
+                    <p className="text-muted-foreground">
+                        {"Failed to load agent on-chain data."}
+                    </p>
+                    <p className="text-xs text-muted-foreground font-mono break-all">
+                        {agentError.message}
+                    </p>
                 </div>
             </AppShell>
         );
