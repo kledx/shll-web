@@ -34,6 +34,8 @@ export const en = {
             day: "/ day",
             swapPack: "Swap Pack",
             repayPack: "Repay Pack",
+            template: "Template",
+            mintInstance: "Mint Instance",
         },
         detail: {
             tabs: {
@@ -578,6 +580,8 @@ export const zh: Dictionary = {
             day: "/ 天",
             swapPack: "交易包",
             repayPack: "还款包",
+            template: "模板",
+            mintInstance: "铸造实例",
         },
         detail: {
             tabs: {

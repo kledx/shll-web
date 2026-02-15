@@ -2,9 +2,9 @@ import { Address } from 'viem';
 
 export const CONTRACTS = {
   AgentNFA: {
-    // BSC Testnet — redeployed 2026-02-13 (off-chain permit + runner flow)
-    address: "0x827E342A9835536c03dCDC369626e1a981299f30" as Address,
-    deployBlock: BigInt(90131714),
+    // BSC Testnet — redeployed 2026-02-15 (V1.3 Rent-to-Mint)
+    address: "0xcf5d434d855155beba97e3554ef9afea5ed4eb4d" as Address,
+    deployBlock: BigInt(90496831),
     abi: [
       {
         "type": "constructor",
@@ -1546,12 +1546,100 @@ export const CONTRACTS = {
         "type": "error",
         "name": "ZeroAddress",
         "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "AlreadyTemplate",
+        "inputs": [{ "name": "tokenId", "type": "uint256", "internalType": "uint256" }]
+      },
+      {
+        "type": "error",
+        "name": "NotTemplate",
+        "inputs": [{ "name": "tokenId", "type": "uint256", "internalType": "uint256" }]
+      },
+      {
+        "type": "function",
+        "name": "isTemplate",
+        "inputs": [{ "name": "tokenId", "type": "uint256", "internalType": "uint256" }],
+        "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
+        "stateMutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "templateOf",
+        "inputs": [{ "name": "tokenId", "type": "uint256", "internalType": "uint256" }],
+        "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+        "stateMutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "nextTokenId",
+        "inputs": [],
+        "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+        "stateMutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "registerTemplate",
+        "inputs": [
+          { "name": "tokenId", "type": "uint256", "internalType": "uint256" },
+          { "name": "packHash", "type": "bytes32", "internalType": "bytes32" },
+          { "name": "packURI", "type": "string", "internalType": "string" }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+      },
+      {
+        "type": "function",
+        "name": "paramsHashOf",
+        "inputs": [{ "name": "tokenId", "type": "uint256", "internalType": "uint256" }],
+        "outputs": [{ "name": "", "type": "bytes32", "internalType": "bytes32" }],
+        "stateMutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "templatePackHash",
+        "inputs": [{ "name": "tokenId", "type": "uint256", "internalType": "uint256" }],
+        "outputs": [{ "name": "", "type": "bytes32", "internalType": "bytes32" }],
+        "stateMutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "templatePolicyId",
+        "inputs": [{ "name": "tokenId", "type": "uint256", "internalType": "uint256" }],
+        "outputs": [{ "name": "", "type": "bytes32", "internalType": "bytes32" }],
+        "stateMutability": "view"
+      },
+      {
+        "type": "event",
+        "name": "TemplateListed",
+        "inputs": [
+          { "name": "templateId", "type": "uint256", "indexed": true, "internalType": "uint256" },
+          { "name": "owner", "type": "address", "indexed": true, "internalType": "address" },
+          { "name": "packHash", "type": "bytes32", "indexed": false, "internalType": "bytes32" },
+          { "name": "packURI", "type": "string", "indexed": false, "internalType": "string" },
+          { "name": "policyId", "type": "bytes32", "indexed": false, "internalType": "bytes32" }
+        ],
+        "anonymous": false
+      },
+      {
+        "type": "event",
+        "name": "InstanceMinted",
+        "inputs": [
+          { "name": "templateId", "type": "uint256", "indexed": true, "internalType": "uint256" },
+          { "name": "instanceId", "type": "uint256", "indexed": true, "internalType": "uint256" },
+          { "name": "renter", "type": "address", "indexed": true, "internalType": "address" },
+          { "name": "vault", "type": "address", "indexed": false, "internalType": "address" },
+          { "name": "expires", "type": "uint64", "indexed": false, "internalType": "uint64" },
+          { "name": "paramsHash", "type": "bytes32", "indexed": false, "internalType": "bytes32" }
+        ],
+        "anonymous": false
       }
     ] as const,
   },
   ListingManager: {
-    address: "0x3d8D7e13cC40b2D3bA4AB8Df64D8B2Fd44A98921" as Address,
-    deployBlock: BigInt(90131714),
+    address: "0x7e47e94d4ec2992898300006483d55848efbc315" as Address,
+    deployBlock: BigInt(90496831),
     abi: [
       {
         "type": "constructor",
@@ -2047,11 +2135,58 @@ export const CONTRACTS = {
           }
         ],
         "stateMutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "createTemplateListing",
+        "inputs": [
+          { "name": "nfa", "type": "address", "internalType": "address" },
+          { "name": "templateId", "type": "uint256", "internalType": "uint256" },
+          { "name": "pricePerDay", "type": "uint96", "internalType": "uint96" },
+          { "name": "minDays", "type": "uint32", "internalType": "uint32" }
+        ],
+        "outputs": [{ "name": "listingId", "type": "bytes32", "internalType": "bytes32" }],
+        "stateMutability": "nonpayable"
+      },
+      {
+        "type": "function",
+        "name": "rentToMint",
+        "inputs": [
+          { "name": "listingId", "type": "bytes32", "internalType": "bytes32" },
+          { "name": "daysToRent", "type": "uint32", "internalType": "uint32" },
+          { "name": "initParams", "type": "bytes", "internalType": "bytes" }
+        ],
+        "outputs": [{ "name": "instanceId", "type": "uint256", "internalType": "uint256" }],
+        "stateMutability": "payable"
+      },
+      {
+        "type": "event",
+        "name": "TemplateListingCreated",
+        "inputs": [
+          { "name": "listingId", "type": "bytes32", "indexed": true, "internalType": "bytes32" },
+          { "name": "nfa", "type": "address", "indexed": true, "internalType": "address" },
+          { "name": "templateId", "type": "uint256", "indexed": true, "internalType": "uint256" },
+          { "name": "pricePerDay", "type": "uint96", "indexed": false, "internalType": "uint96" },
+          { "name": "minDays", "type": "uint32", "indexed": false, "internalType": "uint32" }
+        ],
+        "anonymous": false
+      },
+      {
+        "type": "event",
+        "name": "InstanceRented",
+        "inputs": [
+          { "name": "listingId", "type": "bytes32", "indexed": true, "internalType": "bytes32" },
+          { "name": "instanceId", "type": "uint256", "indexed": true, "internalType": "uint256" },
+          { "name": "renter", "type": "address", "indexed": true, "internalType": "address" },
+          { "name": "expires", "type": "uint64", "indexed": false, "internalType": "uint64" },
+          { "name": "totalPaid", "type": "uint256", "indexed": false, "internalType": "uint256" }
+        ],
+        "anonymous": false
       }
     ] as const,
   },
   PolicyGuard: {
-    address: "0x0D927Df3787FdBA7FCBB77f89411aEBef2383Edb" as Address,
+    address: "0xcfdc3bea04c36673a1eabf777647d38fcfcb23c7" as Address,
     abi: [
       {
         "type": "constructor",

@@ -15,6 +15,8 @@ export interface RentalItem {
     isActive: boolean;
     isOwner: boolean;
     isRenter: boolean;
+    isInstance: boolean;
+    templateId?: bigint;
 }
 
 export function useMyRentals() {
@@ -27,7 +29,7 @@ export function useMyRentals() {
         []
     );
 
-    // Batch read: ownerOf, userOf, userExpires, accountOf for each token
+    // Batch read: ownerOf, userOf, userExpires, accountOf, templateOf for each token
     const contracts = useMemo(() => tokenIds.flatMap(id => [
         {
             address: nfaAddress,
@@ -52,6 +54,12 @@ export function useMyRentals() {
             abi: CONTRACTS.AgentNFA.abi,
             functionName: 'accountOf' as const,
             args: [id]
+        },
+        {
+            address: nfaAddress,
+            abi: CONTRACTS.AgentNFA.abi,
+            functionName: 'templateOf' as const,
+            args: [id]
         }
     ]), [nfaAddress, tokenIds]);
 
@@ -69,11 +77,14 @@ export function useMyRentals() {
 
         const items: RentalItem[] = [];
 
+        const FIELDS_PER_TOKEN = 5;
         for (let i = 0; i < tokenIds.length; i++) {
-            const ownerResult = reads[i * 4];
-            const userResult = reads[i * 4 + 1];
-            const expiresResult = reads[i * 4 + 2];
-            const accountResult = reads[i * 4 + 3];
+            const base = i * FIELDS_PER_TOKEN;
+            const ownerResult = reads[base];
+            const userResult = reads[base + 1];
+            const expiresResult = reads[base + 2];
+            const accountResult = reads[base + 3];
+            const templateResult = reads[base + 4];
 
             if (ownerResult?.status !== 'success' || userResult?.status !== 'success') continue;
 
@@ -81,6 +92,12 @@ export function useMyRentals() {
             const currentUser = userResult.result as Address;
             const expires = (expiresResult?.result as bigint) || BigInt(0);
             const account = (accountResult?.result as Address) || ("0x0000000000000000000000000000000000000000" as Address);
+
+            // templateOf returns 0 for non-instances
+            const templateId = templateResult?.status === 'success'
+                ? (templateResult.result as bigint)
+                : BigInt(0);
+            const isInstance = templateId > BigInt(0);
 
             const isOwner = !!address && agentOwner.toLowerCase() === address.toLowerCase();
             const isRenter = !!address && currentUser.toLowerCase() === address.toLowerCase();
@@ -95,7 +112,9 @@ export function useMyRentals() {
                     expires: expires,
                     isActive: isRenter && expires > BigInt(Math.floor(Date.now() / 1000)),
                     isOwner,
-                    isRenter
+                    isRenter,
+                    isInstance,
+                    templateId: isInstance ? templateId : undefined,
                 });
             }
         }

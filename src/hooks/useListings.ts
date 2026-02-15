@@ -80,16 +80,37 @@ export function useListings() {
     query: { enabled: (data || []).length > 0 },
   });
 
+  // On-chain isTemplate check for V1.3 Rent-to-Mint
+  const templateContracts = (data || []).map((item) => ({
+    address: item.nfa as Address,
+    abi: CONTRACTS.AgentNFA.abi,
+    functionName: "isTemplate" as const,
+    args: [BigInt(item.tokenId)] as const,
+  }));
+
+  const { data: templateResults } = useReadContracts({
+    contracts: templateContracts,
+    query: { enabled: (data || []).length > 0 },
+  });
+
   const listings: AgentListing[] = (data || []).map((item, index) => {
     const indexerRenter = item.renter as Address;
     const chainRenterResult = renterResults?.[index];
     const chainRenter =
       chainRenterResult?.status === "success" &&
-      typeof chainRenterResult.result === "string"
+        typeof chainRenterResult.result === "string"
         ? (chainRenterResult.result as Address)
         : undefined;
     const effectiveRenter = chainRenter ?? indexerRenter;
     const isRented = Boolean(effectiveRenter && effectiveRenter !== zeroAddress);
+
+    // Resolve isTemplate from on-chain (fallback false)
+    const templateResult = templateResults?.[index];
+    const isTemplate =
+      templateResult?.status === "success" &&
+        typeof templateResult.result === "boolean"
+        ? templateResult.result
+        : false;
 
     // Try to parse real name from on-chain persona JSON
     let agentName = item.agentName;
@@ -113,6 +134,7 @@ export function useListings() {
       active: true,
       rented: isRented,
       renter: isRented ? effectiveRenter : undefined,
+      isTemplate,
       capabilities: ["swap"], // Hardcoded for now
       metadata: { name: agentName },
     };
