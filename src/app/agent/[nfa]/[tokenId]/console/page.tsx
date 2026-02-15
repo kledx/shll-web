@@ -610,6 +610,7 @@ export default function ConsolePage() {
                             tokenId={tokenId}
                             refreshKey={refreshKey}
                             readOnly={!isInteractiveConsole}
+                            allowWithdraw={isInteractiveConsole}
                         />
                     </TabsContent>
 

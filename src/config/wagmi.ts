@@ -1,5 +1,5 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
-import { bsc, bscTestnet, opBNB, opBNBTestnet } from 'wagmi/chains';
+import { bsc, bscTestnet } from 'wagmi/chains';
 import { http } from 'wagmi';
 
 // BSC Testnet RPCs - using reliable bnbchain.org seed nodes
