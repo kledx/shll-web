@@ -29,6 +29,13 @@ export interface CapabilityPack {
     description?: string;
     console?: {
         templates: string[];
+        manualExecute?: {
+            enabled?: boolean;
+            disableWhenAutopilotOn?: boolean;
+        };
+        advanced?: {
+            rawEnabled?: boolean;
+        };
     };
     runner?: {
         mode: "manual" | "managed" | "external";
@@ -190,6 +197,10 @@ export function useCapabilityPack(tokenId: bigint | undefined, nfaAddress?: stri
         return {
             hasConsole: !!manifest.console?.templates && manifest.console.templates.length > 0,
             consoleTemplates: manifest.console?.templates || [],
+            manualExecuteEnabled: manifest.console?.manualExecute?.enabled,
+            manualExecuteDisableWhenAutopilotOn:
+                manifest.console?.manualExecute?.disableWhenAutopilotOn,
+            rawEnabled: manifest.console?.advanced?.rawEnabled === true,
             hasRunner: !!manifest.runner,
             runnerMode: manifest.runner?.mode || "manual",
             strategyId: manifest.runner?.strategyId,

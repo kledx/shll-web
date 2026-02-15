@@ -30,7 +30,8 @@ export const KNOWN_TOKENS: TokenConfig[] = [
     {
         symbol: "BNB",
         name: "BNB",
-        address: "" as Address,
+        // Use wrapped native address as canonical underlying for routing/comparisons.
+        address: WBNB_ADDRESS as Address,
         decimals: 18,
         isNative: true,
     },

@@ -209,7 +209,7 @@ export function getConsoleCopy(language: string): ConsoleCopy {
                 runnerEnabled: "Runner 已启用",
                 runnerReason: "最近原因",
                 zeroBalanceHint: "Agent 账户余额为 0，Autopilot 暂无法执行。请先在本页金库面板完成入金。",
-                modeManagedOnlyHint: "当前能力包不是 managed 模式，不能启用托管。",
+                modeManagedOnlyHint: "当前模式不支持启用 Autopilot。",
                 blockedByPackHint: "能力包校验失败，已阻止托管启用。",
                 runnerModeLabels: {
                     manual: "手动",
@@ -344,7 +344,7 @@ export function getConsoleCopy(language: string): ConsoleCopy {
             runnerEnabled: "Runner Enabled",
             runnerReason: "Last Reason",
             zeroBalanceHint: "Agent account balance is zero. Autopilot cannot execute yet. Deposit funds in the Vault panel first.",
-            modeManagedOnlyHint: "Current capability pack is not managed mode. Enable is disabled.",
+            modeManagedOnlyHint: "Current mode does not support autopilot enable.",
             blockedByPackHint: "Capability pack validation failed. Autopilot enable is blocked.",
             runnerModeLabels: {
                 manual: "MANUAL",

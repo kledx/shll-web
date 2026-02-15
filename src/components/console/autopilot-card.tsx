@@ -151,7 +151,7 @@ export function AutopilotCard({
         onchainOperator,
     });
     const modeLabel = ui.runnerModeLabels[runnerMode];
-    const managedMode = runnerMode === "managed";
+    const modeSupportsAutopilotEnable = runnerMode === "managed" || runnerMode === "external";
     const lastReason = runnerStatus?.autopilot?.lastReason || "";
     const balanceZeroBlocked = /agent account balance is zero|balance is zero|insufficient balance/i.test(
         lastReason
@@ -239,7 +239,7 @@ export function AutopilotCard({
             <div className="text-xs text-muted-foreground">
                 {ui.hint}
             </div>
-            {!managedMode && (
+            {!modeSupportsAutopilotEnable && (
                 <div className="text-xs text-amber-700">
                     {ui.modeManagedOnlyHint}
                 </div>
@@ -253,7 +253,7 @@ export function AutopilotCard({
                 <button
                     type="button"
                     onClick={onEnableAutopilot}
-                    disabled={!managedMode || !isInteractiveConsole || isEnablingAutopilot || blockedByPack}
+                    disabled={!modeSupportsAutopilotEnable || !isInteractiveConsole || isEnablingAutopilot || blockedByPack}
                     className="inline-flex items-center rounded-md bg-[var(--color-burgundy)] text-white px-4 py-2 text-sm disabled:opacity-50"
                 >
                     {isEnablingAutopilot

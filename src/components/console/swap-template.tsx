@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { encodeFunctionData, parseUnits, Address, erc20Abi } from "viem";
+import { encodeFunctionData, parseUnits, Address, erc20Abi, isAddress } from "viem";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useReadContract, useBalance } from "wagmi";
 import {
@@ -86,7 +86,7 @@ interface SwapTemplateProps {
 }
 
 export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplateProps) {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
     const [tokenIn, setTokenIn] = useState<string>("BNB");
     const [tokenOut, setTokenOut] = useState<string>("USDT");
     const [amountIn, setAmountIn] = useState<string>("0.001");
@@ -112,7 +112,20 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
 
     // Amount with correct decimals
     const amountInWei = parseUnits(amountIn, tokenInConfig?.decimals || 18);
-    const path = isRouterSwap ? [tokenInConfig.address, tokenOutConfig.address] as Address[] : undefined;
+    const tokenInRouteAddress =
+        tokenInConfig && (tokenInConfig.isNative ? WBNB_ADDRESS : tokenInConfig.address);
+    const tokenOutRouteAddress =
+        tokenOutConfig && (tokenOutConfig.isNative ? WBNB_ADDRESS : tokenOutConfig.address);
+    const hasInvalidRouterPathAddress =
+        isRouterSwap &&
+        (!tokenInRouteAddress ||
+            !tokenOutRouteAddress ||
+            !isAddress(tokenInRouteAddress) ||
+            !isAddress(tokenOutRouteAddress));
+    const path =
+        isRouterSwap && !hasInvalidRouterPathAddress
+            ? [tokenInRouteAddress as Address, tokenOutRouteAddress as Address]
+            : undefined;
 
     // Fetch Quote
     const { data: quoteData } = useReadContract({
@@ -175,6 +188,7 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
 
         if (!tokenInConfig || !tokenOutConfig) return;
         if (isUnsupportedPair) return;
+        if (hasInvalidRouterPathAddress) return;
 
         if (isWrap) {
             const data = encodeFunctionData({
@@ -298,6 +312,13 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
                     {t.agent.console.templates.swap.unsupportedPair}
                 </p>
             )}
+            {hasInvalidRouterPathAddress && (
+                <p className="text-xs text-red-600">
+                    {language === "zh"
+                        ? "代币地址配置无效，请检查 TOKEN_MAP / WBNB_ADDRESS。"
+                        : "Invalid token address configuration. Check TOKEN_MAP / WBNB_ADDRESS."}
+                </p>
+            )}
 
             <div className="space-y-2">
                 <Label>{t.agent.console.templates.swap.amountIn}</Label>
@@ -336,7 +357,7 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
 
             <Button
                 onClick={generateAction}
-                disabled={!agentAccount || hasInsufficientBalance || isUnsupportedPair}
+                disabled={!agentAccount || hasInsufficientBalance || isUnsupportedPair || hasInvalidRouterPathAddress}
                 className="w-full"
                 variant={hasInsufficientBalance ? "destructive" : "default"}
             >

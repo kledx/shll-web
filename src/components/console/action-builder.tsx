@@ -1,25 +1,25 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Play, Terminal, ShieldAlert } from "lucide-react";
+import { Loader2, Play, ShieldAlert, Terminal } from "lucide-react";
 import { Address, Hex, isAddress, isHex } from "viem";
-import { useTranslation } from "@/hooks/useTranslation";
+import { toast } from "sonner";
 import { usePolicyPreflight } from "@/hooks/usePolicyPreflight";
+import { useTranslation } from "@/hooks/useTranslation";
 import { Action, TemplateKey } from "./action-types";
 import { TemplatesPanel } from "./templates-panel";
-import { toast } from "sonner";
 
 interface ActionBuilderProps {
     onSimulate: (action: Action) => void;
     onExecute: (action: Action) => void;
     isSimulating: boolean;
     isExecuting: boolean;
-    simulationResult: { success: boolean, data: Hex } | null;
+    simulationResult: { success: boolean; data: Hex } | null;
     simulationError?: string | null;
     agentAccount?: Address;
     enabledTemplates?: TemplateKey[];
@@ -54,8 +54,9 @@ export function ActionBuilder({
 
     const isValid = isAddress(target) && isHex(data);
 
-    // Preflight check — read on-chain policy state
-    const preflightAction = isValid ? { target: target as Address, value: BigInt(value || "0"), data: data as Hex } : null;
+    const preflightAction = isValid
+        ? { target: target as Address, value: BigInt(value || "0"), data: data as Hex }
+        : null;
     const { violations, isChecking: isPreflightChecking } = usePolicyPreflight(preflightAction);
 
     const handleActionGenerated = (action: Action) => {
@@ -64,12 +65,34 @@ export function ActionBuilder({
         setData(action.data);
     };
 
+    const preflightUi = language === "zh"
+        ? {
+            issuesFound: (count: number) => `已发现 ${count} 项策略限制`,
+            blockedHint: "请先调整模板、代币或参数，再进行模拟。",
+            simulateBlockedToast: "当前参数不满足策略限制，请先按提示调整。",
+            checking: "正在检查策略限制...",
+        }
+        : {
+            issuesFound: (count: number) => `Preflight found ${count} policy issue(s)`,
+            blockedHint: "Please adjust template, tokens, or parameters before simulation.",
+            simulateBlockedToast: "Current parameters are blocked by policy. Please adjust and try again.",
+            checking: "Checking policy preflight...",
+        };
+
     const handleSimulate = () => {
         if (!isValid) return;
+        if (isPreflightChecking) {
+            toast.message(preflightUi.checking);
+            return;
+        }
+        if (violations.length > 0) {
+            toast.warning(preflightUi.simulateBlockedToast);
+            return;
+        }
         onSimulate({
             target: target as Address,
             value: BigInt(value),
-            data: data as Hex
+            data: data as Hex,
         });
     };
 
@@ -78,7 +101,7 @@ export function ActionBuilder({
         onExecute({
             target: target as Address,
             value: BigInt(value),
-            data: data as Hex
+            data: data as Hex,
         });
     };
 
@@ -87,85 +110,58 @@ export function ActionBuilder({
         const zh = language === "zh";
         if (/Target not allowed/i.test(raw)) {
             return zh
-                ? "策略未授权目标合约，请让管理员在 PolicyGuard 白名单中放行该 token/router。"
-                : "Target contract is not allowed. Ask admin to add token/router to PolicyGuard allowlist.";
+                ? "当前策略暂不支持这个目标，请换一个模板或交易对。"
+                : "Current policy does not allow this target. Please try another template or pair.";
         }
         if (/Selector not allowed/i.test(raw)) {
             return zh
-                ? "策略未授权该函数选择器，请更新 PolicyGuard 的 selector 白名单。"
-                : "Function selector is not allowed. Update PolicyGuard selector allowlist.";
+                ? "当前策略暂不支持这个动作类型，请尝试其他操作。"
+                : "Current policy does not allow this action type. Try a different operation.";
         }
         if (/Token not allowed/i.test(raw)) {
             return zh
-                ? "策略未授权该 token，请更新 PolicyGuard token allowlist。"
-                : "Token is not allowed. Update PolicyGuard token allowlist.";
+                ? "当前策略不支持该代币组合，请更换输入或输出代币。"
+                : "Current policy does not allow this token pair. Please choose different tokens.";
         }
         if (/Spender not allowed/i.test(raw)) {
             return zh
-                ? "策略未授权该 spender，请更新 token->spender 白名单。"
-                : "Spender is not allowed. Update token->spender allowlist.";
+                ? "当前策略不支持该授权路径，请更换操作后重试。"
+                : "Current policy does not allow this approval route. Try a different action.";
         }
         if (/PolicyViolation/i.test(raw)) {
             return zh
-                ? "策略校验未通过，请检查 PolicyGuard 配置。"
-                : "Policy validation failed. Check PolicyGuard configuration.";
+                ? "当前策略校验未通过，请调整参数后重试。"
+                : "Policy validation did not pass. Please adjust parameters and try again.";
         }
         if (/amountOutMin is zero/i.test(raw)) {
             return zh
-                ? "滑点保护：最小输出金额不能为零，请设置合理的 amountOutMin。"
-                : "Slippage guard: amountOutMin cannot be zero. Set a valid minimum output.";
+                ? "滑点保护触发：最小输出不能为 0，请调整后再试。"
+                : "Slippage guard triggered: minimum output cannot be zero.";
         }
         if (/Slippage exceeds/i.test(raw)) {
             return zh
-                ? "滑点超出上限，当前策略限制最大滑点为 3%。请调整交易参数。"
-                : "Slippage exceeds policy limit (max 3%). Adjust trade parameters.";
+                ? "滑点超过策略限制，请降低滑点或调整交易参数。"
+                : "Slippage exceeds policy limit. Please adjust trade parameters.";
         }
         if (/Quote unavailable/i.test(raw)) {
             return zh
-                ? "链上报价失败，交易对可能不存在或路径无效。"
-                : "On-chain quote unavailable. Pair may not exist or route is invalid.";
+                ? "暂时无法获取报价，请稍后重试或更换交易对。"
+                : "Quote unavailable right now. Please retry or change the pair.";
         }
         return null;
     };
 
-    const preflightUi = language === "zh"
-        ? {
-            issuesFound: (count: number) => `策略预检发现 ${count} 项缺失`,
-            copyFix: "复制修复命令",
-            copyAllFix: (count: number) => `批量复制所有修复命令 (${count} 条)`,
-            copySuccess: "修复命令已复制",
-            copyAllSuccess: (count: number) => `已复制 ${count} 条修复命令`,
-            copyFailed: "复制失败，请手动复制",
-            continueHint: "您仍可继续模拟，但链上执行大概率会被 PolicyGuard 拒绝。",
-            checking: "正在预检策略...",
-        }
-        : {
-            issuesFound: (count: number) => `Preflight found ${count} policy issue(s)`,
-            copyFix: "Copy Fix Command",
-            copyAllFix: (count: number) => `Copy All Fix Commands (${count})`,
-            copySuccess: "Fix command copied",
-            copyAllSuccess: (count: number) => `${count} fix commands copied`,
-            copyFailed: "Copy failed. Please copy manually.",
-            continueHint: "You can still simulate, but on-chain execution will likely be rejected by PolicyGuard.",
-            checking: "Checking policy preflight...",
-        };
-
-    const handleCopyText = async (text: string, successMessage: string) => {
-        try {
-            await navigator.clipboard.writeText(text);
-            toast.success(successMessage);
-        } catch {
-            toast.error(preflightUi.copyFailed);
-        }
-    };
-
     const policyHint = getPolicyHint(simulationError);
     const templateOrder: TemplateKey[] = ["swap", "repay", "raw"];
-    const effectiveTemplates = (
-        enabledTemplates && enabledTemplates.length > 0 ? enabledTemplates : templateOrder
-    )
-        .filter((item, index, arr): item is TemplateKey => templateOrder.includes(item) && arr.indexOf(item) === index);
-    const defaultTemplate = effectiveTemplates[0] || "raw";
+    const effectiveTemplates = (enabledTemplates || []).filter(
+        (item, index, arr): item is TemplateKey =>
+            templateOrder.includes(item) && arr.indexOf(item) === index
+    );
+    const defaultTemplate = effectiveTemplates[0];
+
+    if (!defaultTemplate) {
+        return null;
+    }
 
     return (
         <div className="space-y-6">
@@ -177,11 +173,13 @@ export function ActionBuilder({
                     <CardDescription>
                         {t.agent.console.builder.subtitle}
                         <br />
-                        {t.agent.console.builder.account}: <span className="font-mono text-xs bg-muted px-1 rounded">{agentAccount || t.agent.detail.loading}</span>
+                        {t.agent.console.builder.account}:{" "}
+                        <span className="font-mono text-xs bg-muted px-1 rounded">
+                            {agentAccount || t.agent.detail.loading}
+                        </span>
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-
                     <TemplatesPanel
                         defaultTemplate={defaultTemplate}
                         effectiveTemplates={effectiveTemplates}
@@ -205,10 +203,11 @@ export function ActionBuilder({
                     <div className="space-y-4 border-t pt-4">
                         <div className="flex items-center justify-between">
                             <Label className="text-muted-foreground">{t.agent.console.builder.preview}</Label>
-                            {isValid ?
-                                <span className="text-xs text-green-600">{t.agent.console.builder.valid}</span> :
+                            {isValid ? (
+                                <span className="text-xs text-green-600">{t.agent.console.builder.valid}</span>
+                            ) : (
                                 <span className="text-xs text-red-600">{t.agent.console.builder.invalid}</span>
-                            }
+                            )}
                         </div>
 
                         <div className="space-y-2">
@@ -244,7 +243,6 @@ export function ActionBuilder({
                         </div>
                     </div>
 
-                    {/* Preflight Warning Card */}
                     {violations.length > 0 && (
                         <div className="mt-4 p-4 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700">
                             <div className="flex items-center gap-2 mb-2 text-amber-700 dark:text-amber-400 font-semibold text-sm">
@@ -253,60 +251,24 @@ export function ActionBuilder({
                             </div>
                             <ul className="space-y-2">
                                 {violations.map((v, i) => (
-                                    <li key={i} className="text-sm">
-                                        <div className="flex items-start gap-1.5 text-amber-800 dark:text-amber-300">
-                                            <span className="mt-0.5">⚠</span>
-                                            <span>{language === "zh" ? v.messageZh : v.messageEn}</span>
-                                        </div>
-                                        {v.fixCommand && (
-                                            <div className="mt-2 ml-5 space-y-1">
-                                                <div className="flex items-center gap-2">
-                                                    <button
-                                                        onClick={() => void handleCopyText(v.fixCommand!, preflightUi.copySuccess)}
-                                                        className="px-2 py-1 text-xs bg-amber-600 hover:bg-amber-700 text-white rounded transition-colors"
-                                                    >
-                                                        {preflightUi.copyFix}
-                                                    </button>
-                                                </div>
-                                                <code className="block text-xs bg-amber-100 dark:bg-amber-900/50 p-2 rounded font-mono overflow-x-auto">
-                                                    {v.fixCommand}
-                                                </code>
-                                            </div>
-                                        )}
+                                    <li key={i} className="text-sm text-amber-800 dark:text-amber-300">
+                                        • {language === "zh" ? v.messageZh : v.messageEn}
                                     </li>
                                 ))}
                             </ul>
-
-                            {/* Batch copy all fix commands */}
-                            {violations.filter(v => v.fixCommand).length > 1 && (
-                                <div className="mt-3 pt-3 border-t border-amber-300 dark:border-amber-700">
-                                    <button
-                                        onClick={() => {
-                                            const commandsCount = violations.filter(v => v.fixCommand).length;
-                                            const allCommands = violations
-                                                .map(v => v.fixCommand)
-                                                .filter(Boolean)
-                                                .join('\n\n');
-                                            void handleCopyText(allCommands, preflightUi.copyAllSuccess(commandsCount));
-                                        }}
-                                        className="w-full px-3 py-2 text-sm bg-amber-600 hover:bg-amber-700 text-white rounded transition-colors font-medium"
-                                    >
-                                        {preflightUi.copyAllFix(violations.filter(v => v.fixCommand).length)}
-                                    </button>
-                                </div>
-                            )}
-
-                            <div className="mt-2 text-sm text-amber-600 dark:text-amber-500">
-                                {preflightUi.continueHint}
+                            <div className="mt-2 text-sm text-amber-700 dark:text-amber-400">
+                                {preflightUi.blockedHint}
                             </div>
                         </div>
                     )}
+
                     {isPreflightChecking && isValid && (
                         <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
                             <Loader2 className="w-3 h-3 animate-spin" />
                             {preflightUi.checking}
                         </div>
                     )}
+
                     {readOnly && (
                         <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
                             {readOnlyMessage || "Console is currently in read-only mode."}
@@ -320,13 +282,24 @@ export function ActionBuilder({
                             disabled={readOnly || !isValid || isSimulating || isExecuting}
                             className="flex-1"
                         >
-                            {isSimulating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Play className="w-4 h-4 mr-2" />}
+                            {isSimulating ? (
+                                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            ) : (
+                                <Play className="w-4 h-4 mr-2" />
+                            )}
                             {t.agent.console.builder.simulate}
                         </Button>
 
                         <Button
                             onClick={handleExecute}
-                            disabled={readOnly || executeDisabled || !isValid || isSimulating || isExecuting || !simulationResult?.success}
+                            disabled={
+                                readOnly ||
+                                executeDisabled ||
+                                !isValid ||
+                                isSimulating ||
+                                isExecuting ||
+                                !simulationResult?.success
+                            }
                             className="flex-1 bg-[var(--color-burgundy)] hover:bg-[var(--color-burgundy)]/90"
                         >
                             {isExecuting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
@@ -335,26 +308,29 @@ export function ActionBuilder({
                     </div>
 
                     {simulationResult && (
-                        <div className={`mt-4 p-4 rounded border ${simulationResult.success ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+                        <div
+                            className={`mt-4 p-4 rounded border ${
+                                simulationResult.success
+                                    ? "bg-green-50 border-green-200 text-green-700"
+                                    : "bg-red-50 border-red-200 text-red-700"
+                            }`}
+                        >
                             <div className="font-bold mb-1">
-                                {simulationResult.success ? t.agent.console.builder.simulation.success : t.agent.console.builder.simulation.reverted}
+                                {simulationResult.success
+                                    ? t.agent.console.builder.simulation.success
+                                    : t.agent.console.builder.simulation.reverted}
                             </div>
                             <div className="text-xs font-mono break-all opacity-80">
                                 {t.agent.console.builder.simulation.return}: {simulationResult.data}
                             </div>
                             {!simulationResult.success && policyHint && (
-                                <div className="mt-2 text-xs font-medium">
-                                    {policyHint}
-                                </div>
+                                <div className="mt-2 text-xs font-medium">{policyHint}</div>
                             )}
-                            {!simulationResult.success && simulationError && (
-                                <div className="mt-1 text-[11px] font-mono break-all opacity-80">
-                                    {simulationError}
-                                </div>
+                            {!simulationResult.success && !policyHint && simulationError && (
+                                <div className="mt-1 text-[11px] break-all opacity-80">{simulationError}</div>
                             )}
                         </div>
                     )}
-
                 </CardContent>
             </Card>
         </div>

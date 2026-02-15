@@ -113,13 +113,15 @@ export default function ConsolePage() {
             return [];
         }
 
+        const rawEnabled = capabilityPack.capabilities?.rawEnabled === true;
         const templates = (capabilityPack.capabilities?.consoleTemplates || [])
             .map(normalizeTemplate)
-            .filter((item): item is TemplateKey => item !== null);
+            .filter((item): item is TemplateKey => item !== null)
+            .filter((item) => item !== "raw" || rawEnabled);
 
         const deduped = Array.from(new Set(templates));
         return deduped;
-    }, [capabilityPack.capabilities?.consoleTemplates, packStatus]);
+    }, [capabilityPack.capabilities?.consoleTemplates, capabilityPack.capabilities?.rawEnabled, packStatus]);
 
     // Simulation State Management
     const [simAction, setSimAction] = useState<Action | null>(null);
@@ -146,25 +148,49 @@ export default function ConsolePage() {
         isLoading: isRunnerStatusLoading,
     } = useAutopilotStatus(tokenId, nfaAddress, refreshKey);
     const isAutopilotOn = runnerStatus?.autopilot?.enabled === true;
-    const executeDisabledByAutopilot = isAutopilotOn;
     const strictPackValid = packStatus === "PACK_VALID";
-    const isManualMode = runnerMode === "manual";
-    const allowBuilderByMode = isManualMode || isAutopilotOn;
+    const manualExecuteEnabledByPack = capabilityPack.capabilities?.manualExecuteEnabled;
+    const disableWhenAutopilotOn =
+        capabilityPack.capabilities?.manualExecuteDisableWhenAutopilotOn ?? true;
+    const executeAllowedByMode = (() => {
+        if (runnerMode === "external") {
+            return manualExecuteEnabledByPack === true;
+        }
+        return manualExecuteEnabledByPack ?? true;
+    })();
+    const executeDisabledByAutopilot =
+        (runnerMode === "managed" || runnerMode === "external") &&
+        disableWhenAutopilotOn &&
+        isAutopilotOn;
+    const executeDisabledByMode = !executeAllowedByMode;
+    const executeDisabled = executeDisabledByAutopilot || executeDisabledByMode;
+    const executeDisabledByModeMessage = language === "zh"
+        ? (
+            runnerMode === "external"
+                ? "External 模式默认禁用手动 Execute，需 capability pack 显式开启。"
+                : "当前 capability pack 已禁用手动 Execute。"
+        )
+        : (
+            runnerMode === "external"
+                ? "External mode disables manual Execute by default. Enable it explicitly in capability pack."
+                : "Manual Execute is disabled by capability pack policy."
+        );
+    const executeDisabledMessage = executeDisabledByAutopilot
+        ? ui.executeDisabledByAutopilot
+        : executeDisabledByMode
+            ? executeDisabledByModeMessage
+            : undefined;
     const showActionBuilder =
-        strictPackValid && allowBuilderByMode && enabledTemplates.length > 0 && isInteractiveConsole;
+        strictPackValid && enabledTemplates.length > 0 && isInteractiveConsole;
     const actionBuilderHiddenHint = !strictPackValid
         ? (language === "zh"
             ? "能力包校验失败，交易构建器已隐藏。"
             : "Capability pack validation failed. Transaction builder is hidden.")
-        : !allowBuilderByMode
+        : enabledTemplates.length === 0
             ? (language === "zh"
-                ? "当前为托管模式。启用 Autopilot 后可使用 Simulate，手动 Execute 会禁用。"
-                : "Managed mode: enable Autopilot to use Simulate. Manual Execute stays disabled.")
-            : enabledTemplates.length === 0
-                ? (language === "zh"
-                    ? "能力包未声明可用模板。"
-                    : "No supported console templates in capability pack.")
-                : null;
+                ? "能力包未声明可用模板。"
+                : "No supported console templates in capability pack.")
+            : null;
     const autopilotBlockedByPack = !strictPackValid;
     const [autopilotOperator, setAutopilotOperator] = useState<string>(
         process.env.NEXT_PUBLIC_RUNNER_OPERATOR || ""
@@ -219,7 +245,7 @@ export default function ConsolePage() {
     };
     const actionScopeHint =
         language === "zh"
-            ? "动作模板用于让你声明本 Agent 可使用的动作/权限边界；并非放权。所有链上执行仍会被 PolicyGuard 二次校验。"
+            ? "动作模板用于声明本 Agent 可使用的动作/权限边界；并非放权。所有链上执行仍会被 PolicyGuard 二次校验。"
             : "Action templates define this agent's allowed action/permission boundary. They do not bypass controls. Every on-chain execution is still enforced by PolicyGuard.";
     const sectionLabels = language === "zh"
         ? {
@@ -249,8 +275,8 @@ export default function ConsolePage() {
             toast.error(readOnlyMessage);
             return;
         }
-        if (executeDisabledByAutopilot) {
-            toast.error(ui.executeDisabledByAutopilot);
+        if (executeDisabled) {
+            toast.error(executeDisabledMessage || ui.executeDisabledByAutopilot);
             return;
         }
         executeAction(tokenId, action);
@@ -273,7 +299,7 @@ export default function ConsolePage() {
             toast.error(readOnlyMessage);
             return;
         }
-        if (runnerMode !== "managed") {
+        if (runnerMode === "manual") {
             toast.error(ui.autopilot.modeManagedOnlyHint);
             return;
         }
@@ -571,8 +597,8 @@ export default function ConsolePage() {
                                 renterAddress={agent?.renter}
                                 readOnly={!isInteractiveConsole}
                                 readOnlyMessage={readOnlyMessage}
-                                executeDisabled={executeDisabledByAutopilot}
-                                executeDisabledMessage={ui.executeDisabledByAutopilot}
+                                executeDisabled={executeDisabled}
+                                executeDisabledMessage={executeDisabledMessage}
                                 templateBoundaryHint={ui.templateBoundaryHint}
                             />
                         ) : actionBuilderHiddenHint ? (

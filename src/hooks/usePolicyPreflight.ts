@@ -1,27 +1,30 @@
-"use client";
+﻿"use client";
 
-import { useReadContracts } from "wagmi";
-import { Address, Hex, keccak256, toBytes, slice, decodeAbiParameters } from "viem";
-import { CONTRACTS } from "../config/contracts";
 import { useMemo } from "react";
+import { useReadContracts } from "wagmi";
+import { Address, Hex, decodeAbiParameters, keccak256, slice, toBytes } from "viem";
+import { CONTRACTS } from "../config/contracts";
 
-// Known selectors matching PolicyKeys.sol
 const SWAP_EXACT_TOKENS: Hex = "0x38ed1739";
 const SWAP_EXACT_ETH: Hex = "0x7ff36ab5";
 const APPROVE: Hex = "0x095ea7b3";
-
-// Slippage limit key
 const KEY_MAX_SLIPPAGE_BPS = keccak256(toBytes("MAX_SLIPPAGE_BPS"));
 
-type GuardFunctionName = "targetAllowed" | "selectorAllowed" | "tokenAllowed" | "spenderAllowed" | "limits";
+type GuardFunctionName =
+    | "targetAllowed"
+    | "selectorAllowed"
+    | "tokenAllowed"
+    | "spenderAllowed"
+    | "limits";
 
 export interface PreflightViolation {
     code: string;
     messageZh: string;
     messageEn: string;
+    // Reserved for admin tooling; renter-facing UI should not expose these directly.
     fixCommand?: string;
     fixAction?: {
-        type: 'add_target' | 'add_selector' | 'add_token' | 'add_spender';
+        type: "add_target" | "add_selector" | "add_token" | "add_spender";
         params: Record<string, string>;
     };
 }
@@ -32,27 +35,20 @@ export interface PreflightResult {
     isReady: boolean;
 }
 
-/**
- * Extract selector from calldata (first 4 bytes)
- */
 function extractSelector(data: Hex): Hex {
     if (data.length < 10) return "0x00000000";
     return slice(data, 0, 4) as Hex;
 }
 
-/**
- * Parse swap path tokens from swapExactTokensForTokens calldata
- */
 function parseSwapPath(data: Hex): Address[] {
     try {
-        // swapExactTokensForTokens(uint256,uint256,address[],address,uint256)
         const decoded = decodeAbiParameters(
             [
-                { type: "uint256" }, // amountIn
-                { type: "uint256" }, // amountOutMin
-                { type: "address[]" }, // path
-                { type: "address" }, // to
-                { type: "uint256" }, // deadline
+                { type: "uint256" },
+                { type: "uint256" },
+                { type: "address[]" },
+                { type: "address" },
+                { type: "uint256" },
             ],
             ("0x" + data.slice(10)) as Hex
         );
@@ -62,16 +58,10 @@ function parseSwapPath(data: Hex): Address[] {
     }
 }
 
-/**
- * Parse approve spender from approve calldata
- */
 function parseApproveSpender(data: Hex): Address | null {
     try {
         const decoded = decodeAbiParameters(
-            [
-                { type: "address" }, // spender
-                { type: "uint256" }, // amount
-            ],
+            [{ type: "address" }, { type: "uint256" }],
             ("0x" + data.slice(10)) as Hex
         );
         return decoded[0] as Address;
@@ -80,15 +70,12 @@ function parseApproveSpender(data: Hex): Address | null {
     }
 }
 
-/**
- * usePolicyPreflight — Pre-check policy permissions BEFORE simulation
- * Reads on-chain PolicyGuard allowlists and returns a list of violations
- */
-export function usePolicyPreflight(action: { target: Address; value: bigint; data: Hex } | null): PreflightResult {
+export function usePolicyPreflight(
+    action: { target: Address; value: bigint; data: Hex } | null
+): PreflightResult {
     const guardAddress = CONTRACTS.PolicyGuard.address;
     const guardAbi = CONTRACTS.PolicyGuard.abi;
 
-    // Parse action parameters
     const selector = useMemo(
         () => (action ? extractSelector(action.data) : ("0x00000000" as Hex)),
         [action]
@@ -96,16 +83,17 @@ export function usePolicyPreflight(action: { target: Address; value: bigint; dat
     const isSwap = selector === SWAP_EXACT_TOKENS;
     const isSwapETH = selector === SWAP_EXACT_ETH;
     const isApprove = selector === APPROVE;
+
     const swapPath = useMemo(() => {
         if (!action || !isSwap) return [];
         return parseSwapPath(action.data);
     }, [action, isSwap]);
+
     const approveSpender = useMemo(() => {
         if (!action || !isApprove) return null;
         return parseApproveSpender(action.data);
     }, [action, isApprove]);
 
-    // Build multicall contracts array
     const contracts = useMemo(() => {
         if (!action) return [];
 
@@ -116,7 +104,6 @@ export function usePolicyPreflight(action: { target: Address; value: bigint; dat
             args: readonly unknown[];
         }> = [];
 
-        // 0: targetAllowed(action.target)
         calls.push({
             address: guardAddress,
             abi: guardAbi,
@@ -124,7 +111,6 @@ export function usePolicyPreflight(action: { target: Address; value: bigint; dat
             args: [action.target],
         });
 
-        // 1: selectorAllowed(action.target, selector)
         calls.push({
             address: guardAddress,
             abi: guardAbi,
@@ -132,7 +118,6 @@ export function usePolicyPreflight(action: { target: Address; value: bigint; dat
             args: [action.target, selector],
         });
 
-        // 2-N: tokenAllowed for each token in swap path
         for (const token of swapPath) {
             calls.push({
                 address: guardAddress,
@@ -142,7 +127,6 @@ export function usePolicyPreflight(action: { target: Address; value: bigint; dat
             });
         }
 
-        // Spender check for approve
         if (isApprove && approveSpender) {
             calls.push({
                 address: guardAddress,
@@ -152,7 +136,6 @@ export function usePolicyPreflight(action: { target: Address; value: bigint; dat
             });
         }
 
-        // MAX_SLIPPAGE_BPS limit
         if (isSwap || isSwapETH) {
             calls.push({
                 address: guardAddress,
@@ -169,86 +152,58 @@ export function usePolicyPreflight(action: { target: Address; value: bigint; dat
         contracts,
         query: {
             enabled: contracts.length > 0,
-            staleTime: 30_000,      // 30 seconds - don't refetch within this time
-            gcTime: 5 * 60_000,     // 5 minutes - cache time (formerly cacheTime)
+            staleTime: 30_000,
+            gcTime: 5 * 60_000,
         },
     });
 
-    // Build violations from results
     const violations = useMemo((): PreflightViolation[] => {
         if (!results || !action) return [];
 
         const v: PreflightViolation[] = [];
         let idx = 0;
 
-        // 0: targetAllowed
         if (results[idx] && results[idx].result === false) {
             v.push({
                 code: "TARGET_NOT_ALLOWED",
-                messageZh: `目标合约 ${action.target.slice(0, 10)}... 不在白名单`,
-                messageEn: `Target ${action.target.slice(0, 10)}... not in allowlist`,
-                fixCommand: `forge script script/ApplyPolicy.s.sol --sig "addTarget(address)" ${action.target} --rpc-url $RPC_URL --broadcast`,
-                fixAction: {
-                    type: 'add_target',
-                    params: { address: action.target },
-                },
+                messageZh: "当前策略暂不支持该目标合约，请更换模板或交易对后再试。",
+                messageEn: "This target is blocked by current policy. Try another template or trading pair.",
             });
         }
         idx++;
 
-        // 1: selectorAllowed
         if (results[idx] && results[idx].result === false) {
             v.push({
                 code: "SELECTOR_NOT_ALLOWED",
-                messageZh: `函数选择器 ${selector} 不在白名单`,
-                messageEn: `Selector ${selector} not in allowlist`,
-                fixCommand: `forge script script/ApplyPolicy.s.sol --sig "addSelector(address,bytes4)" ${action.target} ${selector} --rpc-url $RPC_URL --broadcast`,
-                fixAction: {
-                    type: 'add_selector',
-                    params: { target: action.target, selector },
-                },
+                messageZh: "当前策略暂不支持该动作类型，请尝试其他操作。",
+                messageEn: "This action type is blocked by current policy. Try a different operation.",
             });
         }
         idx++;
 
-        // Token checks
         for (let i = 0; i < swapPath.length; i++) {
-            const token = swapPath[i];
-            if (!token) continue;
             if (results[idx] && results[idx].result === false) {
                 v.push({
                     code: "TOKEN_NOT_ALLOWED",
-                    messageZh: `代币 ${token.slice(0, 10)}... 不在白名单`,
-                    messageEn: `Token ${token.slice(0, 10)}... not in allowlist`,
-                    fixCommand: `forge script script/ApplyPolicy.s.sol --sig "addToken(address)" ${token} --rpc-url $RPC_URL --broadcast`,
-                    fixAction: {
-                        type: 'add_token',
-                        params: { address: token },
-                    },
+                    messageZh: "当前策略不支持该代币组合，请更换输入或输出代币。",
+                    messageEn: "This token pair is blocked by current policy. Please select different tokens.",
                 });
             }
             idx++;
         }
 
-        // Spender check
         if (isApprove && approveSpender) {
             if (results[idx] && results[idx].result === false) {
                 v.push({
                     code: "SPENDER_NOT_ALLOWED",
-                    messageZh: `授权对象 ${approveSpender.slice(0, 10)}... 不在白名单`,
-                    messageEn: `Spender ${approveSpender.slice(0, 10)}... not in allowlist`,
-                    fixCommand: `forge script script/ApplyPolicy.s.sol --sig "addSpender(address,address)" ${action.target} ${approveSpender} --rpc-url $RPC_URL --broadcast`,
-                    fixAction: {
-                        type: 'add_spender',
-                        params: { token: action.target, spender: approveSpender },
-                    },
+                    messageZh: "当前策略不支持该授权路径，请更换操作后再试。",
+                    messageEn: "This approval route is blocked by current policy. Try a different action.",
                 });
             }
-            idx++;
         }
 
         return v;
-    }, [results, action, selector, isApprove, approveSpender, swapPath]);
+    }, [results, action, swapPath, isApprove, approveSpender]);
 
     return {
         violations,
