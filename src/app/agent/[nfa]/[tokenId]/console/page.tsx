@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { AppShell } from "@/components/ui/app-shell";
 import { ActionBuilder } from "@/components/console/action-builder";
@@ -167,7 +167,7 @@ export default function ConsolePage() {
     const executeDisabledByModeMessage = language === "zh"
         ? (
             runnerMode === "external"
-                ? "External 模式默认禁用手动 Execute，需 capability pack 显式开启。"
+                ? "External 模式默认禁用手动 Execute，请在 capability pack 中显式开启。"
                 : "当前 capability pack 已禁用手动 Execute。"
         )
         : (
@@ -223,7 +223,7 @@ export default function ConsolePage() {
         }
         if (lower.includes("request took too long") || lower.includes("timeout")) {
             return language === "zh"
-                ? "RPC 请求超时。请切换到更稳定的 RPC 节点并重试。"
+                ? "RPC 请求超时。请切换到更稳定的 RPC 节点后重试。"
                 : "RPC request timed out. Switch to a more stable RPC endpoint and retry.";
         }
         if (lower.includes("permit.operator must equal runner operator address")) {
@@ -245,7 +245,7 @@ export default function ConsolePage() {
     };
     const actionScopeHint =
         language === "zh"
-            ? "动作模板用于声明本 Agent 可使用的动作/权限边界；并非放权。所有链上执行仍会被 PolicyGuard 二次校验。"
+            ? "动作模板用于声明当前 Agent 的可执行动作/权限边界，并不放权。所有链上执行仍会被 PolicyGuard 二次校验。"
             : "Action templates define this agent's allowed action/permission boundary. They do not bypass controls. Every on-chain execution is still enforced by PolicyGuard.";
     const sectionLabels = language === "zh"
         ? {
@@ -258,7 +258,6 @@ export default function ConsolePage() {
             vault: "Vault",
             history: "History",
         };
-
     const handleSimulate = (action: Action) => {
         if (!isInteractiveConsole) {
             toast.error(readOnlyMessage);
@@ -370,8 +369,8 @@ export default function ConsolePage() {
     if (isAgentLoading) {
         return (
             <AppShell>
-                <div className="flex justify-center p-20">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-burgundy)]"></div>
+                <div className="flex justify-center rounded-2xl border border-[var(--color-border)] bg-white/70 p-20 shadow-[var(--shadow-soft)]">
+                    <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-[var(--color-primary)]"></div>
                 </div>
             </AppShell>
         );
@@ -380,27 +379,27 @@ export default function ConsolePage() {
     if (agentError) {
         return (
             <AppShell>
-                <div className="max-w-lg mx-auto text-center py-20 space-y-4">
-                    <ShieldAlert className="w-12 h-12 text-[var(--color-burgundy)] mx-auto" />
-                    <h2 className="text-2xl font-serif font-bold text-[var(--color-burgundy)]">
+                <div className="mx-auto max-w-lg space-y-4 rounded-2xl border border-[var(--color-border)] bg-white/70 p-10 text-center shadow-[var(--shadow-soft)]">
+                    <ShieldAlert className="mx-auto h-12 w-12 text-[var(--color-primary)]" />
+                    <h2 className="text-2xl font-serif font-bold text-[var(--color-primary)]">
                         {t.agent.console.page.title}
                     </h2>
-                    <p className="text-muted-foreground">
+                    <p className="text-[var(--color-muted-foreground)]">
                         {ui.errorLoadAgent}
                     </p>
-                    <p className="text-xs text-muted-foreground font-mono break-all">
+                    <p className="break-all font-mono text-xs text-[var(--color-muted-foreground)]">
                         {agentError.message}
                     </p>
                     <div className="flex justify-center gap-2 pt-2">
                         <Link
                             href={detailPath}
-                            className="inline-flex items-center rounded-md border px-3 py-2 text-sm hover:bg-muted"
+                            className="inline-flex items-center rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm hover:bg-[var(--color-secondary)]"
                         >
                             {ui.goAgentDetail}
                         </Link>
                         <Link
                             href="/docs"
-                            className="inline-flex items-center rounded-md border px-3 py-2 text-sm hover:bg-muted"
+                            className="inline-flex items-center rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm hover:bg-[var(--color-secondary)]"
                         >
                             {ui.openDocs}
                         </Link>
@@ -414,18 +413,18 @@ export default function ConsolePage() {
     if (!hasAccess) {
         return (
             <AppShell>
-                <div className="max-w-lg mx-auto text-center py-20 space-y-4">
-                    <ShieldAlert className="w-12 h-12 text-[var(--color-burgundy)] mx-auto" />
-                    <h2 className="text-2xl font-serif font-bold text-[var(--color-burgundy)]">
+                <div className="mx-auto max-w-lg space-y-4 rounded-2xl border border-[var(--color-border)] bg-white/70 p-10 text-center shadow-[var(--shadow-soft)]">
+                    <ShieldAlert className="mx-auto h-12 w-12 text-[var(--color-primary)]" />
+                    <h2 className="text-2xl font-serif font-bold text-[var(--color-primary)]">
                         {t.agent.console.page.title}
                     </h2>
-                    <p className="text-muted-foreground">
+                    <p className="text-[var(--color-muted-foreground)]">
                         {!address
                             ? (t.agent.console.page.connectWallet || "Please connect your wallet to access the console.")
                             : (t.agent.console.page.noAccess || "You must be the owner or active renter of this agent to use the console.")}
                     </p>
-                    <div className="rounded-lg border bg-muted/30 px-4 py-3 text-left text-xs text-muted-foreground">
-                        <div className="font-medium text-foreground">{ui.nextStepTitle}</div>
+                    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]/45 px-4 py-3 text-left text-xs text-[var(--color-muted-foreground)]">
+                        <div className="font-medium text-[var(--color-foreground)]">{ui.nextStepTitle}</div>
                         <div className="pt-1">
                             {!address
                                 ? ui.nextStepConnect
@@ -440,13 +439,13 @@ export default function ConsolePage() {
                     <div className="flex justify-center gap-2 pt-2">
                         <Link
                             href={detailPath}
-                            className="inline-flex items-center rounded-md border px-3 py-2 text-sm hover:bg-muted"
+                            className="inline-flex items-center rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm hover:bg-[var(--color-secondary)]"
                         >
                             {ui.goAgentDetail}
                         </Link>
                         <Link
                             href="/me"
-                            className="inline-flex items-center rounded-md border px-3 py-2 text-sm hover:bg-muted"
+                            className="inline-flex items-center rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm hover:bg-[var(--color-secondary)]"
                         >
                             {t.common.nav.me}
                         </Link>
@@ -458,38 +457,38 @@ export default function ConsolePage() {
 
     return (
         <AppShell>
-            <div className="max-w-3xl mx-auto space-y-6">
-                <nav className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Link href="/" className="hover:text-foreground">
+            <div className="mx-auto max-w-4xl space-y-6">
+                <nav className="flex items-center gap-1 text-xs text-[var(--color-muted-foreground)]">
+                    <Link href="/" className="hover:text-[var(--color-primary)]">
                         {t.common.nav.market}
                     </Link>
                     <ChevronRight className="h-3 w-3" />
-                    <Link href={detailPath} className="hover:text-foreground">
+                    <Link href={detailPath} className="hover:text-[var(--color-primary)]">
                         {ui.agentDetail}
                     </Link>
                     <ChevronRight className="h-3 w-3" />
-                    <span className="text-foreground">{t.agent.detail.tabs.console}</span>
+                    <span className="text-[var(--color-foreground)]">{t.agent.detail.tabs.console}</span>
                 </nav>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-3 rounded-2xl border border-[var(--color-border)] bg-white/72 p-6 shadow-[var(--shadow-soft)] md:flex-row md:items-center md:justify-between">
                     <div>
-                        <h1 className="text-3xl font-serif font-bold text-[var(--color-burgundy)]">
+                        <h1 className="page-title text-3xl">
                             {t.agent.console.page.title}
                         </h1>
-                        <p className="text-muted-foreground">
+                        <p className="page-subtitle mt-2 text-sm md:text-base">
                             {t.agent.console.page.subtitle}
                         </p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-left md:text-right">
                         <div className="text-sm font-medium">{t.agent.console.page.agentId}: #{tokenId}</div>
-                        <div className="text-xs text-muted-foreground font-mono">
+                        <div className="font-mono text-xs text-[var(--color-muted-foreground)]">
                             {agentAccount || (isAccountLoading ? t.agent.detail.loading : t.agent.console.page.unknown)}
                         </div>
                     </div>
                 </div>
 
-                <div className="rounded-lg border bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
+                <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]/45 px-4 py-3 text-xs text-[var(--color-muted-foreground)]">
                     <div>
-                        <span className="font-medium text-foreground">{ui.currentRole}: </span>
+                        <span className="font-medium text-[var(--color-foreground)]">{ui.currentRole}: </span>
                         {roleLabel}
                     </div>
                     <div className="pt-1">
@@ -524,29 +523,23 @@ export default function ConsolePage() {
                     </div>
                 )}
 
-                {autopilotBlockedByPack && (
-                    <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
-                        {ui.packInvalidPolicyHint}
-                    </div>
-                )}
-
                 <Tabs defaultValue="control" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3 h-12 rounded-xl border border-[var(--color-burgundy)]/25 bg-[var(--color-burgundy)]/10 p-1">
+                    <TabsList className="grid h-12 w-full grid-cols-3 rounded-xl border border-[var(--color-border)] bg-white/72 p-1">
                         <TabsTrigger
                             value="control"
-                            className="text-sm font-semibold data-[state=active]:bg-[var(--color-burgundy)] data-[state=active]:text-white data-[state=active]:shadow hover:bg-white/60"
+                            className="text-sm font-semibold"
                         >
                             {sectionLabels.control}
                         </TabsTrigger>
                         <TabsTrigger
                             value="vault"
-                            className="text-sm font-semibold data-[state=active]:bg-[var(--color-burgundy)] data-[state=active]:text-white data-[state=active]:shadow hover:bg-white/60"
+                            className="text-sm font-semibold"
                         >
                             {sectionLabels.vault}
                         </TabsTrigger>
                         <TabsTrigger
                             value="history"
-                            className="text-sm font-semibold data-[state=active]:bg-[var(--color-burgundy)] data-[state=active]:text-white data-[state=active]:shadow hover:bg-white/60"
+                            className="text-sm font-semibold"
                         >
                             {sectionLabels.history}
                         </TabsTrigger>
@@ -580,7 +573,7 @@ export default function ConsolePage() {
                             onDisableAutopilot={handleDisableAutopilot}
                         />
 
-                        <div className="rounded-lg border bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
+                        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]/40 px-4 py-3 text-xs text-[var(--color-muted-foreground)]">
                             {actionScopeHint}
                         </div>
 
@@ -627,3 +620,5 @@ export default function ConsolePage() {
         </AppShell>
     );
 }
+
+
