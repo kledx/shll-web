@@ -59,6 +59,11 @@ export function AgentCard({ listing }: { listing: AgentListing }) {
         : isRented
             ? (t.agent.card.rented || "Rented")
             : (t.marketplace?.filterAvailable || "Available");
+    const actionLabel = listing.isTemplate
+        ? t.agent.card.mintInstance
+        : isRented
+            ? t.agent.card.viewDetails
+            : t.agent.card.rentNow;
 
     return (
         <Card className="group relative flex flex-col overflow-hidden border-[var(--color-border)] bg-[var(--color-paper)] transition-all duration-300 hover:shadow-lg hover:border-[var(--color-primary)]/50">
@@ -86,15 +91,15 @@ export function AgentCard({ listing }: { listing: AgentListing }) {
                 {/* Metrics Grid */}
                 <div className="grid grid-cols-2 gap-2 rounded-lg bg-[var(--color-surface)] p-2">
                     <div className="flex flex-col">
-                        <span className="text-[10px] uppercase text-[var(--color-muted-foreground)]">Success Rate</span>
+                        <span className="text-[10px] uppercase text-[var(--color-muted-foreground)]">{t.home.stats.successRate}</span>
                         <span className="font-mono text-sm font-medium">
-                            {listing.metrics?.successRate ? `${listing.metrics.successRate}%` : "100%"}
+                            {typeof listing.metrics?.successRate === "number" ? `${listing.metrics.successRate}%` : "-"}
                         </span>
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-[10px] uppercase text-[var(--color-muted-foreground)]">Executions</span>
+                        <span className="text-[10px] uppercase text-[var(--color-muted-foreground)]">{t.home.stats.totalExecutions}</span>
                         <span className="font-mono text-sm font-medium">
-                            {listing.metrics?.totalExecutions ? `${listing.metrics.totalExecutions}` : "0"}
+                            {typeof listing.metrics?.totalExecutions === "number" ? `${listing.metrics.totalExecutions}` : "-"}
                         </span>
                     </div>
                 </div>
@@ -123,13 +128,13 @@ export function AgentCard({ listing }: { listing: AgentListing }) {
                 {isValidDetailRoute ? (
                     <Link href={`/agent/${listing.nfaAddress}/${listing.tokenId}`}>
                         <Button size="sm" variant={isRented ? "outline" : "default"} className="h-8 text-xs">
-                            {listing.isTemplate ? "Mint" : isRented ? "View" : "Rent"}
+                            {actionLabel}
                             <ArrowRight className="ml-1 h-3 w-3" />
                         </Button>
                     </Link>
                 ) : (
                     <Button size="sm" variant="ghost" disabled className="h-8 text-xs">
-                        Syncing...
+                        {t.agent.detail.loading}
                     </Button>
                 )}
             </CardFooter>

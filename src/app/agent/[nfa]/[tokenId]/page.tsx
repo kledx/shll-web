@@ -83,7 +83,7 @@ export default function AgentDetailPage() {
             <PageTransition className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
                 <div className="space-y-6">
                     <nav className="flex items-center gap-1 text-xs text-[var(--color-muted-foreground)]">
-                        <Link href="/" className="hover:text-[var(--color-primary)]">
+                        <Link href="/market" className="hover:text-[var(--color-primary)]">
                             {t.common.nav.market}
                         </Link>
                         <ChevronRight className="h-3 w-3" />

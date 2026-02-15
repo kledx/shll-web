@@ -21,25 +21,37 @@ interface SidebarProps {
     isMobile: boolean;
 }
 
+type NavItem = {
+    name: string;
+    href: string;
+    icon: typeof Store;
+    isActive: (path: string) => boolean;
+};
+
 export function Sidebar({ isOpen, setIsOpen, isMobile }: SidebarProps) {
     const pathname = usePathname();
     const { t } = useTranslation();
 
-    const navItems = [
+    const navItems: NavItem[] = [
         {
             name: t.common.nav.market,
-            href: "/",
-            icon: Store
+            href: "/market",
+            icon: Store,
+            // Market nav owns market list and agent detail/console flows.
+            isActive: (path) =>
+                path === "/" || path === "/market" || path.startsWith("/agent/"),
         },
         {
             name: t.common.nav.me,
             href: "/me",
-            icon: User
+            icon: User,
+            isActive: (path) => path === "/me" || path.startsWith("/me/"),
         },
         {
             name: t.common.nav.docs,
             href: "/docs",
-            icon: BookOpen
+            icon: BookOpen,
+            isActive: (path) => path === "/docs" || path.startsWith("/docs/"),
         },
     ];
 
@@ -84,7 +96,7 @@ export function Sidebar({ isOpen, setIsOpen, isMobile }: SidebarProps) {
                 {/* Nav Items */}
                 <nav className="flex-1 space-y-2 px-2 py-4">
                     {navItems.map((item) => {
-                        const isActive = pathname === item.href;
+                        const isActive = item.isActive(pathname);
                         return (
                             <Link
                                 key={item.href}

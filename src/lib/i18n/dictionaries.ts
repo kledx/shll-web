@@ -290,7 +290,7 @@ export const en = {
                     title: "1. Connect wallet and switch chain",
                     desc: "Connect wallet from the top-right button, then switch to BSC Testnet if prompted.",
                     action: "Go to Marketplace",
-                    url: "/"
+                    url: "/market"
                 },
                 {
                     title: "2. Rent an agent",
@@ -313,7 +313,7 @@ export const en = {
             ],
             pathsTitle: "Recommended path",
             paths: [
-                "Marketplace: /",
+                "Marketplace: /market",
                 "My agents and rentals: /me",
                 "Agent detail: /agent/{nfa}/{tokenId}",
                 "Agent console: /agent/{nfa}/{tokenId}/console"
@@ -586,7 +586,7 @@ export const en = {
             title: "Ready to run your first safe strategy?",
             desc: "Start from Marketplace, rent an agent, then execute through Console with policy-aware preflight.",
             primaryAction: "Open Marketplace",
-            primaryUrl: "/",
+            primaryUrl: "/market",
             secondaryAction: "Open My Dashboard",
             secondaryUrl: "/me"
         },
@@ -905,7 +905,7 @@ export const zh: Dictionary = {
                     title: "1. 连接钱包并切链",
                     desc: "点击右上角连接钱包，按提示切换到 BSC Testnet。",
                     action: "前往市场",
-                    url: "/"
+                    url: "/market"
                 },
                 {
                     title: "2. 租用 Agent",
@@ -928,7 +928,7 @@ export const zh: Dictionary = {
             ],
             pathsTitle: "常用路径",
             paths: [
-                "市场首页: /",
+                "市场首页: /market",
                 "我的 Agent 与租赁: /me",
                 "Agent 详情: /agent/{nfa}/{tokenId}",
                 "Agent 控制台: /agent/{nfa}/{tokenId}/console"
@@ -1201,7 +1201,7 @@ export const zh: Dictionary = {
             title: "准备好跑第一条安全策略了吗？",
             desc: "从市场租用 Agent，在 Console 里按预检流程执行策略。",
             primaryAction: "前往市场",
-            primaryUrl: "/",
+            primaryUrl: "/market",
             secondaryAction: "打开我的页面",
             secondaryUrl: "/me"
         },

@@ -1638,7 +1638,7 @@ export const CONTRACTS = {
     ] as const,
   },
   ListingManager: {
-    address: "0x7e47e94d4ec2992898300006483d55848efbc315" as Address,
+    address: (process.env.NEXT_PUBLIC_LISTING_MANAGER as Address) || "0x7e47e94d4ec2992898300006483d55848efbc315",
     deployBlock: BigInt(process.env.NEXT_PUBLIC_DEPLOY_BLOCK || 90562960),
     abi: [
       {

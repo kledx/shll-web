@@ -427,7 +427,7 @@ export default function ConsolePage() {
         <AppShell fullWidth>
             <PageTransition className="space-y-6">
                 <nav className="flex items-center gap-1 text-xs text-[var(--color-muted-foreground)]">
-                    <Link href="/" className="hover:text-[var(--color-primary)]">
+                    <Link href="/market" className="hover:text-[var(--color-primary)]">
                         {t.common.nav.market}
                     </Link>
                     <ChevronRight className="h-3 w-3" />

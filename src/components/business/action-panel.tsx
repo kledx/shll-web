@@ -9,6 +9,7 @@ import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { useRentToMint } from "@/hooks/useRentToMint";
 import { Hex } from "viem";
+import { getConsoleCopy } from "@/lib/console/console-copy";
 
 interface ActionPanelProps {
     nfaAddress: string;
@@ -26,9 +27,27 @@ interface ActionPanelProps {
 
 export function ActionPanel({ nfaAddress, tokenId, isActive, isListed, isTemplateListing, isOwner, isRenter, pricePerDay, pricePerDayRaw, minDays, listingId }: ActionPanelProps) {
     const { rentToMintAgent, isLoading: isRenting } = useRentToMint();
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
+    const ui = getConsoleCopy(language);
     const canRent = isActive && isListed && isTemplateListing && !isOwner && !isRenter;
-    const roleLabel = isOwner ? t.agent.detail.status.owner : "Renter";
+    const roleLabel = isOwner
+        ? ui.roleLabels.owner
+        : isRenter
+            ? ui.roleLabels.renter
+            : ui.roleLabels.guest;
+    const rentUnavailableReason = isRenter
+        ? (language === "zh" ? "你当前是该 Agent 的有效租户。" : "You are the active renter of this agent.")
+        : isOwner
+            ? (language === "zh" ? "所有者钱包不能租用自己的 Agent。" : "Owner wallet cannot rent this agent.")
+            : !isTemplateListing
+                ? (
+                    language === "zh"
+                        ? "经典租赁流程已废弃，仅支持多租户模板实例。"
+                        : "Classic rental is deprecated. Only multi-tenant template listings are supported."
+                )
+                : isListed
+                    ? (language === "zh" ? "该挂牌当前不可租用。" : "This listing is not currently rentable.")
+                    : (language === "zh" ? "该 Agent 当前未挂牌出租。" : "This agent is not listed for rent.");
 
     const handleRent = async (days: number) => {
         if (!listingId) {
@@ -62,15 +81,7 @@ export function ActionPanel({ nfaAddress, tokenId, isActive, isListed, isTemplat
                         <CardHeader>
                             <CardTitle className="text-base text-[var(--color-foreground)]">{t.agent.detail.tabs.rent}</CardTitle>
                             <CardDescription className="text-[var(--color-muted-foreground)]">
-                                {isRenter
-                                    ? "You are the active renter of this agent."
-                                    : isOwner
-                                        ? "Owner wallet cannot rent this agent."
-                                        : !isTemplateListing
-                                            ? "Classic rental is deprecated. Only multi-tenant template listings are supported."
-                                        : isListed
-                                            ? "This listing is not currently rentable."
-                                            : "This agent is not listed for rent."}
+                                {rentUnavailableReason}
                             </CardDescription>
                         </CardHeader>
                     </Card>

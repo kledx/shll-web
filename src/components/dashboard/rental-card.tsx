@@ -79,6 +79,9 @@ export function RentalCard({ rental }: RentalCardProps) {
     const isExpired = !rental.isActive;
     const canDeposit = rental.isRenter && rental.isActive;
     const daysLeft = nowSec === null ? 0 : Math.ceil((Number(rental.expires) - nowSec) / 86400);
+    const leaseProgressPercent = isExpired
+        ? 0
+        : Math.max(8, Math.min(100, Math.round((Math.max(daysLeft, 0) / 30) * 100)));
 
     const formatAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 
@@ -125,7 +128,10 @@ export function RentalCard({ rental }: RentalCardProps) {
                 </div>
                 {!rental.isOwner && (
                     <div className="h-1 bg-gray-100 rounded overflow-hidden">
-                        <div className={`h-full ${isExpired ? 'bg-gray-300' : 'bg-[var(--color-burgundy)]'} w-3/4`} />
+                        <div
+                            className={`h-full ${isExpired ? 'bg-gray-300' : 'bg-[var(--color-burgundy)]'}`}
+                            style={{ width: `${leaseProgressPercent}%` }}
+                        />
                     </div>
                 )}
             </CardContent>

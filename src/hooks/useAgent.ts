@@ -217,6 +217,13 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
                 functionName: "templateOf",
                 args: [tokenIdBigInt],
             },
+            // 12: isTemplate (fallback for listing template flag)
+            {
+                address: nfaAddress,
+                abi: CONTRACTS.AgentNFA.abi,
+                functionName: "isTemplate",
+                args: [tokenIdBigInt],
+            },
         ],
         query: {
             enabled: canQuery,
@@ -249,7 +256,12 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
         ? listingIdResult.result
         : undefined;
 
-    const { data: listingData } = useReadContracts({
+    const shouldReadListing = !!listingId && listingId !== ZERO_LISTING_ID;
+    const {
+        data: listingData,
+        isLoading: isListingLoading,
+        error: listingError,
+    } = useReadContracts({
         contracts: [{
             address: listingManagerAddress,
             abi: CONTRACTS.ListingManager.abi,
@@ -257,7 +269,7 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
             args: [listingId || ZERO_LISTING_ID],
         }],
         query: {
-            enabled: !!listingId && listingId !== ZERO_LISTING_ID
+            enabled: shouldReadListing,
         }
     });
 
@@ -269,12 +281,12 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
         };
     }
 
-    if (isLoading) {
+    if (isLoading || (shouldReadListing && isListingLoading)) {
         return { data: null, isLoading: true, error };
     }
 
-    if (error) {
-        return { data: null, isLoading: false, error };
+    if (error || listingError) {
+        return { data: null, isLoading: false, error: error || listingError };
     }
 
     if (!reads) {
@@ -331,11 +343,23 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
 
     // Listing Read
     const listingResult = listingData?.[0] as ContractRead | undefined;
+    if (shouldReadListing && listingResult?.status === "failure") {
+        return {
+            data: null,
+            isLoading: false,
+            error: new Error("Failed to read listing state from ListingManager"),
+        };
+    }
     const listing = isReadSuccess(listingResult) ? listingResult.result : undefined;
     const listingActive = Boolean(getTupleField(listing, "active", 5));
     const listingPricePerDay = toBigIntOrZero(getTupleField(listing, "pricePerDay", 3));
     const listingMinDays = toNumberOrZero(getTupleField(listing, "minDays", 4));
-    const listingIsTemplate = Boolean(getTupleField(listing, "isTemplate", 6));
+    const tokenIsTemplateResult = reads?.[12] as ContractRead | undefined;
+    const tokenIsTemplate = Boolean(
+        isReadSuccess<boolean>(tokenIsTemplateResult) && tokenIsTemplateResult.result
+    );
+    const listingIsTemplate =
+        Boolean(getTupleField(listing, "isTemplate", 6)) || tokenIsTemplate;
 
     // Policy Limits
     const maxDeadline = toBigIntOrZero((reads[6] as ContractRead | undefined)?.result);

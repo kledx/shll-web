@@ -13,6 +13,8 @@ type AppShellProps = {
     contentClassName?: string;
 };
 
+const SIDEBAR_KEY = "shll-sidebar-open";
+
 export function AppShell({ children, fullWidth = false, contentClassName }: AppShellProps) {
     const { t } = useTranslation();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -26,7 +28,12 @@ export function AppShell({ children, fullWidth = false, contentClassName }: AppS
             if (mobile) {
                 setIsSidebarOpen(false);
             } else {
-                setIsSidebarOpen(true);
+                const saved = window.localStorage.getItem(SIDEBAR_KEY);
+                if (saved === null) {
+                    setIsSidebarOpen(true);
+                } else {
+                    setIsSidebarOpen(saved === "1");
+                }
             }
         };
 
@@ -34,6 +41,11 @@ export function AppShell({ children, fullWidth = false, contentClassName }: AppS
         window.addEventListener("resize", checkMobile);
         return () => window.removeEventListener("resize", checkMobile);
     }, []);
+
+    useEffect(() => {
+        if (isMobile) return;
+        window.localStorage.setItem(SIDEBAR_KEY, isSidebarOpen ? "1" : "0");
+    }, [isMobile, isSidebarOpen]);
 
     return (
         <div className="min-h-screen bg-[var(--color-paper)] text-[var(--color-foreground)]">
