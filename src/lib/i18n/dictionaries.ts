@@ -18,7 +18,12 @@ export const en = {
         title: "Marketplace",
         subtitle: "Rent autonomous AI agents safely secured by on-chain policies.",
         noAgents: "No agents available for rent.",
+        noResults: "No agents match your search.",
         wrongChain: "Agents are deployed on BSC Testnet. Please switch your wallet network to view and rent agents.",
+        searchPlaceholder: "Search by name, ID or owner...",
+        filterAll: "All",
+        filterAvailable: "Available",
+        filterRented: "Rented",
     },
     agent: {
         card: {
@@ -557,7 +562,12 @@ export const zh: Dictionary = {
         title: "市场",
         subtitle: "租赁由链上策略保护的自主 AI Agent。",
         noAgents: "暂无可租赁的 Agent。",
+        noResults: "没有匹配的 Agent。",
         wrongChain: "Agent 部署在 BSC Testnet 上，请将钱包切换到 BSC Testnet 网络以查看和租赁 Agent。",
+        searchPlaceholder: "按名称、ID 或所有者搜索...",
+        filterAll: "全部",
+        filterAvailable: "可租赁",
+        filterRented: "已租出",
     },
     agent: {
         card: {

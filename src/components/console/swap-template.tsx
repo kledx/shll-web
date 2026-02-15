@@ -16,6 +16,7 @@ import {
     SwapTokenConfig,
 } from "@/lib/console/swap-utils";
 import { Action } from "./action-types";
+import { TOKEN_MAP, WBNB_ADDRESS, ROUTER_ADDRESS } from "@/config/tokens";
 
 // PancakeRouter ABI (partial — swap functions)
 const ROUTER_ABI = [
@@ -73,17 +74,10 @@ const WBNB_ABI = [
     }
 ] as const;
 
-// BSC Testnet token config — addresses must match PolicyGuard allowlist
-const WBNB_ADDRESS = "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd";
-
-// Token options including native BNB
-const TOKENS: Record<string, SwapTokenConfig> = {
-    "BNB": { address: WBNB_ADDRESS, decimals: 18, isNative: true },
-    "USDT": { address: "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd", decimals: 18, isNative: false },
-    "WBNB": { address: WBNB_ADDRESS, decimals: 18, isNative: false },
-};
-
-const ROUTER_ADDRESS = "0xD99D1c33F9fC3444f8101754aBC46c52416550D1"; // PancakeRouter V2 Testnet
+// Token options — from centralized config
+const TOKENS: Record<string, SwapTokenConfig> = Object.fromEntries(
+    Object.entries(TOKEN_MAP).map(([k, v]) => [k, { address: v.address, decimals: v.decimals, isNative: v.isNative }])
+);
 const SLIPPAGE_PRESETS = [0.1, 0.5, 1.0];
 
 interface SwapTemplateProps {
@@ -349,8 +343,8 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
                 {isUnsupportedPair
                     ? t.agent.console.templates.swap.unsupportedPair
                     : hasInsufficientBalance
-                    ? t.agent.console.templates.swap.insufficientBalance.replace("{token}", tokenIn)
-                    : (isApproveNeeded ? t.agent.console.templates.swap.stepApprove.replace("{token}", tokenIn) : t.agent.console.templates.swap.generate)
+                        ? t.agent.console.templates.swap.insufficientBalance.replace("{token}", tokenIn)
+                        : (isApproveNeeded ? t.agent.console.templates.swap.stepApprove.replace("{token}", tokenIn) : t.agent.console.templates.swap.generate)
                 }
             </Button>
 

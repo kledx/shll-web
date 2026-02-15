@@ -1,12 +1,6 @@
 import { useBalance, useReadContracts } from "wagmi";
 import { Address, erc20Abi, formatUnits } from "viem";
-
-// Token addresses (BSC Testnet) — must match PolicyGuard config
-const TOKENS = {
-    USDT: "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd",
-    WBNB: "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd",
-
-} as const;
+import { ERC20_TOKENS } from "@/config/tokens";
 
 export interface Asset {
     symbol: string;
@@ -24,7 +18,7 @@ export function useVaultBalances(agentAccount?: Address) {
     });
 
     // 2. ERC20 Balances + Decimals (batch read)
-    const tokenList = Object.entries(TOKENS).map(([symbol, address]) => ({ symbol, address: address as Address }));
+    const tokenList = ERC20_TOKENS.map(t => ({ symbol: t.symbol, address: t.address }));
     const zeroAddr = "0x0000000000000000000000000000000000000000" as Address;
 
     const { data: tokenData, isLoading: isTokensLoading, refetch: refetchTokens } = useReadContracts({

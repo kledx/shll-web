@@ -9,19 +9,17 @@ import Link from "next/link";
 import { Clock, ExternalLink, ArrowDownToLine, Loader2 } from "lucide-react";
 import { useAgentAccount } from "@/hooks/useAgentAccount";
 import { useDeposit } from "@/hooks/useDeposit";
+
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Address } from "viem";
 import { useTranslation } from "@/hooks/useTranslation";
+import { KNOWN_TOKENS } from "@/config/tokens";
 
-// Tokens available for deposit (must match PolicyGuard config)
-const DEPOSIT_TOKENS = [
-    { name: "BNB", symbol: "BNB", address: "", decimals: 18, isNative: true },
-    { name: "USDT", symbol: "USDT", address: "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd", decimals: 18, isNative: false },
-    { name: "WBNB", symbol: "WBNB", address: "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd", decimals: 18, isNative: false },
-];
+// Tokens available for deposit — from centralized config
+const DEPOSIT_TOKENS = KNOWN_TOKENS;
 
 interface RentalCardProps {
     rental: RentalItem;
