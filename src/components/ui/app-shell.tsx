@@ -2,7 +2,7 @@
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Link from "next/link";
-import Image from "next/image"; // Added Import
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -25,67 +25,58 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <div className="min-h-screen flex flex-col font-sans bg-[var(--color-paper)] text-[var(--color-dark-text)]">
-            {/* Header */}
-            <header className="sticky top-0 z-50 w-full border-b border-[var(--color-burgundy)]/10 bg-[var(--color-paper)]/80 backdrop-blur-md">
+        <div className="min-h-screen flex flex-col bg-[var(--color-paper)] text-[var(--color-foreground)]">
+            <header className="sticky top-0 z-50 w-full border-b border-[var(--color-border)] bg-[var(--color-paper)]/88 backdrop-blur-md">
                 <TestnetBanner />
-                <div className="container mx-auto flex h-16 items-center justify-between px-4">
-                    <div className="flex items-center gap-6">
-                        <Link href="/" className="flex items-center gap-2 font-serif text-xl font-bold tracking-tight text-[var(--color-burgundy)]">
+                <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-3 md:h-16 md:flex-row md:items-center md:justify-between md:py-0">
+                    <div className="flex flex-wrap items-center gap-4 md:gap-6">
+                        <Link href="/" className="group flex items-center gap-2 font-serif text-xl font-bold tracking-tight text-[var(--color-primary)]">
                             <Image src="/logo.svg" alt="SHLL Logo" width={32} height={32} className="w-8 h-8" />
-                            <span>SHLL</span>
+                            <span className="transition-transform group-hover:translate-x-0.5">SHLL</span>
                         </Link>
 
-                        <nav className="flex items-center gap-1">
+                        <nav className="flex flex-wrap items-center gap-1 rounded-full border border-[var(--color-border)] bg-white/70 p-1 shadow-[var(--shadow-soft)]">
                             {navItems.map((item) => (
-                                <Link key={item.href} href={item.href}>
-                                    <Button
-                                        variant="ghost"
-                                        className={cn(
-                                            "text-base font-medium",
-                                            pathname === item.href
-                                                ? "bg-[var(--color-burgundy)]/5 text-[var(--color-burgundy)]"
-                                                : "text-muted-foreground"
-                                        )}
-                                    >
-                                        {item.name}
-                                    </Button>
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    className={cn(
+                                        "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+                                        pathname === item.href
+                                            ? "bg-[var(--color-primary)] text-white"
+                                            : "text-[var(--color-muted-foreground)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)]"
+                                    )}
+                                >
+                                    {item.name}
                                 </Link>
                             ))}
                         </nav>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-2 md:gap-3">
                         <a
                             href="https://x.com/shllrun"
                             target="_blank"
                             rel="noopener noreferrer"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-border)] bg-white/80 text-[var(--color-primary)] transition-colors hover:bg-[var(--color-secondary)]"
+                            aria-label="Open SHLL official X"
                         >
-                            <Button
-                                variant="ghost"
-                                className="text-sm font-medium text-[var(--color-burgundy)] hover:bg-[var(--color-burgundy)]/5"
-                                aria-label="Open SHLL official X"
-                            >
-                                <XLogoIcon />
-                            </Button>
+                            <XLogoIcon />
                         </a>
                         <a
                             href="https://github.com/kledx/shll"
                             target="_blank"
                             rel="noopener noreferrer"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-border)] bg-white/80 text-[var(--color-primary)] transition-colors hover:bg-[var(--color-secondary)]"
+                            aria-label="Open SHLL GitHub repository"
                         >
-                            <Button
-                                variant="ghost"
-                                className="text-sm font-medium text-[var(--color-burgundy)] hover:bg-[var(--color-burgundy)]/5"
-                                aria-label="Open SHLL GitHub repository"
-                            >
-                                <GitHubLogoIcon />
-                            </Button>
+                            <GitHubLogoIcon />
                         </a>
                         <Button
                             variant="ghost"
+                            size="sm"
                             onClick={toggleLanguage}
-                            className="text-sm font-medium text-[var(--color-burgundy)] hover:bg-[var(--color-burgundy)]/5"
+                            className="rounded-full border border-[var(--color-border)] bg-white/80 text-[var(--color-primary)] hover:bg-[var(--color-secondary)]"
                         >
                             {language === 'en' ? 'EN' : '中文'}
                         </Button>
@@ -94,14 +85,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </div>
             </header>
 
-            {/* Main Content */}
-            <main className="flex-1 container mx-auto px-4 py-8 max-w-5xl">
+            <main className="mx-auto flex-1 w-full max-w-6xl px-4 py-8 md:py-10">
                 {children}
             </main>
 
-            {/* Footer */}
-            <footer className="border-t border-[var(--color-burgundy)]/10 py-6 text-center text-sm text-muted-foreground">
-                <p>{t.common.footer}</p>
+            <footer className="border-t border-[var(--color-border)] py-6 text-sm text-[var(--color-muted-foreground)]">
+                <div className="mx-auto w-full max-w-6xl px-4 text-center">{t.common.footer}</div>
             </footer>
         </div>
     );

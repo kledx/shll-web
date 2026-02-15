@@ -3,20 +3,17 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const chipVariants = cva(
-    "inline-flex items-center rounded-lg px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+    "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-ring)] focus:ring-offset-2 focus:ring-offset-[var(--color-background)]",
     {
         variants: {
             variant: {
-                default:
-                    "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
-                secondary:
-                    "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-                destructive:
-                    "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-                outline: "text-foreground",
-                sticker: "bg-yellow-100 text-yellow-800 border border-yellow-200 rotate-1 shadow-sm font-serif", // Sticker style
-                burgundy: "bg-[var(--color-burgundy)]/10 text-[var(--color-burgundy)] border border-[var(--color-burgundy)]/20",
-                sky: "bg-[var(--color-sky)]/10 text-[var(--color-sky)] border border-[var(--color-sky)]/20",
+                default: "border-[var(--color-border)] bg-white text-[var(--color-foreground)]",
+                secondary: "border-transparent bg-[var(--color-secondary)] text-[var(--color-secondary-foreground)]",
+                destructive: "border-transparent bg-[var(--color-destructive)]/10 text-[var(--color-destructive)]",
+                outline: "border-[var(--color-border)] bg-transparent text-[var(--color-foreground)]",
+                sticker: "border-[#eacb7d] bg-[#fff7d8] text-[#835f1f] rotate-1 shadow-sm font-serif",
+                burgundy: "border-[var(--color-primary)]/20 bg-[var(--color-primary)]/10 text-[var(--color-primary)]",
+                sky: "border-[var(--color-sky)]/20 bg-[var(--color-accent)] text-[var(--color-sky)]",
             },
         },
         defaultVariants: {

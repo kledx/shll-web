@@ -10,11 +10,11 @@ export default function MePage() {
     return (
         <AppShell>
             <div className="max-w-5xl mx-auto space-y-8">
-                <div>
-                    <h1 className="text-3xl font-serif font-bold text-[var(--color-burgundy)]">
+                <div className="rounded-2xl border border-[var(--color-border)] bg-white/72 p-6 shadow-[var(--shadow-soft)] md:p-8">
+                    <h1 className="page-title">
                         {t.dashboard.page.title}
                     </h1>
-                    <p className="text-muted-foreground mt-2">
+                    <p className="page-subtitle mt-3 text-base md:text-lg">
                         {t.dashboard.page.subtitle}
                     </p>
                 </div>

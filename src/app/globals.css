@@ -1,53 +1,66 @@
 @import "tailwindcss";
 
 @theme {
-  /* Brand palette */
-  --color-paper: #FAFAF9;
-  --color-burgundy: #9F1239;
-  --color-sky: #0EA5E9;
-  --color-dark-text: #0F172A;
+  --color-paper: #f8f4ed;
+  --color-ink: #201a16;
+  --color-dark-text: #201a16;
+  --color-burgundy: #7a1f37;
+  --color-burgundy-strong: #62182c;
+  --color-sky: #0b7cad;
+  --color-gold: #c8983a;
 
-  /* Semantic tokens - registered so bg-*, text-* utilities work in TW v4 */
-  --color-background: #FAFAF9;
-  --color-foreground: #0F172A;
+  --color-background: #f8f4ed;
+  --color-foreground: #201a16;
 
-  --color-card: #FAFAF9;
-  --color-card-foreground: #0F172A;
+  --color-card: #fffdf9;
+  --color-card-foreground: #201a16;
 
-  --color-popover: #FAFAF9;
-  --color-popover-foreground: #0F172A;
+  --color-popover: #fffdf9;
+  --color-popover-foreground: #201a16;
 
-  --color-primary: #9F1239;
-  --color-primary-foreground: #FFFFFF;
+  --color-primary: #7a1f37;
+  --color-primary-foreground: #ffffff;
 
-  --color-secondary: #F5F5F4;
-  --color-secondary-foreground: #0F172A;
+  --color-secondary: #efe7db;
+  --color-secondary-foreground: #201a16;
 
-  --color-muted: #F5F5F4;
-  --color-muted-foreground: #78716c;
+  --color-muted: #f3ece2;
+  --color-muted-foreground: #74685d;
 
-  --color-accent: #F5F5F4;
-  --color-accent-foreground: #9F1239;
+  --color-accent: #e9f3f8;
+  --color-accent-foreground: #0b7cad;
 
-  --color-destructive: #DC2626;
-  --color-destructive-foreground: #FAFAF5;
+  --color-destructive: #be2e2e;
+  --color-destructive-foreground: #fff7f6;
 
-  --color-border: #E7E5E4;
-  --color-input: #E7E5E4;
-  --color-ring: #9F1239;
+  --color-border: #e1d3c0;
+  --color-input: #e1d3c0;
+  --color-ring: #7a1f37;
 
-  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+  --font-sans: "Avenir Next", "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
 }
 
 :root {
-  --radius: 0.5rem;
+  --radius: 0.75rem;
+  --shadow-soft: 0 8px 24px rgba(27, 14, 8, 0.08);
+  --shadow-lift: 0 16px 40px rgba(27, 14, 8, 0.12);
+}
+
+* {
+  border-color: var(--color-border);
 }
 
 body {
-  background: var(--color-background);
+  min-height: 100vh;
+  background-color: var(--color-background);
+  background-image:
+    radial-gradient(circle at 12% 10%, rgba(122, 31, 55, 0.08), transparent 28%),
+    radial-gradient(circle at 90% 4%, rgba(11, 124, 173, 0.1), transparent 22%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.42) 0%, rgba(248, 244, 237, 0.92) 32%, rgba(248, 244, 237, 1) 100%);
   color: var(--color-foreground);
   font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
 }
 
 h1,
@@ -57,4 +70,22 @@ h4,
 h5,
 h6 {
   font-family: var(--font-serif);
+  letter-spacing: -0.01em;
+}
+
+::selection {
+  background: rgba(122, 31, 55, 0.18);
+  color: var(--color-foreground);
+}
+
+.page-title {
+  font-size: clamp(2rem, 3vw, 2.8rem);
+  line-height: 1.1;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.page-subtitle {
+  max-width: 66ch;
+  color: var(--color-muted-foreground);
 }

@@ -3,16 +3,16 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-    "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-burgundy)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+    "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-semibold transition-[background-color,color,border-color,box-shadow,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)] disabled:pointer-events-none disabled:opacity-45",
     {
         variants: {
             variant: {
-                default: "bg-[var(--color-burgundy)] text-white hover:bg-[var(--color-burgundy)]/90",
-                destructive: "bg-red-500 text-white hover:bg-red-500/90",
-                outline: "border border-[var(--color-border)] bg-[var(--color-paper)] hover:bg-[#F5F5F4] hover:text-[var(--color-burgundy)]",
-                secondary: "bg-[var(--color-sky)] text-white hover:bg-[var(--color-sky)]/80",
-                ghost: "hover:bg-[#F5F5F4] hover:text-[var(--color-burgundy)]",
-                link: "text-[var(--color-burgundy)] underline-offset-4 hover:underline",
+                default: "bg-[var(--color-primary)] text-[var(--color-primary-foreground)] shadow-[var(--shadow-soft)] hover:-translate-y-px hover:bg-[var(--color-burgundy-strong)] active:translate-y-0",
+                destructive: "bg-[var(--color-destructive)] text-[var(--color-destructive-foreground)] hover:bg-[#a92828]",
+                outline: "border border-[var(--color-border)] bg-white text-[var(--color-foreground)] hover:border-[var(--color-primary)]/35 hover:text-[var(--color-primary)]",
+                secondary: "bg-[var(--color-sky)] text-white hover:bg-[#086a95]",
+                ghost: "text-[var(--color-muted-foreground)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)]",
+                link: "text-[var(--color-primary)] underline-offset-4 hover:underline",
             },
             size: {
                 default: "h-10 px-4 py-2",

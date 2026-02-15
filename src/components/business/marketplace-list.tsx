@@ -47,12 +47,12 @@ export function MarketplaceList() {
 
     if (isWrongChain) {
         return (
-            <div className="flex flex-col items-center gap-4 p-12 rounded-xl border border-yellow-500/30 bg-yellow-500/5">
-                <AlertTriangle className="w-10 h-10 text-yellow-500" />
-                <p className="text-center text-muted-foreground text-sm max-w-md">
+            <div className="flex flex-col items-center gap-4 rounded-2xl border border-amber-300 bg-amber-50/80 p-12 text-center shadow-[var(--shadow-soft)]">
+                <AlertTriangle className="h-10 w-10 text-amber-600" />
+                <p className="max-w-md text-sm text-amber-900">
                     {t.marketplace.wrongChain}
                 </p>
-                <p className="text-xs text-muted-foreground/60">
+                <p className="text-xs text-amber-700/80">
                     Current: <strong>{chain.name}</strong> → Required: <strong>BSC Testnet</strong>
                 </p>
             </div>
@@ -61,22 +61,22 @@ export function MarketplaceList() {
 
     if (isLoading) {
         return (
-            <div className="flex justify-center p-12">
-                <Loader2 className="w-8 h-8 animate-spin text-[var(--color-burgundy)]" />
+            <div className="flex justify-center rounded-2xl border border-[var(--color-border)] bg-white/70 p-12 shadow-[var(--shadow-soft)]">
+                <Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary)]" />
             </div>
         );
     }
 
     if (!listings || listings.length === 0) {
         return (
-            <div className="text-center p-12 text-muted-foreground">
+            <div className="rounded-2xl border border-[var(--color-border)] bg-white/70 p-12 text-center text-[var(--color-muted-foreground)] shadow-[var(--shadow-soft)]">
                 {t.marketplace.noAgents}
             </div>
         );
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-5">
             <MarketplaceSearch
                 onSearchChange={setSearchQuery}
                 onStatusChange={setStatusFilter}
@@ -84,11 +84,11 @@ export function MarketplaceList() {
             />
 
             {filteredListings.length === 0 ? (
-                <div className="text-center p-12 text-muted-foreground">
+                <div className="rounded-2xl border border-[var(--color-border)] bg-white/70 p-12 text-center text-[var(--color-muted-foreground)] shadow-[var(--shadow-soft)]">
                     {t.marketplace.noResults}
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
                     {filteredListings.map((listing) => (
                         <AgentCard
                             key={`${listing.nfaAddress}-${listing.tokenId}`}

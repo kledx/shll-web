@@ -26,6 +26,7 @@ export function ActionPanel({ nfaAddress, tokenId, isActive, isOwner, isRenter, 
     const { rentAgent, isLoading: isRenting } = useRent();
     const { t } = useTranslation();
     const canRent = isActive && !isOwner && !isRenter;
+    const roleLabel = isOwner ? t.agent.detail.status.owner : "Renter";
 
     const handleRent = async (days: number) => {
         if (!listingId) {
@@ -37,14 +38,14 @@ export function ActionPanel({ nfaAddress, tokenId, isActive, isOwner, isRenter, 
 
     return (
         <Tabs defaultValue="rent" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid h-11 w-full grid-cols-2 rounded-xl border border-[var(--color-border)] bg-white/72 p-1">
                 <TabsTrigger value="rent">{t.agent.detail.tabs.rent}</TabsTrigger>
                 <TabsTrigger value="console" disabled={!isRenter && !isOwner}>
                     {t.agent.detail.tabs.console}
                 </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="rent">
+            <TabsContent value="rent" className="mt-4">
                 {canRent ? (
                     <RentForm
                         pricePerDay={pricePerDay}
@@ -54,10 +55,10 @@ export function ActionPanel({ nfaAddress, tokenId, isActive, isOwner, isRenter, 
                         isRenting={isRenting}
                     />
                 ) : (
-                    <Card className="border-dashed border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/50">
+                    <Card className="border-dashed border-[var(--color-border)] bg-white/70">
                         <CardHeader>
-                            <CardTitle>{t.agent.detail.tabs.rent}</CardTitle>
-                            <CardDescription>
+                            <CardTitle className="text-base text-[var(--color-foreground)]">{t.agent.detail.tabs.rent}</CardTitle>
+                            <CardDescription className="text-[var(--color-muted-foreground)]">
                                 {isRenter
                                     ? "You are the active renter of this agent."
                                     : isOwner
@@ -69,16 +70,16 @@ export function ActionPanel({ nfaAddress, tokenId, isActive, isOwner, isRenter, 
                 )}
             </TabsContent>
 
-            <TabsContent value="console">
-                <Card className="border-dashed border-[var(--color-burgundy)]/20 bg-[var(--color-paper)]/50">
+            <TabsContent value="console" className="mt-4">
+                <Card className="border-dashed border-[var(--color-border)] bg-white/70">
                     <CardHeader>
-                        <CardTitle>{t.agent.console.title}</CardTitle>
-                        <CardDescription>{t.agent.console.desc}</CardDescription>
+                        <CardTitle className="text-base text-[var(--color-foreground)]">{t.agent.console.title}</CardTitle>
+                        <CardDescription className="text-[var(--color-muted-foreground)]">{t.agent.console.desc}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="flex flex-col gap-4">
-                            <p className="text-sm text-muted-foreground">
-                                {t.agent.console.view.replace("{role}", isOwner ? t.agent.detail.status.owner : "Renter")}
+                            <p className="text-sm text-[var(--color-muted-foreground)]">
+                                {t.agent.console.view.replace("{role}", roleLabel)}
                             </p>
                             <Link href={`/agent/${nfaAddress}/${tokenId}/console`}>
                                 <Button className="w-full gap-2">

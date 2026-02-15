@@ -10,15 +10,15 @@ export default function Home() {
 
   return (
     <AppShell>
-      <div className="space-y-6">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-serif font-bold text-[var(--color-burgundy)]">
+      <div className="space-y-8">
+        <section className="rounded-2xl border border-[var(--color-border)] bg-white/72 p-6 shadow-[var(--shadow-soft)] md:p-8">
+          <h1 className="page-title">
             {t.marketplace.title}
           </h1>
-          <p className="text-muted-foreground">
+          <p className="page-subtitle mt-3 text-base md:text-lg">
             {t.marketplace.subtitle}
           </p>
-        </div>
+        </section>
 
         <MarketplaceList />
       </div>

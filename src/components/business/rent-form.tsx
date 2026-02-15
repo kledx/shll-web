@@ -40,7 +40,7 @@ export function RentForm({ pricePerDay, minDays, paymentToken, onRent, isRenting
     const totalCost = (price * days).toFixed(4);
 
     return (
-        <Card className="border-[var(--color-burgundy)]/10">
+        <Card className="border-[var(--color-border)] bg-white/72">
             <CardHeader>
                 <CardTitle>{t.agent.rent.title}</CardTitle>
                 <CardDescription>{t.agent.rent.minLease.replace("{days}", minDays.toString())}</CardDescription>
@@ -61,11 +61,11 @@ export function RentForm({ pricePerDay, minDays, paymentToken, onRent, isRenting
                         </Button>
                         <Input
                             type="number"
-                            className="flex-1 text-center font-mono text-lg h-auto py-2"
+                            className="h-11 flex-1 text-center font-mono text-lg"
                             value={days}
                             onChange={(e) => {
                                 const val = parseInt(e.target.value);
-                                if (!isNaN(val)) setDays(val);
+                                if (!isNaN(val)) setDays(Math.max(minDays, val));
                             }}
                             min={minDays}
                         />
@@ -80,9 +80,9 @@ export function RentForm({ pricePerDay, minDays, paymentToken, onRent, isRenting
                 </div>
 
                 {/* Cost Summary */}
-                <div className="p-3 bg-[var(--color-paper)]/50 rounded-lg flex justify-between items-center text-sm border">
-                    <span className="text-muted-foreground">{t.agent.rent.totalCost}:</span>
-                    <span className="font-bold text-[var(--color-burgundy)]">
+                <div className="flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]/35 p-3 text-sm">
+                    <span className="text-[var(--color-muted-foreground)]">{t.agent.rent.totalCost}:</span>
+                    <span className="font-bold text-[var(--color-primary)]">
                         {totalCost} {paymentToken}
                     </span>
                 </div>
@@ -102,7 +102,7 @@ export function RentForm({ pricePerDay, minDays, paymentToken, onRent, isRenting
                         </Button>
                     ) : (
                         <Button
-                            className="w-full bg-[var(--color-burgundy)] hover:bg-[var(--color-burgundy)]/90"
+                            className="w-full"
                             onClick={handleRent}
                             disabled={isRenting}
                         >
