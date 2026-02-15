@@ -17,6 +17,7 @@ const LISTINGS_QUERY = `
         expires
         agentName
         owner
+        isTemplate
       }
     }
   }
@@ -32,6 +33,7 @@ interface IndexerListingItem {
   expires: string | number;
   agentName: string;
   owner: string;
+  isTemplate: boolean;
 }
 
 interface MetadataResult {
@@ -80,19 +82,6 @@ export function useListings() {
     query: { enabled: (data || []).length > 0 },
   });
 
-  // On-chain isTemplate check for V1.3 Rent-to-Mint
-  const templateContracts = (data || []).map((item) => ({
-    address: item.nfa as Address,
-    abi: CONTRACTS.AgentNFA.abi,
-    functionName: "isTemplate" as const,
-    args: [BigInt(item.tokenId)] as const,
-  }));
-
-  const { data: templateResults } = useReadContracts({
-    contracts: templateContracts,
-    query: { enabled: (data || []).length > 0 },
-  });
-
   const listings: AgentListing[] = (data || []).map((item, index) => {
     const indexerRenter = item.renter as Address;
     const chainRenterResult = renterResults?.[index];
@@ -104,13 +93,8 @@ export function useListings() {
     const effectiveRenter = chainRenter ?? indexerRenter;
     const isRented = Boolean(effectiveRenter && effectiveRenter !== zeroAddress);
 
-    // Resolve isTemplate from on-chain (fallback false)
-    const templateResult = templateResults?.[index];
-    const isTemplate =
-      templateResult?.status === "success" &&
-        typeof templateResult.result === "boolean"
-        ? templateResult.result
-        : false;
+    // Use Indexer isTemplate directly (reliable)
+    const isTemplate = item.isTemplate;
 
     // Try to parse real name from on-chain persona JSON
     let agentName = item.agentName;
