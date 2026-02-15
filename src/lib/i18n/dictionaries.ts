@@ -34,8 +34,8 @@ export const en = {
             day: "/ day",
             swapPack: "Swap Pack",
             repayPack: "Repay Pack",
-            template: "Template",
-            mintInstance: "Mint Instance",
+            template: "Multi-tenant Agent",
+            mintInstance: "Rent Agent",
         },
         detail: {
             tabs: {
@@ -48,6 +48,7 @@ export const en = {
                 active: "Active",
                 inactive: "Inactive",
                 minLease: "Min Lease: {days} days",
+                notListed: "Not Listed",
                 policyActive: "Policy Active",
                 owner: "Owner",
             },
@@ -62,6 +63,18 @@ export const en = {
             connect: "Connect Wallet to Rent",
             approve: "Approve {token}",
             confirm: "Confirm Rental",
+            toasts: {
+                walletNotConnected: "Wallet not connected",
+                rentToMintSubmitted: "Rent-to-Mint transaction submitted",
+                rentToMintFailed: "Rent-to-Mint transaction failed",
+                rentToMintSimulationFailed: "Rent-to-Mint simulation failed",
+                instanceMintedSuccess: "Instance minted! You are now the owner & renter.",
+                insufficientBalanceTitle: "Insufficient BNB balance",
+                insufficientBalancePrecheck:
+                    "Rent requires at least {rentBnb} BNB, plus gas. Current balance: {balanceBnb} BNB.",
+                insufficientBalanceSimulation:
+                    "This rent needs {rentBnb} BNB for value, plus gas. Please fund your testnet BNB balance and try again.",
+            },
         },
         vault: {
             title: "Vault Balance",
@@ -164,17 +177,19 @@ export const en = {
     dashboard: {
         page: {
             title: "My Dashboard",
-            subtitle: "Manage your rented agents and view your history.",
+            subtitle: "Manage your owned agents and rent-to-mint assets.",
         },
         tabs: {
             owned: "My Agents",
+            instances: "Rented Agents",
             active: "Active Rentals",
-            history: "History",
+            history: "Instance History",
         },
         empty: {
             owned: "You don't own any agents yet.",
+            instances: "You don't have any rented agents yet.",
             active: "No active rentals found.",
-            history: "No expired rentals found.",
+            history: "No expired instances found.",
         },
         card: {
             agentLabel: "Agent",
@@ -580,8 +595,8 @@ export const zh: Dictionary = {
             day: "/ 天",
             swapPack: "交易包",
             repayPack: "还款包",
-            template: "模板",
-            mintInstance: "铸造实例",
+            template: "\u591a\u79df\u6237Agent",
+            mintInstance: "\u79df\u7528Agent",
         },
         detail: {
             tabs: {
@@ -594,6 +609,7 @@ export const zh: Dictionary = {
                 active: "活跃",
                 inactive: "非活跃",
                 minLease: "最少租期: {days} 天",
+                notListed: "未上架",
                 policyActive: "风控运行中",
                 owner: "所有者",
             },
@@ -608,6 +624,18 @@ export const zh: Dictionary = {
             connect: "连接钱包以租赁",
             approve: "授权 {token}",
             confirm: "确认租赁",
+            toasts: {
+                walletNotConnected: "钱包未连接",
+                rentToMintSubmitted: "租用铸造交易已提交",
+                rentToMintFailed: "租用铸造交易失败",
+                rentToMintSimulationFailed: "租用铸造模拟失败",
+                instanceMintedSuccess: "实例铸造成功，你现在是该实例的所有者与租户。",
+                insufficientBalanceTitle: "BNB 余额不足",
+                insufficientBalancePrecheck:
+                    "租金至少需要 {rentBnb} BNB，且还需预留 Gas。当前余额 {balanceBnb} BNB。",
+                insufficientBalanceSimulation:
+                    "本次租赁需要支付 {rentBnb} BNB 租金，并额外支付 Gas。请先充值测试网 BNB 后重试。",
+            },
         },
         vault: {
             title: "金库余额",
@@ -710,17 +738,19 @@ export const zh: Dictionary = {
     dashboard: {
         page: {
             title: "\u6211\u7684\u63a7\u5236\u53f0",
-            subtitle: "\u7ba1\u7406\u4f60\u79df\u7528\u7684 Agent \u5e76\u67e5\u770b\u5386\u53f2\u8bb0\u5f55\u3002",
+            subtitle: "\u7ba1\u7406\u4f60\u62e5\u6709\u7684 Agent \u4e0e\u300c\u79df\u7528\u540e\u94f8\u9020\u300d\u8d44\u4ea7\u3002",
         },
         tabs: {
             owned: "\u6211\u7684 Agent",
+            instances: "\u79df\u7528Agent",
             active: "\u5f53\u524d\u79df\u7528",
-            history: "\u5386\u53f2\u8bb0\u5f55",
+            history: "\u5b9e\u4f8b\u5386\u53f2",
         },
         empty: {
             owned: "\u4f60\u8fd8\u6ca1\u6709\u62e5\u6709\u4efb\u4f55 Agent\u3002",
+            instances: "\u4f60\u8fd8\u6ca1\u6709\u4efb\u4f55\u79df\u7528Agent\u3002",
             active: "\u6682\u65e0\u8fdb\u884c\u4e2d\u7684\u79df\u7528\u3002",
-            history: "\u6682\u65e0\u5df2\u8fc7\u671f\u7684\u79df\u7528\u8bb0\u5f55\u3002",
+            history: "\u6682\u65e0\u5df2\u8fc7\u671f\u7684\u5b9e\u4f8b\u8bb0\u5f55\u3002",
         },
         card: {
             agentLabel: "Agent",

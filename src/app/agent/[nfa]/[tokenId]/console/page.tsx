@@ -237,9 +237,10 @@ export default function ConsolePage() {
                 : "Chain ID mismatch. Ensure frontend, runner, and wallet are on the same network.";
         }
         if (lower.includes("nfaaddress mismatch")) {
+            const expected = raw.match(/expected\s+(0x[a-fA-F0-9]{40})/)?.[1];
             return language === "zh"
-                ? "AgentNFA 地址不匹配，请检查前端与 Runner 合约配置。"
-                : "AgentNFA address mismatch. Check frontend and runner contract configuration.";
+                ? `AgentNFA 地址不匹配。Runner 期望 ${expected || "未知地址"}，当前页面为 ${nfaAddress}。`
+                : `AgentNFA address mismatch. Runner expects ${expected || "unknown address"}, current page uses ${nfaAddress}.`;
         }
         return raw.slice(0, 160);
     };

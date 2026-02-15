@@ -18,6 +18,22 @@ export interface AgentMetadata {
     vaultHash: `0x${string}`;
 }
 
+const ZERO_HASH = "0x0000000000000000000000000000000000000000000000000000000000000000" as const;
+
+function pickText(primary: string | undefined, fallback: string | undefined): string {
+    const a = (primary || "").trim();
+    if (a) return a;
+    return (fallback || "").trim();
+}
+
+function pickVaultHash(primary: `0x${string}` | undefined, fallback: `0x${string}` | undefined): `0x${string}` {
+    const a = (primary || "").trim().toLowerCase() as `0x${string}`;
+    if (a && a !== ZERO_HASH) return a;
+    const b = (fallback || "").trim().toLowerCase() as `0x${string}`;
+    if (b) return b;
+    return a || ZERO_HASH;
+}
+
 /**
  * Capability Pack Manifest structure
  */
@@ -133,18 +149,76 @@ export function useCapabilityPack(tokenId: bigint | undefined, nfaAddress?: stri
         error: Error | null;
     };
 
+    // 1.1 If this token is an instance, resolve templateId for metadata fallback.
+    const {
+        data: templateId,
+        isLoading: isTemplateIdLoading,
+        error: templateIdError,
+    } = useReadContract({
+        address: resolvedNfaAddress,
+        abi: nfaAbi,
+        functionName: "templateOf",
+        args: tokenId !== undefined ? [tokenId] : undefined,
+        query: {
+            enabled: tokenId !== undefined,
+            staleTime: 30_000,
+        },
+    }) as {
+        data: bigint | undefined;
+        isLoading: boolean;
+        error: Error | null;
+    };
+
+    const templateTokenId = useMemo(() => {
+        if (typeof templateId === "bigint" && templateId > BigInt(0)) return templateId;
+        return undefined;
+    }, [templateId]);
+
+    const {
+        data: templateMetadata,
+        isLoading: isTemplateMetadataLoading,
+        error: templateMetadataError,
+    } = useReadContract({
+        address: resolvedNfaAddress,
+        abi: nfaAbi,
+        functionName: "getAgentMetadata",
+        args: templateTokenId !== undefined ? [templateTokenId] : undefined,
+        query: {
+            enabled: templateTokenId !== undefined,
+            staleTime: 30_000,
+        },
+    }) as {
+        data: AgentMetadata | undefined;
+        isLoading: boolean;
+        error: Error | null;
+    };
+
+    const resolvedMetadata = useMemo<AgentMetadata | undefined>(() => {
+        if (!metadata && !templateMetadata) return undefined;
+        const primary = metadata;
+        const fallback = templateMetadata;
+        return {
+            persona: pickText(primary?.persona, fallback?.persona),
+            experience: pickText(primary?.experience, fallback?.experience),
+            voiceHash: pickText(primary?.voiceHash, fallback?.voiceHash),
+            animationURI: pickText(primary?.animationURI, fallback?.animationURI),
+            vaultURI: pickText(primary?.vaultURI, fallback?.vaultURI),
+            vaultHash: pickVaultHash(primary?.vaultHash, fallback?.vaultHash),
+        };
+    }, [metadata, templateMetadata]);
+
     // 2. Fetch capability pack manifest from vaultURI
     const {
         data: manifest,
         isLoading: isManifestLoading,
         error: manifestError,
     } = useQuery<CapabilityPack | null>({
-        queryKey: ["capabilityPack", metadata?.vaultURI, metadata?.vaultHash],
+        queryKey: ["capabilityPack", resolvedMetadata?.vaultURI, resolvedMetadata?.vaultHash],
         queryFn: async () => {
-            if (!metadata?.vaultURI) return null;
+            if (!resolvedMetadata?.vaultURI) return null;
 
             try {
-                const proxyUrl = `/api/capability-pack?uri=${encodeURIComponent(metadata.vaultURI)}&hash=${encodeURIComponent(metadata.vaultHash || "")}`;
+                const proxyUrl = `/api/capability-pack?uri=${encodeURIComponent(resolvedMetadata.vaultURI)}&hash=${encodeURIComponent(resolvedMetadata.vaultHash || "")}`;
                 const response = await fetch(proxyUrl, { cache: "no-store" });
 
                 if (!response.ok) {
@@ -173,22 +247,22 @@ export function useCapabilityPack(tokenId: bigint | undefined, nfaAddress?: stri
                 throw error;
             }
         },
-        enabled: !!metadata?.vaultURI,
+        enabled: !!resolvedMetadata?.vaultURI,
         staleTime: 5 * 60_000, // Cache for 5 minutes
         retry: 2,
     });
 
     // 3. Verify hash integrity
     const isHashValid = useMemo(() => {
-        if (!manifest || !metadata?.vaultHash) return null;
+        if (!manifest || !resolvedMetadata?.vaultHash) return null;
 
         // Empty hash means no verification required
-        if (metadata.vaultHash === "0x0000000000000000000000000000000000000000000000000000000000000000") {
+        if (resolvedMetadata.vaultHash === ZERO_HASH) {
             return true;
         }
 
-        return verifyPackHash(manifest, metadata.vaultHash);
-    }, [manifest, metadata?.vaultHash]);
+        return verifyPackHash(manifest, resolvedMetadata.vaultHash);
+    }, [manifest, resolvedMetadata?.vaultHash]);
 
     // 4. Parse capabilities from manifest
     const capabilities = useMemo(() => {
@@ -212,9 +286,9 @@ export function useCapabilityPack(tokenId: bigint | undefined, nfaAddress?: stri
 
     return {
         // Metadata
-        metadata,
-        isMetadataLoading,
-        metadataError,
+        metadata: resolvedMetadata,
+        isMetadataLoading: isMetadataLoading || isTemplateIdLoading || isTemplateMetadataLoading,
+        metadataError: metadataError || templateIdError || templateMetadataError,
 
         // Manifest
         manifest,
@@ -223,14 +297,14 @@ export function useCapabilityPack(tokenId: bigint | undefined, nfaAddress?: stri
 
         // Validation
         isHashValid,
-        hasCapabilityPack: !!metadata?.vaultURI,
+        hasCapabilityPack: !!resolvedMetadata?.vaultURI,
 
         // Capabilities
         capabilities,
 
         // Loading states
-        isLoading: isMetadataLoading || isManifestLoading,
-        error: metadataError || manifestError,
+        isLoading: isMetadataLoading || isTemplateIdLoading || isTemplateMetadataLoading || isManifestLoading,
+        error: metadataError || templateIdError || templateMetadataError || manifestError,
     };
 }
 

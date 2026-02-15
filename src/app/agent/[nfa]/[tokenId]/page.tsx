@@ -65,6 +65,13 @@ export default function AgentDetailPage() {
 
     const isOwner = address?.toLowerCase() === agent.owner.toLowerCase();
     const isRenter = address?.toLowerCase() === agent.renter.toLowerCase();
+    const isValidOwner = /^0x[a-fA-F0-9]{40}$/.test(agent.owner);
+    const ownerDisplay = isValidOwner
+        ? `${agent.owner.slice(0, 6)}...${agent.owner.slice(-4)}`
+        : "-";
+    const minLeaseDisplay = agent.isListed
+        ? t.agent.detail.status.minLease.replace("{days}", agent.minDays.toString())
+        : t.agent.detail.status.notListed;
 
     return (
         <AppShell>
@@ -103,14 +110,14 @@ export default function AgentDetailPage() {
                                     {t.agent.detail.status.owner}
                                 </div>
                                 <div className="flex items-center font-mono text-xs text-[var(--color-foreground)]">
-                                    {agent.owner.slice(0, 6)}...{agent.owner.slice(-4)}
-                                    <CopyButton text={agent.owner} />
+                                    {ownerDisplay}
+                                    {isValidOwner && <CopyButton text={agent.owner} />}
                                 </div>
                             </div>
                             <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)]/40 p-3 text-[var(--color-muted-foreground)]">
                                 <div className="mb-1 flex items-center gap-1 text-xs uppercase tracking-wide">
                                     <Clock className="h-4 w-4" />
-                                    {t.agent.detail.status.minLease.replace("{days}", agent.minDays.toString())}
+                                    {minLeaseDisplay}
                                 </div>
                             </div>
                             <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)]/40 p-3 text-[var(--color-muted-foreground)]">
@@ -159,6 +166,8 @@ export default function AgentDetailPage() {
                         nfaAddress={nfaAddress}
                         tokenId={tokenId}
                         isActive={agent.status === "active"}
+                        isListed={agent.isListed}
+                        isTemplateListing={agent.isTemplateListing}
                         isOwner={isOwner}
                         isRenter={isRenter}
                         pricePerDay={agent.pricePerDay.split(" ")[0]}

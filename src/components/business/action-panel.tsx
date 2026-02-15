@@ -7,13 +7,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
 import Link from "next/link";
-import { useRent } from "@/hooks/useRent";
+import { useRentToMint } from "@/hooks/useRentToMint";
 import { Hex } from "viem";
 
 interface ActionPanelProps {
     nfaAddress: string;
     tokenId: string;
     isActive: boolean;
+    isListed: boolean;
+    isTemplateListing: boolean;
     isOwner: boolean;
     isRenter: boolean;
     pricePerDay: string;
@@ -22,10 +24,10 @@ interface ActionPanelProps {
     listingId: string;
 }
 
-export function ActionPanel({ nfaAddress, tokenId, isActive, isOwner, isRenter, pricePerDay, pricePerDayRaw, minDays, listingId }: ActionPanelProps) {
-    const { rentAgent, isLoading: isRenting } = useRent();
+export function ActionPanel({ nfaAddress, tokenId, isActive, isListed, isTemplateListing, isOwner, isRenter, pricePerDay, pricePerDayRaw, minDays, listingId }: ActionPanelProps) {
+    const { rentToMintAgent, isLoading: isRenting } = useRentToMint();
     const { t } = useTranslation();
-    const canRent = isActive && !isOwner && !isRenter;
+    const canRent = isActive && isListed && isTemplateListing && !isOwner && !isRenter;
     const roleLabel = isOwner ? t.agent.detail.status.owner : "Renter";
 
     const handleRent = async (days: number) => {
@@ -33,7 +35,8 @@ export function ActionPanel({ nfaAddress, tokenId, isActive, isOwner, isRenter, 
             console.error("No listing ID found");
             return;
         }
-        await rentAgent(listingId as Hex, days, pricePerDayRaw);
+        // initParams must be non-empty for rentToMint.
+        await rentToMintAgent(listingId as Hex, days, pricePerDayRaw, "0x01");
     };
 
     return (
@@ -63,7 +66,11 @@ export function ActionPanel({ nfaAddress, tokenId, isActive, isOwner, isRenter, 
                                     ? "You are the active renter of this agent."
                                     : isOwner
                                         ? "Owner wallet cannot rent this agent."
-                                        : "This listing is not currently rentable."}
+                                        : !isTemplateListing
+                                            ? "Classic rental is deprecated. Only multi-tenant template listings are supported."
+                                        : isListed
+                                            ? "This listing is not currently rentable."
+                                            : "This agent is not listed for rent."}
                             </CardDescription>
                         </CardHeader>
                     </Card>

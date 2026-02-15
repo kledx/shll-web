@@ -1788,6 +1788,11 @@ export const CONTRACTS = {
             "name": "active",
             "type": "bool",
             "internalType": "bool"
+          },
+          {
+            "name": "isTemplate",
+            "type": "bool",
+            "internalType": "bool"
           }
         ],
         "stateMutability": "view"

@@ -16,6 +16,7 @@ export interface AgentData {
     expires: number;
     listingId: string;
     isListed: boolean;
+    isTemplateListing: boolean;
     policy: {
         maxDeadlineWindow: number;
         maxPathLength: number;
@@ -68,6 +69,55 @@ interface ParsedPersona {
     name?: string;
     description?: string;
     role?: string;
+}
+
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as Address;
+const ZERO_LISTING_ID = "0x0000000000000000000000000000000000000000000000000000000000000000" as const;
+const ZERO_HASH = "0x0000000000000000000000000000000000000000000000000000000000000000";
+
+type ContractRead = {
+    status?: "success" | "failure";
+    result?: unknown;
+};
+
+function isReadSuccess<T>(read: ContractRead | undefined): read is ContractRead & { status: "success"; result: T } {
+    return read?.status === "success";
+}
+
+function getTupleField(tuple: unknown, key: string, index: number): unknown {
+    if (!tuple || (typeof tuple !== "object" && !Array.isArray(tuple))) return undefined;
+    const keyed = (tuple as Record<string, unknown>)[key];
+    if (keyed !== undefined) return keyed;
+    if (Array.isArray(tuple)) return tuple[index];
+    return undefined;
+}
+
+function toBigIntOrZero(value: unknown): bigint {
+    if (typeof value === "bigint") return value;
+    if (typeof value === "number" && Number.isFinite(value) && value >= 0) return BigInt(Math.trunc(value));
+    if (typeof value === "string" && /^\d+$/.test(value)) return BigInt(value);
+    return BigInt(0);
+}
+
+function toNumberOrZero(value: unknown): number {
+    if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+    if (typeof value === "bigint") return Number(value);
+    return 0;
+}
+
+function pickText(primary: unknown, fallback: unknown): string {
+    const a = typeof primary === "string" ? primary.trim() : "";
+    if (a) return a;
+    const b = typeof fallback === "string" ? fallback.trim() : "";
+    return b;
+}
+
+function pickVaultHash(primary: unknown, fallback: unknown): string {
+    const a = typeof primary === "string" ? primary.trim() : "";
+    if (a && a.toLowerCase() !== ZERO_HASH) return a;
+    const b = typeof fallback === "string" ? fallback.trim() : "";
+    if (b) return b;
+    return a;
 }
 
 export function useAgent(tokenId: string, nfaAddressInput?: string) {
@@ -160,23 +210,54 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
                 functionName: "limits",
                 args: [KEY_MAX_REPAY],
             },
+            // 11: templateOf (for instance metadata fallback)
+            {
+                address: nfaAddress,
+                abi: CONTRACTS.AgentNFA.abi,
+                functionName: "templateOf",
+                args: [tokenIdBigInt],
+            },
         ],
         query: {
             enabled: canQuery,
         }
     });
 
+    const templateIdResult = reads?.[11] as ContractRead | undefined;
+    const templateId =
+        isReadSuccess<bigint>(templateIdResult) &&
+            typeof templateIdResult.result === "bigint" &&
+            templateIdResult.result > BigInt(0)
+            ? templateIdResult.result
+            : undefined;
+
+    const { data: templateMetadataData } = useReadContracts({
+        contracts: [{
+            address: nfaAddress,
+            abi: CONTRACTS.AgentNFA.abi,
+            functionName: "getAgentMetadata",
+            args: [templateId ?? BigInt(0)],
+        }],
+        query: {
+            enabled: templateId !== undefined,
+        }
+    });
+
     // Special handling for Listing (need listingId first)
-    const listingId = reads?.[5]?.result as `0x${string}`;
+    const listingIdResult = reads?.[5] as ContractRead | undefined;
+    const listingId = isReadSuccess<`0x${string}`>(listingIdResult) && typeof listingIdResult.result === "string"
+        ? listingIdResult.result
+        : undefined;
+
     const { data: listingData } = useReadContracts({
         contracts: [{
             address: listingManagerAddress,
             abi: CONTRACTS.ListingManager.abi,
             functionName: "listings",
-            args: [listingId || "0x0000000000000000000000000000000000000000000000000000000000000000"],
+            args: [listingId || ZERO_LISTING_ID],
         }],
         query: {
-            enabled: !!listingId && listingId !== "0x0000000000000000000000000000000000000000000000000000000000000000"
+            enabled: !!listingId && listingId !== ZERO_LISTING_ID
         }
     });
 
@@ -204,34 +285,74 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
         };
     }
 
-    const owner = reads[0].result as Address;
-    const user = reads[1].result as Address;
-    const userExpires = reads[2].result as bigint;
-    const metadata = (reads[3].result as MetadataStruct | undefined) ?? {};
-    const state = (reads[4].result as StateStruct | undefined) ?? {};
+    const ownerResult = reads[0] as ContractRead | undefined;
+    if (!isReadSuccess<Address>(ownerResult) || typeof ownerResult.result !== "string" || !/^0x[a-fA-F0-9]{40}$/.test(ownerResult.result)) {
+        return {
+            data: null,
+            isLoading: false,
+            error: new Error("Failed to read token owner"),
+        };
+    }
+    const owner = ownerResult.result as Address;
+
+    const userResult = reads[1] as ContractRead | undefined;
+    const expiresResult = reads[2] as ContractRead | undefined;
+    const metadataResult = reads[3] as ContractRead | undefined;
+    const stateResult = reads[4] as ContractRead | undefined;
+
+    const user =
+        isReadSuccess<Address>(userResult) && typeof userResult.result === "string"
+            ? (userResult.result as Address)
+            : ZERO_ADDRESS;
+    const userExpires = toBigIntOrZero(isReadSuccess(expiresResult) ? expiresResult.result : undefined);
+    const metadata =
+        isReadSuccess<MetadataStruct>(metadataResult) && typeof metadataResult.result === "object" && metadataResult.result
+            ? (metadataResult.result as MetadataStruct)
+            : {};
+    const templateMetadataResult = templateMetadataData?.[0] as ContractRead | undefined;
+    const templateMetadata =
+        isReadSuccess<MetadataStruct>(templateMetadataResult) &&
+            typeof templateMetadataResult.result === "object" &&
+            templateMetadataResult.result
+            ? (templateMetadataResult.result as MetadataStruct)
+            : {};
+    const resolvedMetadata: MetadataStruct = {
+        persona: pickText(metadata?.persona, templateMetadata?.persona),
+        experience: pickText(metadata?.experience, templateMetadata?.experience),
+        voiceHash: pickText(metadata?.voiceHash, templateMetadata?.voiceHash),
+        animationURI: pickText(metadata?.animationURI, templateMetadata?.animationURI),
+        vaultURI: pickText(metadata?.vaultURI, templateMetadata?.vaultURI),
+        vaultHash: pickVaultHash(metadata?.vaultHash, templateMetadata?.vaultHash),
+    };
+    const state =
+        isReadSuccess<StateStruct>(stateResult) && typeof stateResult.result === "object" && stateResult.result
+            ? (stateResult.result as StateStruct)
+            : {};
 
     // Listing Read
-    const listing = listingData?.[0]?.result as readonly unknown[] | undefined;
-    const listingActive = Boolean(listing?.[5]);
-    const listingPricePerDay = typeof listing?.[3] === "bigint" ? listing[3] : BigInt(0);
-    const listingMinDays = typeof listing?.[4] === "bigint" ? Number(listing[4]) : 0;
+    const listingResult = listingData?.[0] as ContractRead | undefined;
+    const listing = isReadSuccess(listingResult) ? listingResult.result : undefined;
+    const listingActive = Boolean(getTupleField(listing, "active", 5));
+    const listingPricePerDay = toBigIntOrZero(getTupleField(listing, "pricePerDay", 3));
+    const listingMinDays = toNumberOrZero(getTupleField(listing, "minDays", 4));
+    const listingIsTemplate = Boolean(getTupleField(listing, "isTemplate", 6));
 
     // Policy Limits
-    const maxDeadline = reads[6].result as bigint;
-    const maxPath = reads[7].result as bigint;
-    const maxSwap = reads[8].result as bigint;
-    const maxApprove = reads[9].result as bigint;
-    const maxRepay = reads[10].result as bigint;
+    const maxDeadline = toBigIntOrZero((reads[6] as ContractRead | undefined)?.result);
+    const maxPath = toBigIntOrZero((reads[7] as ContractRead | undefined)?.result);
+    const maxSwap = toBigIntOrZero((reads[8] as ContractRead | undefined)?.result);
+    const maxApprove = toBigIntOrZero((reads[9] as ContractRead | undefined)?.result);
+    const maxRepay = toBigIntOrZero((reads[10] as ContractRead | undefined)?.result);
 
     // Parse Metadata JSON
     const fallbackName = `Agent #${tokenId}`;
     let parsedPersona = {
         name: fallbackName,
-        description: metadata?.experience || "No metadata",
+        description: resolvedMetadata?.experience?.trim() || "",
         role: "Agent"
     };
     try {
-        const rawPersona = metadata?.persona?.trim();
+        const rawPersona = resolvedMetadata?.persona?.trim();
         if (rawPersona) {
             const parsed = JSON.parse(rawPersona) as ParsedPersona | string;
             if (typeof parsed === "string") {
@@ -245,19 +366,19 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
             }
         }
     } catch (e) {
-        if (metadata?.persona?.trim()) {
-            parsedPersona.name = metadata.persona.trim();
+        if (resolvedMetadata?.persona?.trim()) {
+            parsedPersona.name = resolvedMetadata.persona.trim();
         }
         console.warn("Failed to parse persona JSON", e);
     }
 
     // Determine status
     // BAP-578 Status: 0=Active, 1=Paused, 2=Terminated
-    const bapStatus = state?.status || 0;
+    const bapStatus = toNumberOrZero(state?.status);
     let uiStatus: AgentData["status"] = "active";
     if (bapStatus === 1) uiStatus = "paused";
     if (bapStatus === 2) uiStatus = "terminated";
-    if (uiStatus === "active" && user && user !== "0x0000000000000000000000000000000000000000") {
+    if (uiStatus === "active" && user !== ZERO_ADDRESS) {
         uiStatus = "rented";
     }
 
@@ -268,14 +389,15 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
         owner: owner || "",
         name: parsedPersona.name,
         description: parsedPersona.description,
-        pricePerDay: listingActive ? formatEther(listingPricePerDay) + " BNB" : "Not Listed",
+        pricePerDay: listingActive ? formatEther(listingPricePerDay) + " BNB" : "-",
         pricePerDayRaw: listingPricePerDay,
         minDays: listingActive ? listingMinDays : 0,
         status: uiStatus,
-        renter: user || "0x0000000000000000000000000000000000000000",
+        renter: user || ZERO_ADDRESS,
         expires: Number(userExpires || 0),
         listingId: listingId || "",
         isListed: listingActive,
+        isTemplateListing: listingIsTemplate,
         policy: {
             maxDeadlineWindow: Number(maxDeadline || 0),
             maxPathLength: Number(maxPath || 0),
@@ -286,12 +408,12 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
             allowedSpenders: [] // Global
         },
         metadata: {
-            persona: metadata?.persona || "",
-            experience: metadata?.experience || "",
-            voiceHash: metadata?.voiceHash || "",
-            animationURI: metadata?.animationURI || "",
-            vaultURI: metadata?.vaultURI || "",
-            vaultHash: metadata?.vaultHash || "",
+            persona: resolvedMetadata?.persona || "",
+            experience: resolvedMetadata?.experience || "",
+            voiceHash: resolvedMetadata?.voiceHash || "",
+            animationURI: resolvedMetadata?.animationURI || "",
+            vaultURI: resolvedMetadata?.vaultURI || "",
+            vaultHash: resolvedMetadata?.vaultHash || "",
         },
         state: {
             balance: state?.balance ? formatEther(state.balance) : "0",

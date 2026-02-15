@@ -34,6 +34,18 @@ export interface AgentListing {
 
 export function AgentCard({ listing }: { listing: AgentListing }) {
     const { t } = useTranslation();
+    const isValidOwner = /^0x[a-fA-F0-9]{40}$/.test(listing.owner);
+    const ownerDisplay = isValidOwner
+        ? `by ${listing.owner.slice(0, 6)}...${listing.owner.slice(-4)}`
+        : "by -";
+    const isValidDetailRoute = /^0x[a-fA-F0-9]{40}$/.test(listing.nfaAddress)
+        && listing.nfaAddress !== "0x0000000000000000000000000000000000000000"
+        && /^\d+$/.test(listing.tokenId);
+    const ctaLabel = listing.isTemplate
+        ? (t.agent.card.mintInstance ?? "Mint Instance")
+        : listing.rented
+            ? t.agent.card.viewDetails
+            : t.agent.card.rentNow;
 
     return (
         <Card className={`group relative overflow-hidden border-[var(--color-border)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lift)] ${listing.rented && !listing.isTemplate ? "opacity-80" : ""}`}>
@@ -66,7 +78,7 @@ export function AgentCard({ listing }: { listing: AgentListing }) {
                     {listing.metadata?.name || `Agent ${listing.tokenId}`}
                 </CardTitle>
                 <CardDescription className="truncate font-mono text-xs">
-                    by {listing.owner.slice(0, 6)}...{listing.owner.slice(-4)}
+                    {ownerDisplay}
                 </CardDescription>
             </CardHeader>
 
@@ -92,19 +104,20 @@ export function AgentCard({ listing }: { listing: AgentListing }) {
             </CardContent>
 
             <CardFooter>
-                <Link href={`/agent/${listing.nfaAddress}/${listing.tokenId}`} className="w-full">
-                    <Button
-                        className="w-full justify-between"
-                        variant={listing.rented && !listing.isTemplate ? "outline" : "default"}
-                    >
-                        {listing.isTemplate
-                            ? (t.agent.card.mintInstance ?? "Mint Instance")
-                            : listing.rented
-                                ? t.agent.card.viewDetails
-                                : t.agent.card.rentNow
-                        } <ArrowRight className="h-4 w-4" />
+                {isValidDetailRoute ? (
+                    <Link href={`/agent/${listing.nfaAddress}/${listing.tokenId}`} className="w-full">
+                        <Button
+                            className="w-full justify-between"
+                            variant={listing.rented && !listing.isTemplate ? "outline" : "default"}
+                        >
+                            {ctaLabel} <ArrowRight className="h-4 w-4" />
+                        </Button>
+                    </Link>
+                ) : (
+                    <Button className="w-full justify-between" variant="outline" disabled>
+                        Data Syncing <ArrowRight className="h-4 w-4" />
                     </Button>
-                </Link>
+                )}
             </CardFooter>
         </Card>
     );
