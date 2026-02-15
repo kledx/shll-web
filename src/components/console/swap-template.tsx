@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,7 @@ import {
 import { Action } from "./action-types";
 import { TOKEN_MAP, WBNB_ADDRESS, ROUTER_ADDRESS } from "@/config/tokens";
 
-// PancakeRouter ABI (partial — swap functions)
+// PancakeRouter ABI (partial 鈥?swap functions)
 const ROUTER_ABI = [
     {
         "inputs": [
@@ -74,7 +74,7 @@ const WBNB_ABI = [
     }
 ] as const;
 
-// Token options — from centralized config
+// Token options 鈥?from centralized config
 const TOKENS: Record<string, SwapTokenConfig> = Object.fromEntries(
     Object.entries(TOKEN_MAP).map(([k, v]) => [k, { address: v.address, decimals: v.decimals, isNative: v.isNative }])
 );
@@ -248,7 +248,7 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
         let value: bigint;
 
         if (tokenInConfig.isNative) {
-            // Native BNB → use swapExactETHForTokens (BNB sent as msg.value)
+            // Native BNB 鈫?use swapExactETHForTokens (BNB sent as msg.value)
             data = encodeFunctionData({
                 abi: ROUTER_ABI,
                 functionName: "swapExactETHForTokens",
@@ -256,7 +256,7 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
             });
             value = amountInWei; // BNB amount goes into action.value
         } else {
-            // ERC-20 → use swapExactTokensForTokens
+            // ERC-20 鈫?use swapExactTokensForTokens
             data = encodeFunctionData({
                 abi: ROUTER_ABI,
                 functionName: "swapExactTokensForTokens",
@@ -303,7 +303,7 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
 
             {tokenIn === "BNB" && (
                 <p className="text-xs text-muted-foreground">
-                    💡 {t.agent.console.templates.swap.bnbNotice}
+                    馃挕 {t.agent.console.templates.swap.bnbNotice}
                 </p>
             )}
 
@@ -327,7 +327,7 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
 
             {/* Slippage Tolerance */}
             <div className="space-y-2">
-                <Label>{t.agent.console.templates.swap.slippage || "Slippage Tolerance"}</Label>
+                <Label>{t.agent.console.templates.swap.slippage}</Label>
                 <div className="flex items-center gap-2">
                     {SLIPPAGE_PRESETS.map(preset => (
                         <Button
@@ -371,10 +371,12 @@ export function SwapTemplate({ onActionGenerated, agentAccount }: SwapTemplatePr
 
             {isApproveNeeded && !hasInsufficientBalance && !isUnsupportedPair && (
                 <p className="text-xs text-muted-foreground text-center">
-                    ℹ️ {t.agent.console.templates.swap.approveNotice.replace("{token}", tokenIn)} <br />
+                    鈩癸笍 {t.agent.console.templates.swap.approveNotice.replace("{token}", tokenIn)} <br />
                     {t.agent.console.templates.swap.txNotice}
                 </p>
             )}
         </div>
     );
 }
+
+

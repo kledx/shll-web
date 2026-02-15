@@ -11,6 +11,7 @@ import { Address, Hex, isAddress, isHex } from "viem";
 import { toast } from "sonner";
 import { usePolicyPreflight } from "@/hooks/usePolicyPreflight";
 import { useTranslation } from "@/hooks/useTranslation";
+import { getConsoleCopy } from "@/lib/console/console-copy";
 import { Action, TemplateKey } from "./action-types";
 import { TemplatesPanel } from "./templates-panel";
 
@@ -48,6 +49,7 @@ export function ActionBuilder({
     templateBoundaryHint,
 }: ActionBuilderProps) {
     const { t, language } = useTranslation();
+    const ui = getConsoleCopy(language);
     const [target, setTarget] = useState<string>("");
     const [value, setValue] = useState<string>("0");
     const [data, setData] = useState<string>("0x");
@@ -65,19 +67,7 @@ export function ActionBuilder({
         setData(action.data);
     };
 
-    const preflightUi = language === "zh"
-        ? {
-            issuesFound: (count: number) => `已发现 ${count} 项策略限制`,
-            blockedHint: "请先调整模板、代币或参数，再进行模拟。",
-            simulateBlockedToast: "当前参数不满足策略限制，请先按提示调整。",
-            checking: "正在检查策略限制...",
-        }
-        : {
-            issuesFound: (count: number) => `Preflight found ${count} policy issue(s)`,
-            blockedHint: "Please adjust template, tokens, or parameters before simulation.",
-            simulateBlockedToast: "Current parameters are blocked by policy. Please adjust and try again.",
-            checking: "Checking policy preflight...",
-        };
+    const preflightUi = ui.builder.preflight;
 
     const handleSimulate = () => {
         if (!isValid) return;
@@ -107,46 +97,29 @@ export function ActionBuilder({
 
     const getPolicyHint = (raw?: string | null) => {
         if (!raw) return null;
-        const zh = language === "zh";
         if (/Target not allowed/i.test(raw)) {
-            return zh
-                ? "当前策略暂不支持这个目标，请换一个模板或交易对。"
-                : "Current policy does not allow this target. Please try another template or pair.";
+            return ui.builder.policyHints.targetNotAllowed;
         }
         if (/Selector not allowed/i.test(raw)) {
-            return zh
-                ? "当前策略暂不支持这个动作类型，请尝试其他操作。"
-                : "Current policy does not allow this action type. Try a different operation.";
+            return ui.builder.policyHints.selectorNotAllowed;
         }
         if (/Token not allowed/i.test(raw)) {
-            return zh
-                ? "当前策略不支持该代币组合，请更换输入或输出代币。"
-                : "Current policy does not allow this token pair. Please choose different tokens.";
+            return ui.builder.policyHints.tokenNotAllowed;
         }
         if (/Spender not allowed/i.test(raw)) {
-            return zh
-                ? "当前策略不支持该授权路径，请更换操作后重试。"
-                : "Current policy does not allow this approval route. Try a different action.";
+            return ui.builder.policyHints.spenderNotAllowed;
         }
         if (/PolicyViolation/i.test(raw)) {
-            return zh
-                ? "当前策略校验未通过，请调整参数后重试。"
-                : "Policy validation did not pass. Please adjust parameters and try again.";
+            return ui.builder.policyHints.policyViolation;
         }
         if (/amountOutMin is zero/i.test(raw)) {
-            return zh
-                ? "滑点保护触发：最小输出不能为 0，请调整后再试。"
-                : "Slippage guard triggered: minimum output cannot be zero.";
+            return ui.builder.policyHints.amountOutMinZero;
         }
         if (/Slippage exceeds/i.test(raw)) {
-            return zh
-                ? "滑点超过策略限制，请降低滑点或调整交易参数。"
-                : "Slippage exceeds policy limit. Please adjust trade parameters.";
+            return ui.builder.policyHints.slippageExceeds;
         }
         if (/Quote unavailable/i.test(raw)) {
-            return zh
-                ? "暂时无法获取报价，请稍后重试或更换交易对。"
-                : "Quote unavailable right now. Please retry or change the pair.";
+            return ui.builder.policyHints.quoteUnavailable;
         }
         return null;
     };
@@ -271,7 +244,7 @@ export function ActionBuilder({
 
                     {readOnly && (
                         <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                            {readOnlyMessage || "Console is currently in read-only mode."}
+                            {readOnlyMessage || ui.builder.readOnlyFallback}
                         </div>
                     )}
 

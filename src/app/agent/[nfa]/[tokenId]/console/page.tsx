@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { AppShell } from "@/components/ui/app-shell";
+import { AppShell } from "@/components/layout/app-shell";
 import { ActionBuilder } from "@/components/console/action-builder";
 import { Action, TemplateKey } from "@/components/console/action-types";
 import { useAgentAccount } from "@/hooks/useAgentAccount";
@@ -12,7 +12,7 @@ import { AutopilotCard } from "@/components/console/autopilot-card";
 import { useSimulate } from "@/hooks/useSimulate";
 import { useAccount } from "wagmi";
 import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { type ComponentProps, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { ChevronRight, ShieldAlert } from "lucide-react";
 import { useAutopilot } from "@/hooks/useAutopilot";
@@ -24,6 +24,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Address, zeroAddress } from "viem";
 import Link from "next/link";
+import { PageTransition } from "@/components/layout/page-transition";
+import { PageHeader } from "@/components/layout/page-header";
+import { PageSection } from "@/components/layout/page-section";
 
 export default function ConsolePage() {
     const { t, language } = useTranslation();
@@ -164,17 +167,10 @@ export default function ConsolePage() {
         isAutopilotOn;
     const executeDisabledByMode = !executeAllowedByMode;
     const executeDisabled = executeDisabledByAutopilot || executeDisabledByMode;
-    const executeDisabledByModeMessage = language === "zh"
-        ? (
-            runnerMode === "external"
-                ? "External 模式默认禁用手动 Execute，请在 capability pack 中显式开启。"
-                : "当前 capability pack 已禁用手动 Execute。"
-        )
-        : (
-            runnerMode === "external"
-                ? "External mode disables manual Execute by default. Enable it explicitly in capability pack."
-                : "Manual Execute is disabled by capability pack policy."
-        );
+    const executeDisabledByModeMessage =
+        runnerMode === "external"
+            ? ui.executeDisabledByModeExternal
+            : ui.executeDisabledByModePack;
     const executeDisabledMessage = executeDisabledByAutopilot
         ? ui.executeDisabledByAutopilot
         : executeDisabledByMode
@@ -183,13 +179,9 @@ export default function ConsolePage() {
     const showActionBuilder =
         strictPackValid && enabledTemplates.length > 0 && isInteractiveConsole;
     const actionBuilderHiddenHint = !strictPackValid
-        ? (language === "zh"
-            ? "能力包校验失败，交易构建器已隐藏。"
-            : "Capability pack validation failed. Transaction builder is hidden.")
+        ? ui.actionBuilderHiddenInvalidPack
         : enabledTemplates.length === 0
-            ? (language === "zh"
-                ? "能力包未声明可用模板。"
-                : "No supported console templates in capability pack.")
+            ? ui.actionBuilderHiddenNoTemplates
             : null;
     const autopilotBlockedByPack = !strictPackValid;
     const [autopilotOperator, setAutopilotOperator] = useState<string>(
@@ -209,56 +201,31 @@ export default function ConsolePage() {
         const lower = raw.toLowerCase();
 
         if (lower.includes("tokenid not allowed by runner")) {
-            return language === "zh"
-                ? "Runner 未放行该 Agent。请在 runner 配置 `ALLOWED_TOKEN_IDS` 中加入当前 tokenId。"
-                : "Runner has not allowed this agent. Add the tokenId to runner `ALLOWED_TOKEN_IDS`.";
+            return ui.autopilotErrors.tokenNotAllowedByRunner;
         }
         if (
             lower.includes("gas required exceeds allowance") ||
             lower.includes("insufficient funds")
         ) {
-            return language === "zh"
-                ? "Runner 操作地址 gas 不足。请给 Runner Operator 地址充值测试 BNB 后重试。"
-                : "Runner operator has insufficient gas. Fund the runner operator address and retry.";
+            return ui.autopilotErrors.insufficientGas;
         }
         if (lower.includes("request took too long") || lower.includes("timeout")) {
-            return language === "zh"
-                ? "RPC 请求超时。请切换到更稳定的 RPC 节点后重试。"
-                : "RPC request timed out. Switch to a more stable RPC endpoint and retry.";
+            return ui.autopilotErrors.rpcTimeout;
         }
         if (lower.includes("permit.operator must equal runner operator address")) {
-            return language === "zh"
-                ? "Permit 中的 operator 与 Runner 实际地址不一致，请使用 Runner 当前地址。"
-                : "Permit operator does not match runner operator address. Use the current runner operator.";
+            return ui.autopilotErrors.operatorMismatch;
         }
         if (lower.includes("chainid mismatch")) {
-            return language === "zh"
-                ? "链 ID 不匹配，请确认前端、Runner、钱包都在同一网络。"
-                : "Chain ID mismatch. Ensure frontend, runner, and wallet are on the same network.";
+            return ui.autopilotErrors.chainIdMismatch;
         }
         if (lower.includes("nfaaddress mismatch")) {
-            const expected = raw.match(/expected\s+(0x[a-fA-F0-9]{40})/)?.[1];
-            return language === "zh"
-                ? `AgentNFA 地址不匹配。Runner 期望 ${expected || "未知地址"}，当前页面为 ${nfaAddress}。`
-                : `AgentNFA address mismatch. Runner expects ${expected || "unknown address"}, current page uses ${nfaAddress}.`;
+            const expected = raw.match(/expected\s+(0x[a-fA-F0-9]{40})/)?.[1] || ui.autopilotErrors.unknownExpectedAddress;
+            return ui.autopilotErrors.nfaAddressMismatch(expected, nfaAddress);
         }
         return raw.slice(0, 160);
     };
-    const actionScopeHint =
-        language === "zh"
-            ? "动作模板用于声明当前 Agent 的可执行动作/权限边界，并不放权。所有链上执行仍会被 PolicyGuard 二次校验。"
-            : "Action templates define this agent's allowed action/permission boundary. They do not bypass controls. Every on-chain execution is still enforced by PolicyGuard.";
-    const sectionLabels = language === "zh"
-        ? {
-            control: "控制",
-            vault: "金库",
-            history: "历史",
-        }
-        : {
-            control: "Control",
-            vault: "Vault",
-            history: "History",
-        };
+    const actionScopeHint = ui.actionScopeHint;
+    const sectionLabels = ui.sectionLabels;
     const handleSimulate = (action: Action) => {
         if (!isInteractiveConsole) {
             toast.error(readOnlyMessage);
@@ -370,7 +337,7 @@ export default function ConsolePage() {
     if (isAgentLoading) {
         return (
             <AppShell>
-                <div className="flex justify-center rounded-2xl border border-[var(--color-border)] bg-white/70 p-20 shadow-[var(--shadow-soft)]">
+                <div className="flex justify-center rounded-2xl border border-[var(--color-border)] bg-white/70 p-10 md:p-12 shadow-[var(--shadow-soft)]">
                     <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-[var(--color-primary)]"></div>
                 </div>
             </AppShell>
@@ -380,7 +347,7 @@ export default function ConsolePage() {
     if (agentError) {
         return (
             <AppShell>
-                <div className="mx-auto max-w-lg space-y-4 rounded-2xl border border-[var(--color-border)] bg-white/70 p-10 text-center shadow-[var(--shadow-soft)]">
+                <div className="mx-auto max-w-lg space-y-4 rounded-2xl border border-[var(--color-border)] bg-white/70 p-8 md:p-10 text-center shadow-[var(--shadow-soft)]">
                     <ShieldAlert className="mx-auto h-12 w-12 text-[var(--color-primary)]" />
                     <h2 className="text-2xl font-serif font-bold text-[var(--color-primary)]">
                         {t.agent.console.page.title}
@@ -414,17 +381,17 @@ export default function ConsolePage() {
     if (!hasAccess) {
         return (
             <AppShell>
-                <div className="mx-auto max-w-lg space-y-4 rounded-2xl border border-[var(--color-border)] bg-white/70 p-10 text-center shadow-[var(--shadow-soft)]">
+                <div className="mx-auto max-w-lg space-y-4 rounded-2xl border border-[var(--color-border)] bg-white/70 p-8 md:p-10 text-center shadow-[var(--shadow-soft)]">
                     <ShieldAlert className="mx-auto h-12 w-12 text-[var(--color-primary)]" />
                     <h2 className="text-2xl font-serif font-bold text-[var(--color-primary)]">
                         {t.agent.console.page.title}
                     </h2>
                     <p className="text-[var(--color-muted-foreground)]">
                         {!address
-                            ? (t.agent.console.page.connectWallet || "Please connect your wallet to access the console.")
-                            : (t.agent.console.page.noAccess || "You must be the owner or active renter of this agent to use the console.")}
+                            ? t.agent.console.page.connectWallet
+                            : t.agent.console.page.noAccess}
                     </p>
-                    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]/45 px-4 py-3 text-left text-xs text-[var(--color-muted-foreground)]">
+                    <PageSection tone="muted" className="text-left text-xs text-[var(--color-muted-foreground)]">
                         <div className="font-medium text-[var(--color-foreground)]">{ui.nextStepTitle}</div>
                         <div className="pt-1">
                             {!address
@@ -436,7 +403,7 @@ export default function ConsolePage() {
                                 ? ui.nextStepPathConnect
                                 : `${ui.nextStepPathRentPrefix}${detailPath} -> rent/extend -> ${consolePath}`}
                         </div>
-                    </div>
+                    </PageSection>
                     <div className="flex justify-center gap-2 pt-2">
                         <Link
                             href={detailPath}
@@ -457,8 +424,8 @@ export default function ConsolePage() {
     }
 
     return (
-        <AppShell>
-            <div className="mx-auto max-w-4xl space-y-6">
+        <AppShell fullWidth>
+            <PageTransition className="space-y-6">
                 <nav className="flex items-center gap-1 text-xs text-[var(--color-muted-foreground)]">
                     <Link href="/" className="hover:text-[var(--color-primary)]">
                         {t.common.nav.market}
@@ -470,24 +437,20 @@ export default function ConsolePage() {
                     <ChevronRight className="h-3 w-3" />
                     <span className="text-[var(--color-foreground)]">{t.agent.detail.tabs.console}</span>
                 </nav>
-                <div className="flex flex-col gap-3 rounded-2xl border border-[var(--color-border)] bg-white/72 p-6 shadow-[var(--shadow-soft)] md:flex-row md:items-center md:justify-between">
-                    <div>
-                        <h1 className="page-title text-3xl">
-                            {t.agent.console.page.title}
-                        </h1>
-                        <p className="page-subtitle mt-2 text-sm md:text-base">
-                            {t.agent.console.page.subtitle}
-                        </p>
-                    </div>
-                    <div className="text-left md:text-right">
-                        <div className="text-sm font-medium">{t.agent.console.page.agentId}: #{tokenId}</div>
-                        <div className="font-mono text-xs text-[var(--color-muted-foreground)]">
-                            {agentAccount || (isAccountLoading ? t.agent.detail.loading : t.agent.console.page.unknown)}
-                        </div>
-                    </div>
-                </div>
+                <PageHeader
+                    title={t.agent.console.page.title}
+                    subtitle={t.agent.console.page.subtitle}
+                    rightSlot={
+                        <>
+                            <div className="text-sm font-medium">{t.agent.console.page.agentId}: #{tokenId}</div>
+                            <div className="font-mono text-xs text-[var(--color-muted-foreground)]">
+                                {agentAccount || (isAccountLoading ? t.agent.detail.loading : t.agent.console.page.unknown)}
+                            </div>
+                        </>
+                    }
+                />
 
-                <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]/45 px-4 py-3 text-xs text-[var(--color-muted-foreground)]">
+                <PageSection tone="muted" className="text-xs text-[var(--color-muted-foreground)]">
                     <div>
                         <span className="font-medium text-[var(--color-foreground)]">{ui.currentRole}: </span>
                         {roleLabel}
@@ -499,84 +462,144 @@ export default function ConsolePage() {
                                 ? ui.roleHintOwner
                                 : ui.roleHintGuest}
                     </div>
+                </PageSection>
+
+                {/* Mobile View: Tabs */}
+                <div className="lg:hidden">
+                    <Tabs defaultValue="control" className="w-full">
+                        <TabsList className="grid h-12 w-full grid-cols-3 rounded-xl border border-[var(--color-border)] bg-white/72 p-1">
+                            <TabsTrigger value="control" className="text-sm font-semibold">{sectionLabels.control}</TabsTrigger>
+                            <TabsTrigger value="vault" className="text-sm font-semibold">{sectionLabels.vault}</TabsTrigger>
+                            <TabsTrigger value="history" className="text-sm font-semibold">{sectionLabels.history}</TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="control" className="mt-4 space-y-4">
+                            <ConsoleControlSection
+                                ui={ui}
+                                runnerMode={runnerMode}
+                                enableState={enableState}
+                                operatorNonce={operatorNonce}
+                                onchainOperator={onchainOperator}
+                                operatorExpires={operatorExpires}
+                                agent={agent}
+                                autopilotOperator={autopilotOperator}
+                                autopilotExpiresAt={autopilotExpiresAt}
+                                runnerOperatorDefault={runnerOperatorDefault}
+                                runnerStatus={runnerStatus}
+                                isRunnerStatusLoading={isRunnerStatusLoading}
+                                autopilotBlockedByPack={autopilotBlockedByPack}
+                                isInteractiveConsole={isInteractiveConsole}
+                                isRenter={isRenter}
+                                isOwner={isOwner}
+                                isEnablingAutopilot={isEnablingAutopilot}
+                                isClearingAutopilot={isClearingAutopilot}
+                                setAutopilotOperator={setAutopilotOperator}
+                                setAutopilotExpiresAt={setAutopilotExpiresAt}
+                                handleEnableAutopilot={handleEnableAutopilot}
+                                handleDisableAutopilot={handleDisableAutopilot}
+                                actionScopeHint={actionScopeHint}
+                                showActionBuilder={showActionBuilder}
+                                handleSimulate={handleSimulate}
+                                handleExecute={handleExecute}
+                                isSimulating={isSimulating}
+                                isExecuting={isExecuting}
+                                simulationResult={simulationResult}
+                                simulationError={simulationError}
+                                agentAccount={agentAccount}
+                                enabledTemplates={enabledTemplates}
+                                executeDisabled={executeDisabled}
+                                executeDisabledMessage={executeDisabledMessage}
+                                actionBuilderHiddenHint={actionBuilderHiddenHint}
+                                readOnly={!isInteractiveConsole}
+                                readOnlyMessage={readOnlyMessage}
+                            />
+                        </TabsContent>
+
+                        <TabsContent value="vault" className="mt-4">
+                            <VaultPanel
+                                agentAccount={agentAccount}
+                                isRenter={isRenter}
+                                isOwner={isOwner}
+                                tokenId={tokenId}
+                                refreshKey={refreshKey}
+                                readOnly={!isInteractiveConsole}
+                                allowWithdraw={isInteractiveConsole}
+                            />
+                        </TabsContent>
+
+                        <TabsContent value="history" className="mt-4">
+                            <TransactionHistory tokenId={tokenId} nfaAddress={nfaAddress} refreshKey={refreshKey} />
+                        </TabsContent>
+                    </Tabs>
                 </div>
 
-                <StatusCard
-                    tokenId={tokenId}
-                    leaseStatus={leaseStatus}
-                    leaseExpires={agent?.expires}
-                    packStatus={packStatus}
-                    vaultURI={agent?.metadata?.vaultURI}
-                    vaultHash={agent?.metadata?.vaultHash as `0x${string}` | undefined}
-                    runnerMode={runnerMode}
-                    policySummary={{
-                        maxDeadlineWindow: agent?.policy.maxDeadlineWindow ?? 0,
-                        maxPathLength: agent?.policy.maxPathLength ?? 0,
-                        allowedTokens: agent?.policy.allowedTokens.length ?? 0,
-                        allowedSpenders: agent?.policy.allowedSpenders.length ?? 0,
-                    }}
-                    ui={ui.status}
-                />
+                {/* Desktop View: 3-Column Grid */}
+                <div className="hidden lg:grid lg:grid-cols-3 lg:gap-6">
+                    {/* Column 1: Status & Autopilot (Control Settings) */}
+                    <div className="space-y-6">
+                        <section className="space-y-3">
+                            <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
+                                {t.agent.detail.status.policyActive}
+                            </h3>
+                            <StatusCard
+                                tokenId={tokenId}
+                                leaseStatus={leaseStatus}
+                                leaseExpires={agent?.expires}
+                                packStatus={packStatus}
+                                vaultURI={agent?.metadata?.vaultURI}
+                                vaultHash={agent?.metadata?.vaultHash as `0x${string}` | undefined}
+                                runnerMode={runnerMode}
+                                policySummary={{
+                                    maxDeadlineWindow: agent?.policy.maxDeadlineWindow ?? 0,
+                                    maxPathLength: agent?.policy.maxPathLength ?? 0,
+                                    allowedTokens: agent?.policy.allowedTokens.length ?? 0,
+                                    allowedSpenders: agent?.policy.allowedSpenders.length ?? 0,
+                                }}
+                                ui={ui.status}
+                            />
+                        </section>
 
-                {!isInteractiveConsole && (
-                    <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                        {readOnlyMessage}
+                        <section className="space-y-3">
+                            <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
+                                {ui.autopilot.title}
+                            </h3>
+                            <AutopilotCard
+                                ui={ui.autopilot}
+                                runnerMode={runnerMode}
+                                enableState={enableState}
+                                operatorNonce={operatorNonce}
+                                onchainOperator={onchainOperator}
+                                operatorExpires={operatorExpires}
+                                leaseExpires={agent?.expires}
+                                autopilotOperator={autopilotOperator}
+                                autopilotExpiresAt={autopilotExpiresAt}
+                                runnerOperatorDefault={runnerOperatorDefault}
+                                runnerStatus={runnerStatus}
+                                runnerStatusLoading={isRunnerStatusLoading}
+                                lockOperatorInput
+                                lockExpiryInput
+                                blockedByPack={autopilotBlockedByPack}
+                                isInteractiveConsole={isInteractiveConsole}
+                                isRenter={isRenter}
+                                isOwner={isOwner}
+                                isEnablingAutopilot={isEnablingAutopilot}
+                                isClearingAutopilot={isClearingAutopilot}
+                                onSetAutopilotOperator={setAutopilotOperator}
+                                onSetAutopilotExpiresAt={setAutopilotExpiresAt}
+                                onEnableAutopilot={handleEnableAutopilot}
+                                onDisableAutopilot={handleDisableAutopilot}
+                            />
+                        </section>
                     </div>
-                )}
 
-                <Tabs defaultValue="control" className="w-full">
-                    <TabsList className="grid h-12 w-full grid-cols-3 rounded-xl border border-[var(--color-border)] bg-white/72 p-1">
-                        <TabsTrigger
-                            value="control"
-                            className="text-sm font-semibold"
-                        >
-                            {sectionLabels.control}
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="vault"
-                            className="text-sm font-semibold"
-                        >
-                            {sectionLabels.vault}
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="history"
-                            className="text-sm font-semibold"
-                        >
-                            {sectionLabels.history}
-                        </TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="control" className="mt-4 space-y-4">
-                        <AutopilotCard
-                            ui={ui.autopilot}
-                            runnerMode={runnerMode}
-                            enableState={enableState}
-                            operatorNonce={operatorNonce}
-                            onchainOperator={onchainOperator}
-                            operatorExpires={operatorExpires}
-                            leaseExpires={agent?.expires}
-                            autopilotOperator={autopilotOperator}
-                            autopilotExpiresAt={autopilotExpiresAt}
-                            runnerOperatorDefault={runnerOperatorDefault}
-                            runnerStatus={runnerStatus}
-                            runnerStatusLoading={isRunnerStatusLoading}
-                            lockOperatorInput
-                            lockExpiryInput
-                            blockedByPack={autopilotBlockedByPack}
-                            isInteractiveConsole={isInteractiveConsole}
-                            isRenter={isRenter}
-                            isOwner={isOwner}
-                            isEnablingAutopilot={isEnablingAutopilot}
-                            isClearingAutopilot={isClearingAutopilot}
-                            onSetAutopilotOperator={setAutopilotOperator}
-                            onSetAutopilotExpiresAt={setAutopilotExpiresAt}
-                            onEnableAutopilot={handleEnableAutopilot}
-                            onDisableAutopilot={handleDisableAutopilot}
-                        />
-
-                        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]/40 px-4 py-3 text-xs text-[var(--color-muted-foreground)]">
+                    {/* Column 2: Execution (Action Builder) */}
+                    <div className="space-y-6">
+                        <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
+                            {ui.builder.title}
+                        </h3>
+                        <PageSection tone="muted" className="text-xs text-[var(--color-muted-foreground)]">
                             {actionScopeHint}
-                        </div>
+                        </PageSection>
 
                         {showActionBuilder ? (
                             <ActionBuilder
@@ -600,27 +623,143 @@ export default function ConsolePage() {
                                 {actionBuilderHiddenHint}
                             </div>
                         ) : null}
-                    </TabsContent>
+                    </div>
 
-                    <TabsContent value="vault" className="mt-4">
-                        <VaultPanel
-                            agentAccount={agentAccount}
-                            isRenter={isRenter}
-                            isOwner={isOwner}
-                            tokenId={tokenId}
-                            refreshKey={refreshKey}
-                            readOnly={!isInteractiveConsole}
-                            allowWithdraw={isInteractiveConsole}
-                        />
-                    </TabsContent>
+                    {/* Column 3: Data (Vault & History) */}
+                    <div className="space-y-6">
+                        <section className="space-y-3">
+                            <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
+                                {sectionLabels.vault}
+                            </h3>
+                            <VaultPanel
+                                agentAccount={agentAccount}
+                                isRenter={isRenter}
+                                isOwner={isOwner}
+                                tokenId={tokenId}
+                                refreshKey={refreshKey}
+                                readOnly={!isInteractiveConsole}
+                                allowWithdraw={isInteractiveConsole}
+                            />
+                        </section>
 
-                    <TabsContent value="history" className="mt-4">
-                        <TransactionHistory tokenId={tokenId} nfaAddress={nfaAddress} refreshKey={refreshKey} />
-                    </TabsContent>
-                </Tabs>
-            </div>
+                        <section className="space-y-3">
+                            <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
+                                {sectionLabels.history}
+                            </h3>
+                            <TransactionHistory tokenId={tokenId} nfaAddress={nfaAddress} refreshKey={refreshKey} />
+                        </section>
+                    </div>
+                </div>
+            </PageTransition>
         </AppShell>
     );
 }
 
+// Helper component for Mobile Control Tab
+function ConsoleControlSection({
+    ui, runnerMode, enableState, operatorNonce, onchainOperator, operatorExpires, agent,
+    autopilotOperator, autopilotExpiresAt, runnerOperatorDefault, runnerStatus, isRunnerStatusLoading,
+    autopilotBlockedByPack, isInteractiveConsole, isRenter, isOwner, isEnablingAutopilot, isClearingAutopilot,
+    setAutopilotOperator, setAutopilotExpiresAt, handleEnableAutopilot, handleDisableAutopilot,
+    actionScopeHint, showActionBuilder, handleSimulate, handleExecute, isSimulating, isExecuting,
+    simulationResult, simulationError, agentAccount, enabledTemplates, executeDisabled, executeDisabledMessage,
+    actionBuilderHiddenHint, readOnly, readOnlyMessage
+}: ConsoleControlSectionProps) {
+    return (
+        <div className="space-y-4">
+            <AutopilotCard
+                ui={ui.autopilot}
+                runnerMode={runnerMode}
+                enableState={enableState}
+                operatorNonce={operatorNonce}
+                onchainOperator={onchainOperator}
+                operatorExpires={operatorExpires}
+                leaseExpires={agent?.expires}
+                autopilotOperator={autopilotOperator}
+                autopilotExpiresAt={autopilotExpiresAt}
+                runnerOperatorDefault={runnerOperatorDefault}
+                runnerStatus={runnerStatus}
+                runnerStatusLoading={isRunnerStatusLoading}
+                lockOperatorInput
+                lockExpiryInput
+                blockedByPack={autopilotBlockedByPack}
+                isInteractiveConsole={isInteractiveConsole}
+                isRenter={isRenter}
+                isOwner={isOwner}
+                isEnablingAutopilot={isEnablingAutopilot}
+                isClearingAutopilot={isClearingAutopilot}
+                onSetAutopilotOperator={setAutopilotOperator}
+                onSetAutopilotExpiresAt={setAutopilotExpiresAt}
+                onEnableAutopilot={handleEnableAutopilot}
+                onDisableAutopilot={handleDisableAutopilot}
+            />
 
+            <PageSection tone="muted" className="text-xs text-[var(--color-muted-foreground)]">
+                {actionScopeHint}
+            </PageSection>
+
+            {showActionBuilder ? (
+                <ActionBuilder
+                    onSimulate={handleSimulate}
+                    onExecute={handleExecute}
+                    isSimulating={isSimulating}
+                    isExecuting={isExecuting}
+                    simulationResult={simulationResult}
+                    simulationError={simulationError}
+                    agentAccount={agentAccount}
+                    enabledTemplates={enabledTemplates}
+                    renterAddress={agent?.renter}
+                    readOnly={readOnly}
+                    readOnlyMessage={readOnlyMessage}
+                    executeDisabled={executeDisabled}
+                    executeDisabledMessage={executeDisabledMessage}
+                    templateBoundaryHint={ui.templateBoundaryHint}
+                />
+            ) : actionBuilderHiddenHint ? (
+                <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    {actionBuilderHiddenHint}
+                </div>
+            ) : null}
+        </div>
+    );
+}
+
+type ConsoleControlSectionProps = {
+    ui: ReturnType<typeof getConsoleCopy>;
+    runnerMode: RunnerMode;
+    enableState: ComponentProps<typeof AutopilotCard>["enableState"];
+    operatorNonce: bigint;
+    onchainOperator: string | null;
+    operatorExpires: bigint;
+    agent?: { expires?: number; renter?: string } | null;
+    autopilotOperator: string;
+    autopilotExpiresAt: string;
+    runnerOperatorDefault?: string;
+    runnerStatus: ComponentProps<typeof AutopilotCard>["runnerStatus"];
+    isRunnerStatusLoading: boolean;
+    autopilotBlockedByPack: boolean;
+    isInteractiveConsole: boolean;
+    isRenter: boolean;
+    isOwner: boolean;
+    isEnablingAutopilot: boolean;
+    isClearingAutopilot: boolean;
+    setAutopilotOperator: (value: string) => void;
+    setAutopilotExpiresAt: (value: string) => void;
+    handleEnableAutopilot: () => void;
+    handleDisableAutopilot: () => void;
+    actionScopeHint: string;
+    showActionBuilder: boolean;
+    handleSimulate: (action: Action) => void;
+    handleExecute: (action: Action) => void;
+    isSimulating: boolean;
+    isExecuting: boolean;
+    simulationResult: ComponentProps<typeof ActionBuilder>["simulationResult"];
+    simulationError: ComponentProps<typeof ActionBuilder>["simulationError"];
+    agentAccount: ComponentProps<typeof ActionBuilder>["agentAccount"];
+    enabledTemplates: TemplateKey[] | undefined;
+    executeDisabled: boolean;
+    executeDisabledMessage?: string;
+    actionBuilderHiddenHint: string | null;
+    readOnly: boolean;
+    readOnlyMessage: string;
+};

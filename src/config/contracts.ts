@@ -1,10 +1,10 @@
-import { Address } from 'viem';
+﻿import { Address } from 'viem';
 
 export const CONTRACTS = {
   AgentNFA: {
-    // BSC Testnet — redeployed 2026-02-15 (V1.3 Rent-to-Mint)
-    address: "0xcf5d434d855155beba97e3554ef9afea5ed4eb4d" as Address,
-    deployBlock: BigInt(90496831),
+    // BSC Testnet 鈥?redeployed 2026-02-15 (V1.3 Rent-to-Mint)
+    address: (process.env.NEXT_PUBLIC_AGENT_NFA as Address) || "0x636557BFe696221bd05B78b04FB3d091A322D1dE",
+    deployBlock: BigInt(process.env.NEXT_PUBLIC_DEPLOY_BLOCK || 90562960),
     abi: [
       {
         "type": "constructor",
@@ -1639,7 +1639,7 @@ export const CONTRACTS = {
   },
   ListingManager: {
     address: "0x7e47e94d4ec2992898300006483d55848efbc315" as Address,
-    deployBlock: BigInt(90496831),
+    deployBlock: BigInt(process.env.NEXT_PUBLIC_DEPLOY_BLOCK || 90562960),
     abi: [
       {
         "type": "constructor",

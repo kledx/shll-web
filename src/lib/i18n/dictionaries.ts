@@ -14,6 +14,33 @@ export const en = {
         switchChain: "Switch Chain",
         native: "Native",
     },
+    home: {
+        hero: {
+            title: "Rent Autonomous AI Agents",
+            subtitle: "The first decentralized marketplace for renting and executing policy-guarded AI agents on BSC.",
+            cta: "Explore Marketplace",
+            secondaryCta: "Read Docs",
+        },
+        stats: {
+            activeAgents: "Active Agents",
+            totalExecutions: "Total Executions",
+            successRate: "Success Rate",
+            totalValue: "TVL",
+        },
+        featured: {
+            title: "Featured Agents",
+            subtitle: "Top performing agents available for immediate rent.",
+        },
+        why: {
+            title: "Why SHLL?",
+            subtitle: "Built for trustless automation.",
+            items: [
+                { title: "Non-Custodial", desc: "Your funds stay in your agent's vault. No private key sharing." },
+                { title: "Policy Guarded", desc: "On-chain policies enforce execution limits and allowlists." },
+                { title: "Verifiable", desc: "All actions and logical branches are verifiable on-chain." }
+            ]
+        }
+    },
     marketplace: {
         title: "Marketplace",
         subtitle: "Rent autonomous AI agents safely secured by on-chain policies.",
@@ -24,6 +51,20 @@ export const en = {
         filterAll: "All",
         filterAvailable: "Available",
         filterRented: "Rented",
+        sort: {
+            label: "Sort by",
+            newest: "Newest",
+            oldest: "Oldest",
+            priceAsc: "Price: Low to High",
+            priceDesc: "Price: High to Low",
+        },
+        filters: {
+            title: "Filters",
+            status: "Status",
+            price: "Price Range",
+            capabilities: "Capabilities",
+            clear: "Clear All",
+        }
     },
     agent: {
         card: {
@@ -43,6 +84,7 @@ export const en = {
                 history: "History & Records",
                 rent: "Rent / Extend",
                 console: "Console",
+                faq: "FAQ",
             },
             status: {
                 active: "Active",
@@ -54,6 +96,17 @@ export const en = {
             },
             notFound: "Agent not found.",
             loading: "Loading...",
+            risk: {
+                title: "Risk Analysis",
+                allowlist: "Allowlist Only",
+                allowlistDesc: "Interactions restricted to verified contracts.",
+                spendLimit: "Spend Limit",
+                spendLimitDesc: "Max spend per transaction is capped.",
+                nonCustodial: "Non-Custodial",
+                nonCustodialDesc: "Assets held in agent vault, not by runner.",
+                trustScore: "Trust Score",
+                viewPolicy: "View Policy",
+            },
         },
         rent: {
             title: "Rent Agent",
@@ -513,6 +566,7 @@ export const en = {
             warning: "Authorizing an operator allows action submission, not policy bypass."
         },
         faq: {
+            title: "Frequently Asked Questions",
             items: [
                 {
                     q: "Do renters need to hand private keys to SHLL?",
@@ -575,6 +629,33 @@ export const zh: Dictionary = {
         switchChain: "切换网络",
         native: "原生",
     },
+    home: {
+        hero: {
+            title: "租赁自主 AI Agent",
+            subtitle: "BSC 链上首个去中心化 AI Agent 租赁与执行市场，由链上策略守护。",
+            cta: "探索市场",
+            secondaryCta: "阅读文档",
+        },
+        stats: {
+            activeAgents: "活跃 Agent",
+            totalExecutions: "总执行次数",
+            successRate: "执行成功率",
+            totalValue: "总锁定价值",
+        },
+        featured: {
+            title: "精选 Agent",
+            subtitle: "表现最佳的 Agent，即刻可租。",
+        },
+        why: {
+            title: "为什么选择 SHLL？",
+            subtitle: "专为去中心化自动化而生。",
+            items: [
+                { title: "非托管", desc: "资金保留在 Agent 金库中，无需共享私钥。" },
+                { title: "策略守护", desc: "链上策略强制执行风控限制与白名单。" },
+                { title: "可验证", desc: "所有操作与逻辑分支均链上可查。" }
+            ]
+        }
+    },
     marketplace: {
         title: "市场",
         subtitle: "租赁由链上策略保护的自主 AI Agent。",
@@ -585,6 +666,20 @@ export const zh: Dictionary = {
         filterAll: "全部",
         filterAvailable: "可租赁",
         filterRented: "已租出",
+        sort: {
+            label: "排序",
+            newest: "最新上架",
+            oldest: "最早上架",
+            priceAsc: "价格: 低到高",
+            priceDesc: "价格: 高到低",
+        },
+        filters: {
+            title: "筛选",
+            status: "状态",
+            price: "价格范围",
+            capabilities: "能力",
+            clear: "清除全部",
+        }
     },
     agent: {
         card: {
@@ -604,6 +699,7 @@ export const zh: Dictionary = {
                 history: "历史记录",
                 rent: "租赁 / 续租",
                 console: "控制台",
+                faq: "常见问题",
             },
             status: {
                 active: "活跃",
@@ -615,6 +711,17 @@ export const zh: Dictionary = {
             },
             notFound: "未找到 Agent。",
             loading: "加载中...",
+            risk: {
+                title: "风险分析",
+                allowlist: "仅白名单",
+                allowlistDesc: "交互仅限于已验证的合约地址。",
+                spendLimit: "支出限额",
+                spendLimitDesc: "单笔交易最大支出受限。",
+                nonCustodial: "非托管",
+                nonCustodialDesc: "资产由 Agent 金库持有，非 Runner 托管。",
+                trustScore: "信任评分",
+                viewPolicy: "查看策略",
+            },
         },
         rent: {
             title: "租赁 Agent",
@@ -1074,6 +1181,7 @@ export const zh: Dictionary = {
             warning: "给 operator 授权只是允许提交动作，不是允许绕过策略。"
         },
         faq: {
+            title: "常见问题解答",
             items: [
                 {
                     q: "租户需要把私钥交给 SHLL 吗？",

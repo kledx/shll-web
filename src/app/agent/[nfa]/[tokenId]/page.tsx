@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { AppShell } from "@/components/ui/app-shell";
+import { AppShell } from "@/components/layout/app-shell";
 import { PolicySummary } from "@/components/business/policy-summary";
 import { ActionPanel } from "@/components/business/action-panel";
 import { useAccount } from "wagmi";
@@ -15,8 +15,13 @@ import { useAgentAccount } from "@/hooks/useAgentAccount";
 import { Copy } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import Link from "next/link";
+import { RiskPanel } from "@/components/agent/risk-panel";
+import { FAQSection } from "@/components/agent/faq-section";
+import { PageTransition } from "@/components/layout/page-transition";
+import { PageSection } from "@/components/layout/page-section";
 
 function CopyButton({ text }: { text: string }) {
+    const { language } = useTranslation();
     const handleCopy = () => {
         navigator.clipboard.writeText(text);
         // Toast would go here
@@ -26,7 +31,7 @@ function CopyButton({ text }: { text: string }) {
             type="button"
             onClick={handleCopy}
             className="ml-1 inline-flex h-9 w-9 items-center justify-center rounded-md text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)]"
-            aria-label="Copy address"
+            aria-label={language === "zh" ? "复制地址" : "Copy address"}
         >
             <Copy className="h-3 w-3" />
         </button>
@@ -46,7 +51,7 @@ export default function AgentDetailPage() {
     if (isLoading) {
         return (
             <AppShell>
-                <div className="flex justify-center rounded-2xl border border-[var(--color-border)] bg-white/70 p-20 shadow-[var(--shadow-soft)]">
+                <div className="flex justify-center rounded-2xl border border-[var(--color-border)] bg-white/70 p-10 md:p-12 shadow-[var(--shadow-soft)]">
                     <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-[var(--color-primary)]" />
                 </div>
             </AppShell>
@@ -56,7 +61,7 @@ export default function AgentDetailPage() {
     if (!agent) {
         return (
             <AppShell>
-                <div className="rounded-2xl border border-[var(--color-border)] bg-white/70 p-20 text-center shadow-[var(--shadow-soft)]">
+                <div className="rounded-2xl border border-[var(--color-border)] bg-white/70 p-10 md:p-12 text-center shadow-[var(--shadow-soft)]">
                     <p className="text-xl text-[var(--color-muted-foreground)]">{t.agent.detail.notFound}</p>
                 </div>
             </AppShell>
@@ -74,8 +79,8 @@ export default function AgentDetailPage() {
         : t.agent.detail.status.notListed;
 
     return (
-        <AppShell>
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
+        <AppShell fullWidth>
+            <PageTransition className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
                 <div className="space-y-6">
                     <nav className="flex items-center gap-1 text-xs text-[var(--color-muted-foreground)]">
                         <Link href="/" className="hover:text-[var(--color-primary)]">
@@ -85,7 +90,7 @@ export default function AgentDetailPage() {
                         <span className="text-[var(--color-foreground)]">{agent.name}</span>
                     </nav>
 
-                    <section className="space-y-4 rounded-2xl border border-[var(--color-border)] bg-white/72 p-6 shadow-[var(--shadow-soft)]">
+                    <PageSection as="section" className="space-y-4">
                         <div className="flex flex-wrap items-center gap-2">
                             <Chip variant="sticker" className="text-sm">#{tokenId}</Chip>
                             <Chip variant={agent.status === "active" ? "burgundy" : "secondary"}>
@@ -127,7 +132,11 @@ export default function AgentDetailPage() {
                                 </div>
                             </div>
                         </div>
-                    </section>
+                    </PageSection>
+
+                    {/* RISK PANEL (New Component) */}
+                    <RiskPanel />
+
 
                     <Tabs defaultValue="overview" className="w-full">
                         <TabsList className="mb-4 h-12 rounded-xl border border-[var(--color-border)] bg-white/72">
@@ -137,11 +146,14 @@ export default function AgentDetailPage() {
                             <TabsTrigger value="history" className="px-6 py-2.5">
                                 {t.agent.detail.tabs.history}
                             </TabsTrigger>
+                            <TabsTrigger value="faq" className="px-6 py-2.5">
+                                {t.agent.detail.tabs.faq}
+                            </TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="overview" className="space-y-5">
                             {(isOwner || isRenter) && (
-                                <section className="rounded-2xl border border-[var(--color-border)] bg-white/72 p-4 shadow-[var(--shadow-soft)]">
+                                <PageSection as="section" compact>
                                     <VaultPanel
                                         agentAccount={agentAccount}
                                         isRenter={isRenter}
@@ -149,7 +161,7 @@ export default function AgentDetailPage() {
                                         tokenId={tokenId}
                                         readOnly
                                     />
-                                </section>
+                                </PageSection>
                             )}
 
                             <PolicySummary rules={agent.policy} />
@@ -157,6 +169,10 @@ export default function AgentDetailPage() {
 
                         <TabsContent value="history">
                             <TransactionHistory tokenId={tokenId} />
+                        </TabsContent>
+
+                        <TabsContent value="faq">
+                            <FAQSection />
                         </TabsContent>
                     </Tabs>
                 </div>
@@ -176,7 +192,7 @@ export default function AgentDetailPage() {
                         listingId={agent.listingId}
                     />
                 </div>
-            </div>
+            </PageTransition>
         </AppShell>
     );
 }

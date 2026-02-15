@@ -156,6 +156,10 @@ export function useListings() {
       renter: isRented ? effectiveRenter : undefined,
       isTemplate: Boolean(item.isTemplate),
       capabilities: ["swap"], // Hardcoded for now
+      metrics: {
+        successRate: 100,
+        totalExecutions: typeof tokenId === 'string' ? parseInt(tokenId) * 5 + 2 : 0 // Fake data for visual variety
+      },
       metadata: { name: agentName },
     };
   });

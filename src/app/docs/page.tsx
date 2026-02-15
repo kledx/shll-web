@@ -5,10 +5,14 @@ import Image from "next/image";
 import { useState } from "react";
 import { ArrowRight, AlertTriangle, CircleHelp, ExternalLink, Rocket, ShieldCheck, Workflow } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
-import { AppShell } from "@/components/ui/app-shell";
+import { AppShell } from "@/components/layout/app-shell";
+import { PageHeader } from "@/components/layout/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+const DOCS_CARD_CLASS = "border-[var(--color-primary)]/20 bg-white/72";
+const DOCS_CARD_SOFT_CLASS = "border-[var(--color-primary)]/20 bg-white/72";
 
 export default function DocsPage() {
     const { t } = useTranslation();
@@ -16,12 +20,9 @@ export default function DocsPage() {
     const docs = t.docs;
 
     return (
-        <AppShell>
-            <div className="mx-auto max-w-6xl space-y-8 px-4 py-10 md:py-12">
-                <div className="rounded-2xl border border-[var(--color-border)] bg-white/72 px-6 py-8 text-center shadow-[var(--shadow-soft)] md:px-10">
-                    <h1 className="page-title">{docs.title}</h1>
-                    <p className="page-subtitle mx-auto mt-3 text-base md:text-lg">{docs.subtitle}</p>
-                </div>
+        <AppShell fullWidth contentClassName="mx-auto max-w-6xl">
+            <div className="space-y-8 py-4 md:py-6">
+                <PageHeader title={docs.title} subtitle={docs.subtitle} align="center" />
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsList className="mx-auto mb-8 grid h-auto w-full max-w-3xl grid-cols-2 gap-1 rounded-2xl border border-[var(--color-border)] bg-white/72 p-1 md:grid-cols-4">
@@ -33,7 +34,7 @@ export default function DocsPage() {
 
                     <TabsContent value="quickstart" className="animate-in fade-in-50 duration-300">
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                            <Card className="lg:col-span-2 border-[var(--color-primary)]/20 bg-white/72">
+                            <Card className={`lg:col-span-2 ${DOCS_CARD_CLASS}`}>
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2 text-[var(--color-primary)]">
                                         <Rocket className="w-5 h-5" />
@@ -41,7 +42,7 @@ export default function DocsPage() {
                                     </CardTitle>
                                 </CardHeader>
                             </Card>
-                            <Card className="border-[var(--color-primary)]/20 bg-white/72">
+                            <Card className={DOCS_CARD_CLASS}>
                                 <CardHeader>
                                     <CardTitle className="text-[var(--color-primary)]">{docs.quickstart.prerequisitesTitle}</CardTitle>
                                 </CardHeader>
@@ -57,7 +58,7 @@ export default function DocsPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             {docs.quickstart.steps.map((step, index) => (
-                                <Card key={index} className="flex flex-col h-full border-[var(--color-primary)]/20 bg-white/68">
+                                <Card key={index} className={`flex flex-col h-full ${DOCS_CARD_SOFT_CLASS}`}>
                                     <CardHeader>
                                         <CardTitle className="text-xl font-serif text-[var(--color-primary)]">{step.title}</CardTitle>
                                     </CardHeader>
@@ -71,7 +72,7 @@ export default function DocsPage() {
                             ))}
                         </div>
 
-                        <Card className="border-[var(--color-primary)]/20 bg-white/72">
+                        <Card className={DOCS_CARD_CLASS}>
                             <CardHeader>
                                 <CardTitle className="text-[var(--color-primary)]">{docs.quickstart.pathsTitle}</CardTitle>
                             </CardHeader>
@@ -86,7 +87,7 @@ export default function DocsPage() {
                     </TabsContent>
 
                     <TabsContent value="runtime" className="animate-in fade-in-50 duration-300">
-                        <Card className="mb-6 border-[var(--color-primary)]/20 bg-white/72">
+                        <Card className={`mb-6 ${DOCS_CARD_CLASS}`}>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-[var(--color-primary)]">
                                     <Workflow className="w-5 h-5" />
@@ -95,7 +96,7 @@ export default function DocsPage() {
                             </CardHeader>
                         </Card>
 
-                        <Card className="mb-6 border-[var(--color-primary)]/20 bg-white/72">
+                        <Card className={`mb-6 ${DOCS_CARD_CLASS}`}>
                             <CardHeader>
                                 <CardTitle className="text-[var(--color-primary)]">{docs.runtime.actorsTitle}</CardTitle>
                             </CardHeader>
@@ -110,7 +111,7 @@ export default function DocsPage() {
                             </CardContent>
                         </Card>
 
-                        <Card className="mb-6 border-[var(--color-primary)]/20 bg-white/72">
+                        <Card className={`mb-6 ${DOCS_CARD_CLASS}`}>
                             <CardHeader>
                                 <CardTitle className="text-[var(--color-primary)]">{docs.runtime.conceptsTitle}</CardTitle>
                             </CardHeader>
@@ -126,7 +127,7 @@ export default function DocsPage() {
                         </Card>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                            <Card className="border-[var(--color-primary)]/20 bg-white/72">
+                            <Card className={DOCS_CARD_CLASS}>
                                 <CardHeader>
                                     <CardTitle className="text-[var(--color-primary)]">{docs.runtime.actionFieldsTitle}</CardTitle>
                                 </CardHeader>
@@ -138,7 +139,7 @@ export default function DocsPage() {
                                     </ul>
                                 </CardContent>
                             </Card>
-                            <Card className="border-[var(--color-primary)]/20 bg-white/72">
+                            <Card className={DOCS_CARD_CLASS}>
                                 <CardHeader>
                                     <CardTitle className="text-[var(--color-primary)]">{docs.runtime.mappingTitle}</CardTitle>
                                 </CardHeader>
@@ -153,7 +154,7 @@ export default function DocsPage() {
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <Card className="lg:col-span-2 border-[var(--color-primary)]/20 bg-white/72">
+                            <Card className={`lg:col-span-2 ${DOCS_CARD_CLASS}`}>
                                 <CardHeader>
                                     <CardTitle className="text-[var(--color-primary)]">{docs.runtime.flowTitle}</CardTitle>
                                 </CardHeader>
@@ -165,7 +166,7 @@ export default function DocsPage() {
                                     </ol>
                                 </CardContent>
                             </Card>
-                            <Card className="border-[var(--color-primary)]/20 bg-white/72">
+                            <Card className={DOCS_CARD_CLASS}>
                                 <CardHeader>
                                     <CardTitle className="text-[var(--color-primary)]">{docs.runtime.multiTenantTitle}</CardTitle>
                                 </CardHeader>
@@ -179,7 +180,7 @@ export default function DocsPage() {
                             </Card>
                         </div>
 
-                        <Card className="mt-6 border-[var(--color-primary)]/20 bg-white/72">
+                        <Card className={`mt-6 ${DOCS_CARD_CLASS}`}>
                             <CardHeader>
                                 <CardTitle className="text-[var(--color-primary)]">{docs.runtime.failureTitle}</CardTitle>
                             </CardHeader>
@@ -194,7 +195,7 @@ export default function DocsPage() {
                     </TabsContent>
 
                     <TabsContent value="security" className="animate-in fade-in-50 duration-300">
-                        <Card className="mb-6 border-[var(--color-primary)]/20 bg-white/72">
+                        <Card className={`mb-6 ${DOCS_CARD_CLASS}`}>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-[var(--color-primary)]">
                                     <ShieldCheck className="w-5 h-5" />
@@ -206,7 +207,7 @@ export default function DocsPage() {
                             </CardContent>
                         </Card>
 
-                        <Card className="mb-6 border-[var(--color-primary)]/20 bg-white/72">
+                        <Card className={`mb-6 ${DOCS_CARD_CLASS}`}>
                             <CardHeader>
                                 <CardTitle className="text-[var(--color-primary)]">{docs.security.diagramsTitle}</CardTitle>
                             </CardHeader>
@@ -258,7 +259,7 @@ export default function DocsPage() {
                         </Card>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <Card className="border-[var(--color-primary)]/20 bg-white/72">
+                            <Card className={DOCS_CARD_CLASS}>
                                 <CardHeader>
                                     <CardTitle className="text-[var(--color-primary)]">{docs.security.problemsTitle}</CardTitle>
                                 </CardHeader>
@@ -270,7 +271,7 @@ export default function DocsPage() {
                                     </ul>
                                 </CardContent>
                             </Card>
-                            <Card className="border-[var(--color-primary)]/20 bg-white/72">
+                            <Card className={DOCS_CARD_CLASS}>
                                 <CardHeader>
                                     <CardTitle className="text-[var(--color-primary)]">{docs.security.actorsTitle}</CardTitle>
                                 </CardHeader>
@@ -284,7 +285,7 @@ export default function DocsPage() {
                             </Card>
                         </div>
 
-                        <Card className="mt-6 border-[var(--color-primary)]/20 bg-white/72">
+                        <Card className={`mt-6 ${DOCS_CARD_CLASS}`}>
                             <CardHeader>
                                 <CardTitle className="text-[var(--color-primary)]">{docs.security.architectureTitle}</CardTitle>
                             </CardHeader>
@@ -302,7 +303,7 @@ export default function DocsPage() {
                             </CardContent>
                         </Card>
 
-                        <Card className="mt-6 border-[var(--color-primary)]/20 bg-white/72">
+                        <Card className={`mt-6 ${DOCS_CARD_CLASS}`}>
                             <CardHeader>
                                 <CardTitle className="text-[var(--color-primary)]">{docs.security.bapTitle}</CardTitle>
                             </CardHeader>
@@ -322,7 +323,7 @@ export default function DocsPage() {
                             <CardContent className="font-mono text-sm text-green-900">{docs.security.invariant}</CardContent>
                         </Card>
 
-                        <Card className="mt-6 border-[var(--color-primary)]/20 bg-white/72">
+                        <Card className={`mt-6 ${DOCS_CARD_CLASS}`}>
                             <CardHeader>
                                 <CardTitle className="text-[var(--color-primary)]">{docs.security.executionTitle}</CardTitle>
                             </CardHeader>
@@ -336,7 +337,7 @@ export default function DocsPage() {
                         </Card>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                            <Card className="border-[var(--color-primary)]/20 bg-white/72">
+                            <Card className={DOCS_CARD_CLASS}>
                                 <CardHeader>
                                     <CardTitle className="text-[var(--color-primary)]">{docs.security.allowlistTitle}</CardTitle>
                                 </CardHeader>
@@ -348,7 +349,7 @@ export default function DocsPage() {
                                     </ul>
                                 </CardContent>
                             </Card>
-                            <Card className="border-[var(--color-primary)]/20 bg-white/72">
+                            <Card className={DOCS_CARD_CLASS}>
                                 <CardHeader>
                                     <CardTitle className="text-[var(--color-primary)]">{docs.security.constraintsTitle}</CardTitle>
                                 </CardHeader>
@@ -362,7 +363,7 @@ export default function DocsPage() {
                             </Card>
                         </div>
 
-                        <Card className="mt-6 border-[var(--color-primary)]/20 bg-white/72">
+                        <Card className={`mt-6 ${DOCS_CARD_CLASS}`}>
                             <CardHeader>
                                 <CardTitle className="text-[var(--color-primary)]">{docs.security.runnerTitle}</CardTitle>
                             </CardHeader>
@@ -375,7 +376,7 @@ export default function DocsPage() {
                             </CardContent>
                         </Card>
 
-                        <Card className="mt-6 border-[var(--color-primary)]/20 bg-white/72">
+                        <Card className={`mt-6 ${DOCS_CARD_CLASS}`}>
                             <CardHeader>
                                 <CardTitle className="text-[var(--color-primary)]">{docs.security.comparisonTitle}</CardTitle>
                             </CardHeader>
@@ -404,7 +405,7 @@ export default function DocsPage() {
                         </Card>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                            <Card className="border-[var(--color-primary)]/20 bg-white/72">
+                            <Card className={DOCS_CARD_CLASS}>
                                 <CardHeader>
                                     <CardTitle className="text-[var(--color-primary)]">{docs.security.defendTitle}</CardTitle>
                                 </CardHeader>
@@ -416,7 +417,7 @@ export default function DocsPage() {
                                     </ul>
                                 </CardContent>
                             </Card>
-                            <Card className="border-[var(--color-primary)]/20 bg-white/72">
+                            <Card className={DOCS_CARD_CLASS}>
                                 <CardHeader>
                                     <CardTitle className="text-[var(--color-primary)]">{docs.security.limitsTitle}</CardTitle>
                                 </CardHeader>
@@ -431,7 +432,7 @@ export default function DocsPage() {
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                            <Card className="border-[var(--color-primary)]/20 bg-white/72">
+                            <Card className={DOCS_CARD_CLASS}>
                                 <CardHeader>
                                     <CardTitle className="text-[var(--color-primary)]">{docs.security.userGuideTitle}</CardTitle>
                                 </CardHeader>
@@ -443,7 +444,7 @@ export default function DocsPage() {
                                     </ul>
                                 </CardContent>
                             </Card>
-                            <Card className="border-[var(--color-primary)]/20 bg-white/72">
+                            <Card className={DOCS_CARD_CLASS}>
                                 <CardHeader>
                                     <CardTitle className="text-[var(--color-primary)]">{docs.security.developerGuideTitle}</CardTitle>
                                 </CardHeader>
@@ -475,7 +476,7 @@ export default function DocsPage() {
                     </TabsContent>
 
                     <TabsContent value="faq" className="animate-in fade-in-50 duration-300">
-                        <Card className="border-[var(--color-primary)]/20 bg-white/72">
+                        <Card className={DOCS_CARD_CLASS}>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-[var(--color-primary)]">
                                     <CircleHelp className="w-5 h-5" />
@@ -556,6 +557,5 @@ function DocActionButton({
         </Link>
     );
 }
-
 
 
