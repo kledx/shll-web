@@ -33,6 +33,7 @@ function CopyButton({ text }: { text: string }) {
             className="ml-1 inline-flex h-9 w-9 items-center justify-center rounded-md text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)]"
             aria-label={language === "zh" ? "复制地址" : "Copy address"}
         >
+            <span className="sr-only">Copy</span>
             <Copy className="h-3 w-3" />
         </button>
     );
@@ -134,7 +135,7 @@ export default function AgentDetailPage() {
                         </div>
                     </PageSection>
 
-                    {/* RISK PANEL (New Component) */}
+                    {/* RISK PANEL */}
                     <RiskPanel />
 
 
@@ -164,7 +165,7 @@ export default function AgentDetailPage() {
                                 </PageSection>
                             )}
 
-                            <PolicySummary rules={agent.policy} />
+                            <PolicySummary rules={agent.policy} v14Policy={agent.v14Policy} />
                         </TabsContent>
 
                         <TabsContent value="history">

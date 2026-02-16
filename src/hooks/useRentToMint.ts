@@ -17,7 +17,7 @@ function isInsufficientBalanceError(message: string): boolean {
 
 /**
  * Hook for Rent-to-Mint flow — mints a new instance from a template listing.
- * Mirrors useRent.ts but calls ListingManager.rentToMint(listingId, daysToRent, initParams).
+ * Mirrors useRent.ts but calls ListingManager.rentToMint(...) or rentToMintWithParams(...).
  */
 export function useRentToMint() {
     const { t } = useTranslation();
@@ -74,12 +74,18 @@ export function useRentToMint() {
      * @param listingId   Template listing ID (bytes32)
      * @param days        Number of days to rent
      * @param pricePerDay Price per day in wei
-     * @param initParams  Optional init params (bytes), defaults to "0x01"
+     * @param v14Params   Optional V1.4 parameters (policyId, version, paramsPacked)
+     * @param initParams  Legacy init params (bytes), defaults to "0x01"
      */
     const rentToMintAgent = async (
         listingId: Hex,
         days: number,
         pricePerDay: bigint,
+        v14Params?: {
+            policyId: number;
+            version: number;
+            paramsPacked: Hex;
+        },
         initParams: Hex = "0x01"
     ) => {
         if (!publicClient || !address) {
@@ -106,16 +112,28 @@ export function useRentToMint() {
         }
 
         try {
-            const { request } = await publicClient.simulateContract({
-                account: address,
-                address: CONTRACTS.ListingManager.address,
-                abi: CONTRACTS.ListingManager.abi,
-                functionName: "rentToMint",
-                args: [listingId, days, initParams],
-                value: totalValue,
-            });
+            let requestResult;
+            if (v14Params) {
+                requestResult = await publicClient.simulateContract({
+                    account: address,
+                    address: CONTRACTS.ListingManager.address,
+                    abi: CONTRACTS.ListingManager.abi,
+                    functionName: "rentToMintWithParams",
+                    args: [listingId, days, v14Params.policyId, v14Params.version, v14Params.paramsPacked],
+                    value: totalValue,
+                });
+            } else {
+                requestResult = await publicClient.simulateContract({
+                    account: address,
+                    address: CONTRACTS.ListingManager.address,
+                    abi: CONTRACTS.ListingManager.abi,
+                    functionName: "rentToMint",
+                    args: [listingId, days, initParams],
+                    value: totalValue,
+                });
+            }
 
-            writeContract(request);
+            writeContract(requestResult.request as any);
         } catch (e: unknown) {
             const err = e as { shortMessage?: string; message?: string };
             const message = err.shortMessage || err.message || "Unknown error";

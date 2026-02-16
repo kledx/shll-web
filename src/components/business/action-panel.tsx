@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useRentToMint } from "@/hooks/useRentToMint";
 import { Hex } from "viem";
 import { getConsoleCopy } from "@/lib/console/console-copy";
+import { usePolicy, InstanceParams } from "@/hooks/usePolicy";
 
 interface ActionPanelProps {
     nfaAddress: string;
@@ -29,6 +30,11 @@ export function ActionPanel({ nfaAddress, tokenId, isActive, isListed, isTemplat
     const { rentToMintAgent, isLoading: isRenting } = useRentToMint();
     const { t, language } = useTranslation();
     const ui = getConsoleCopy(language);
+
+    // V1.4 Policy Support: Fetching schema for Pilot Policy (ID 1, Ver 1)
+    // In production, this would come from agent data or listing info.
+    const { schema, encodeParams } = usePolicy(isTemplateListing ? 1 : undefined, 1);
+
     const canRent = isActive && isListed && isTemplateListing && !isOwner && !isRenter;
     const roleLabel = isOwner
         ? ui.roleLabels.owner
@@ -49,13 +55,24 @@ export function ActionPanel({ nfaAddress, tokenId, isActive, isListed, isTemplat
                     ? (language === "zh" ? "该挂牌当前不可租用。" : "This listing is not currently rentable.")
                     : (language === "zh" ? "该 Agent 当前未挂牌出租。" : "This agent is not listed for rent.");
 
-    const handleRent = async (days: number) => {
+    const handleRent = async (days: number, params?: InstanceParams) => {
         if (!listingId) {
             console.error("No listing ID found");
             return;
         }
-        // initParams must be non-empty for rentToMint.
-        await rentToMintAgent(listingId as Hex, days, pricePerDayRaw, "0x01");
+
+        if (params && schema) {
+            // V1.4 Parameterized Rental
+            const paramsPacked = encodeParams(params);
+            await rentToMintAgent(listingId as Hex, days, pricePerDayRaw, {
+                policyId: 1,
+                version: 1,
+                paramsPacked
+            });
+        } else {
+            // V1.3 Default Rental
+            await rentToMintAgent(listingId as Hex, days, pricePerDayRaw, undefined, "0x01");
+        }
     };
 
     return (
@@ -75,6 +92,7 @@ export function ActionPanel({ nfaAddress, tokenId, isActive, isListed, isTemplat
                         paymentToken="BNB"
                         onRent={handleRent}
                         isRenting={isRenting}
+                        schema={schema}
                     />
                 ) : (
                     <Card className="border-dashed border-[var(--color-border)] bg-white/70">

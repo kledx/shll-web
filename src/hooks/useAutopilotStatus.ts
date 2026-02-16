@@ -16,6 +16,9 @@ export interface RunnerAutopilotStatus {
         lastReason?: string;
         updatedAt?: string;
     };
+    // V1.4.1 fields
+    paramsHash?: string;
+    strategyId?: string;
     runs?: Array<{
         id: string;
         actionType?: string;
@@ -23,6 +26,10 @@ export interface RunnerAutopilotStatus {
         txHash?: string;
         error?: string;
         createdAt?: string;
+        // V1.4.1 enhanced fields
+        paramsHash?: string;
+        strategyExplain?: string;
+        failureCategory?: string;
     }>;
 }
 

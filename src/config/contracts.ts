@@ -2166,6 +2166,19 @@ export const CONTRACTS = {
         "stateMutability": "payable"
       },
       {
+        "type": "function",
+        "name": "rentToMintWithParams",
+        "inputs": [
+          { "name": "listingId", "type": "bytes32", "internalType": "bytes32" },
+          { "name": "daysToRent", "type": "uint32", "internalType": "uint32" },
+          { "name": "policyId", "type": "uint32", "internalType": "uint32" },
+          { "name": "version", "type": "uint16", "internalType": "uint16" },
+          { "name": "paramsPacked", "type": "bytes", "internalType": "bytes" }
+        ],
+        "outputs": [{ "name": "instanceId", "type": "uint256", "internalType": "uint256" }],
+        "stateMutability": "payable"
+      },
+      {
         "type": "event",
         "name": "TemplateListingCreated",
         "inputs": [
@@ -2949,6 +2962,126 @@ export const CONTRACTS = {
         "type": "error",
         "name": "ZeroAddress",
         "inputs": []
+      }
+    ] as const,
+  },
+  PolicyRegistry: {
+    address: getRuntimeEnv("NEXT_PUBLIC_POLICY_REGISTRY", "0x0000000000000000000000000000000000000000") as Address,
+    abi: [
+      {
+        "type": "function",
+        "name": "getSchema",
+        "inputs": [
+          { "name": "policyId", "type": "uint32", "internalType": "uint32" },
+          { "name": "version", "type": "uint16", "internalType": "uint16" }
+        ],
+        "outputs": [
+          {
+            "name": "",
+            "type": "tuple",
+            "internalType": "struct PolicyRegistry.ParamSchema",
+            "components": [
+              { "name": "maxSlippageBps", "type": "uint16", "internalType": "uint16" },
+              { "name": "maxTradeLimit", "type": "uint96", "internalType": "uint96" },
+              { "name": "maxDailyLimit", "type": "uint96", "internalType": "uint96" },
+              { "name": "allowedTokenGroups", "type": "uint32[]", "internalType": "uint32[]" },
+              { "name": "allowedDexGroups", "type": "uint32[]", "internalType": "uint32[]" },
+              { "name": "receiverMustBeVault", "type": "bool", "internalType": "bool" },
+              { "name": "forbidInfiniteApprove", "type": "bool", "internalType": "bool" }
+            ]
+          }
+        ],
+        "stateMutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "getActionRule",
+        "inputs": [
+          { "name": "policyId", "type": "uint32", "internalType": "uint32" },
+          { "name": "version", "type": "uint16", "internalType": "uint16" },
+          { "name": "target", "type": "address", "internalType": "address" },
+          { "name": "selector", "type": "bytes4", "internalType": "bytes4" }
+        ],
+        "outputs": [
+          {
+            "name": "",
+            "type": "tuple",
+            "internalType": "struct PolicyRegistry.ActionRule",
+            "components": [
+              { "name": "moduleMask", "type": "uint256", "internalType": "uint256" },
+              { "name": "exists", "type": "bool", "internalType": "bool" }
+            ]
+          }
+        ],
+        "stateMutability": "view"
+      }
+    ] as const,
+  },
+  InstanceConfig: {
+    address: getRuntimeEnv("NEXT_PUBLIC_INSTANCE_CONFIG", "0x0000000000000000000000000000000000000000") as Address,
+    abi: [
+      {
+        "type": "function",
+        "name": "getInstanceParams",
+        "inputs": [{ "name": "instanceId", "type": "uint256", "internalType": "uint256" }],
+        "outputs": [
+          {
+            "name": "ref",
+            "type": "tuple",
+            "internalType": "struct InstanceConfig.PolicyRef",
+            "components": [
+              { "name": "policyId", "type": "uint32", "internalType": "uint32" },
+              { "name": "version", "type": "uint16", "internalType": "uint16" }
+            ]
+          },
+          { "name": "params", "type": "bytes", "internalType": "bytes" }
+        ],
+        "stateMutability": "view"
+      }
+    ] as const,
+  },
+  GroupRegistry: {
+    address: getRuntimeEnv("NEXT_PUBLIC_GROUP_REGISTRY", "0x0000000000000000000000000000000000000000") as Address,
+    abi: [
+      {
+        "type": "function",
+        "name": "isInGroup",
+        "inputs": [
+          { "name": "groupId", "type": "uint32", "internalType": "uint32" },
+          { "name": "member", "type": "address", "internalType": "address" }
+        ],
+        "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
+        "stateMutability": "view"
+      }
+    ] as const,
+  },
+  PolicyGuardV2: {
+    address: getRuntimeEnv("NEXT_PUBLIC_POLICY_GUARD_V2", "0x0000000000000000000000000000000000000000") as Address,
+    abi: [
+      {
+        "type": "function",
+        "name": "validate",
+        "inputs": [
+          { "name": "nfa", "type": "address", "internalType": "address" },
+          { "name": "tokenId", "type": "uint256", "internalType": "uint256" },
+          { "name": "agentAccount", "type": "address", "internalType": "address" },
+          { "name": "caller", "type": "address", "internalType": "address" },
+          {
+            "name": "action",
+            "type": "tuple",
+            "internalType": "struct Action",
+            "components": [
+              { "name": "target", "type": "address", "internalType": "address" },
+              { "name": "value", "type": "uint256", "internalType": "uint256" },
+              { "name": "data", "type": "bytes", "internalType": "bytes" }
+            ]
+          }
+        ],
+        "outputs": [
+          { "name": "ok", "type": "bool", "internalType": "bool" },
+          { "name": "reason", "type": "string", "internalType": "string" }
+        ],
+        "stateMutability": "view"
       }
     ] as const,
   },

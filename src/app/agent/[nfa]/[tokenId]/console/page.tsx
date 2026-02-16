@@ -28,6 +28,7 @@ import { PageTransition } from "@/components/layout/page-transition";
 import { PageHeader } from "@/components/layout/page-header";
 import { PageSection } from "@/components/layout/page-section";
 import { getRuntimeEnv } from "@/lib/runtime-env";
+import { InstanceConfigPanel } from "@/components/console/instance-config-panel";
 
 export default function ConsolePage() {
     const { t, language } = useTranslation();
@@ -591,6 +592,13 @@ export default function ConsolePage() {
                                 onDisableAutopilot={handleDisableAutopilot}
                             />
                         </section>
+
+                        {/* V1.4 Instance Config Panel */}
+                        <InstanceConfigPanel
+                            tokenId={tokenId}
+                            runnerStatus={runnerStatus}
+                            language={language === "zh" ? "zh" : "en"}
+                        />
                     </div>
 
                     {/* Column 2: Execution (Action Builder) */}
