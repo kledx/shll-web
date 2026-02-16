@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { getConsoleCopy } from "@/lib/console/console-copy";
+import { getRuntimeEnv } from "@/lib/runtime-env";
 
 interface ActivityItem {
     id: string;
@@ -42,7 +43,7 @@ export function TransactionHistory({
     const [isLoading, setIsLoading] = useState(true);
     const [degraded, setDegraded] = useState(false);
     const [degradedReason, setDegradedReason] = useState<string | null>(null);
-    const txExplorerBaseUrl = (process.env.NEXT_PUBLIC_EXPLORER_TX_BASE_URL || "https://testnet.bscscan.com/tx").replace(/\/$/, "");
+    const txExplorerBaseUrl = getRuntimeEnv("NEXT_PUBLIC_EXPLORER_TX_BASE_URL", "https://testnet.bscscan.com/tx").replace(/\/$/, "");
 
     const formatTime = (ts: string) => {
         const value = Number(ts);

@@ -5,6 +5,7 @@
 //   Option B: set NEXT_PUBLIC_EXTRA_TOKENS env var (format: SYMBOL:Name:0xAddr:decimals;...)
 
 import { Address } from "viem";
+import { getRuntimeEnv } from "@/lib/runtime-env";
 
 export interface TokenConfig {
     symbol: string;
@@ -58,7 +59,7 @@ const DEFAULT_TOKENS: TokenConfig[] = [
  * All extra tokens are treated as ERC-20 (isNative = false).
  */
 function parseExtraTokens(): TokenConfig[] {
-    const raw = process.env.NEXT_PUBLIC_EXTRA_TOKENS ?? "";
+    const raw = getRuntimeEnv("NEXT_PUBLIC_EXTRA_TOKENS", "");
     if (!raw.trim()) return [];
     const results: TokenConfig[] = [];
     for (const entry of raw.split(";")) {

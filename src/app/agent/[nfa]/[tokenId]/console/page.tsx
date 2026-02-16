@@ -27,6 +27,7 @@ import Link from "next/link";
 import { PageTransition } from "@/components/layout/page-transition";
 import { PageHeader } from "@/components/layout/page-header";
 import { PageSection } from "@/components/layout/page-section";
+import { getRuntimeEnv } from "@/lib/runtime-env";
 
 export default function ConsolePage() {
     const { t, language } = useTranslation();
@@ -35,7 +36,7 @@ export default function ConsolePage() {
     const nfaAddress = params.nfa as string;
     const detailPath = `/agent/${nfaAddress}/${tokenId}`;
     const consolePath = `${detailPath}/console`;
-    const runnerOperatorDefault = process.env.NEXT_PUBLIC_RUNNER_OPERATOR || "";
+    const runnerOperatorDefault = getRuntimeEnv("NEXT_PUBLIC_RUNNER_OPERATOR", "");
     const tokenIdBigInt = useMemo(() => {
         try {
             return BigInt(tokenId);
@@ -185,7 +186,7 @@ export default function ConsolePage() {
             : null;
     const autopilotBlockedByPack = !strictPackValid;
     const [autopilotOperator, setAutopilotOperator] = useState<string>(
-        process.env.NEXT_PUBLIC_RUNNER_OPERATOR || ""
+        getRuntimeEnv("NEXT_PUBLIC_RUNNER_OPERATOR", "")
     );
     const [autopilotExpiresAt, setAutopilotExpiresAt] = useState<string>("");
     const runnerOperatorLocked = (runnerStatus?.runnerOperator || runnerOperatorDefault || "").trim();
