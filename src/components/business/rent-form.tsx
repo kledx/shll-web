@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -17,9 +18,20 @@ interface RentFormProps {
     onRent: (days: number, params?: InstanceParams) => Promise<void>;
     isRenting: boolean;
     schema?: ParamSchema;
+    enableInstanceParams?: boolean;
+    initialParams?: Partial<InstanceParams>;
 }
 
-export function RentForm({ pricePerDay, minDays, paymentToken, onRent, isRenting, schema }: RentFormProps) {
+export function RentForm({
+    pricePerDay,
+    minDays,
+    paymentToken,
+    onRent,
+    isRenting,
+    schema,
+    enableInstanceParams = false,
+    initialParams,
+}: RentFormProps) {
     const { t, language } = useTranslation();
     const { isConnected } = useAccount();
     const [days, setDays] = useState(minDays);
@@ -36,6 +48,14 @@ export function RentForm({ pricePerDay, minDays, paymentToken, onRent, isRenting
         riskTier: 1,
     });
 
+    useEffect(() => {
+        if (!initialParams) return;
+        setParams((prev) => ({
+            ...prev,
+            ...initialParams,
+        }));
+    }, [initialParams]);
+
     // Mock approval function
     const handleApprove = async () => {
         setIsApproving(true);
@@ -46,19 +66,19 @@ export function RentForm({ pricePerDay, minDays, paymentToken, onRent, isRenting
     };
 
     const handleRent = async () => {
-        await onRent(days, schema ? params : undefined);
+        await onRent(days, enableInstanceParams ? params : undefined);
     };
 
     const price = parseFloat(pricePerDay) || 0;
     const totalCost = (price * days).toFixed(4);
 
     const isParamsValid = useMemo(() => {
-        if (!schema) return true;
+        if (!enableInstanceParams || !schema) return true;
         if (params.slippageBps > schema.maxSlippageBps) return false;
         if (params.tradeLimit > schema.maxTradeLimit) return false;
         if (params.dailyLimit > schema.maxDailyLimit) return false;
         return true;
-    }, [params, schema]);
+    }, [params, schema, enableInstanceParams]);
 
     return (
         <Card className="border-[var(--color-border)] bg-white/72">
@@ -68,7 +88,7 @@ export function RentForm({ pricePerDay, minDays, paymentToken, onRent, isRenting
                         <CardTitle>{t.agent.rent.title}</CardTitle>
                         <CardDescription>{t.agent.rent.minLease.replace("{days}", minDays.toString())}</CardDescription>
                     </div>
-                    {schema && (
+                    {enableInstanceParams && (
                         <div className="flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-1 text-[10px] font-bold text-blue-600 border border-blue-500/20">
                             <Settings2 className="h-3 w-3" />
                             V1.4
@@ -129,7 +149,9 @@ export function RentForm({ pricePerDay, minDays, paymentToken, onRent, isRenting
                                     value={params.slippageBps}
                                     onChange={(e) => setParams({ ...params, slippageBps: parseInt(e.target.value) || 0 })}
                                 />
-                                <p className="text-[10px] text-[var(--color-muted-foreground)]">MAX: {schema.maxSlippageBps}</p>
+                                <p className="text-[10px] text-[var(--color-muted-foreground)]">
+                                    MAX: {schema ? schema.maxSlippageBps : "—"}
+                                </p>
                             </div>
 
                             <div className="space-y-2">
@@ -143,7 +165,9 @@ export function RentForm({ pricePerDay, minDays, paymentToken, onRent, isRenting
                                         try { setParams({ ...params, tradeLimit: parseEther(e.target.value || "0") }); } catch (e) { }
                                     }}
                                 />
-                                <p className="text-[10px] text-[var(--color-muted-foreground)]">MAX: {formatEther(schema.maxTradeLimit)}</p>
+                                <p className="text-[10px] text-[var(--color-muted-foreground)]">
+                                    MAX: {schema ? formatEther(schema.maxTradeLimit) : "—"}
+                                </p>
                             </div>
 
                             <div className="space-y-2">
@@ -157,7 +181,9 @@ export function RentForm({ pricePerDay, minDays, paymentToken, onRent, isRenting
                                         try { setParams({ ...params, dailyLimit: parseEther(e.target.value || "0") }); } catch (e) { }
                                     }}
                                 />
-                                <p className="text-[10px] text-[var(--color-muted-foreground)]">MAX: {formatEther(schema.maxDailyLimit)}</p>
+                                <p className="text-[10px] text-[var(--color-muted-foreground)]">
+                                    MAX: {schema ? formatEther(schema.maxDailyLimit) : "—"}
+                                </p>
                             </div>
 
                             <div className="space-y-2">

@@ -3,6 +3,7 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { PolicySummary } from "@/components/business/policy-summary";
 import { ActionPanel } from "@/components/business/action-panel";
+import { AgentSettings } from "@/components/business/agent-settings";
 import { useAccount } from "wagmi";
 import { useParams } from "next/navigation";
 import { Chip } from "@/components/ui/chip";
@@ -46,7 +47,7 @@ export default function AgentDetailPage() {
     const { address } = useAccount();
     const { t } = useTranslation();
 
-    const { data: agent, isLoading } = useAgent(tokenId, nfaAddress);
+    const { data: agent, isLoading, error } = useAgent(tokenId, nfaAddress);
     const { account: agentAccount } = useAgentAccount(tokenId, nfaAddress);
 
     if (isLoading) {
@@ -54,6 +55,17 @@ export default function AgentDetailPage() {
             <AppShell>
                 <div className="flex justify-center rounded-2xl border border-[var(--color-border)] bg-white/70 p-10 md:p-12 shadow-[var(--shadow-soft)]">
                     <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-[var(--color-primary)]" />
+                </div>
+            </AppShell>
+        );
+    }
+
+    if (!agent && error) {
+        return (
+            <AppShell>
+                <div className="rounded-2xl border border-[var(--color-border)] bg-white/70 p-10 md:p-12 text-center shadow-[var(--shadow-soft)]">
+                    <p className="text-xl text-[var(--color-muted-foreground)]">{t.agent.detail.notFound}</p>
+                    <p className="mt-2 text-xs text-[var(--color-muted-foreground)]">{String(error.message || error)}</p>
                 </div>
             </AppShell>
         );
@@ -166,6 +178,15 @@ export default function AgentDetailPage() {
                             )}
 
                             <PolicySummary rules={agent.policy} v14Policy={agent.v14Policy} />
+
+                            {(isOwner || isRenter) && (
+                                <AgentSettings
+                                    tokenId={BigInt(tokenId)}
+                                    isRenter={isRenter}
+                                    isOwner={isOwner}
+                                    v14Params={agent.v14Policy}
+                                />
+                            )}
                         </TabsContent>
 
                         <TabsContent value="history">

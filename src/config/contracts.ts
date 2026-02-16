@@ -2205,7 +2205,7 @@ export const CONTRACTS = {
     ] as const,
   },
   PolicyGuard: {
-    address: "0xcfdc3bea04c36673a1eabf777647d38fcfcb23c7" as Address,
+    address: getRuntimeEnv("NEXT_PUBLIC_POLICY_GUARD", "0xcfdc3bea04c36673a1eabf777647d38fcfcb23c7") as Address,
     abi: [
       {
         "type": "constructor",
@@ -2965,8 +2965,11 @@ export const CONTRACTS = {
       }
     ] as const,
   },
-  PolicyRegistry: {
-    address: getRuntimeEnv("NEXT_PUBLIC_POLICY_REGISTRY", "0x0000000000000000000000000000000000000000") as Address,
+  // ═══════════════════════════════════════════════════════════
+  // V2.0: PolicyGuardV3 — merged contract (replaces PolicyRegistry + InstanceConfig + GroupRegistry + PolicyGuardV2)
+  // ═══════════════════════════════════════════════════════════
+  PolicyGuardV3: {
+    address: getRuntimeEnv("NEXT_PUBLIC_POLICY_GUARD_V3", "0x0000000000000000000000000000000000000000") as Address,
     abi: [
       {
         "type": "function",
@@ -2979,7 +2982,7 @@ export const CONTRACTS = {
           {
             "name": "",
             "type": "tuple",
-            "internalType": "struct PolicyRegistry.ParamSchema",
+            "internalType": "struct PolicyGuardV3.ParamSchema",
             "components": [
               { "name": "maxSlippageBps", "type": "uint16", "internalType": "uint16" },
               { "name": "maxTradeLimit", "type": "uint96", "internalType": "uint96" },
@@ -2987,39 +2990,16 @@ export const CONTRACTS = {
               { "name": "allowedTokenGroups", "type": "uint32[]", "internalType": "uint32[]" },
               { "name": "allowedDexGroups", "type": "uint32[]", "internalType": "uint32[]" },
               { "name": "receiverMustBeVault", "type": "bool", "internalType": "bool" },
-              { "name": "forbidInfiniteApprove", "type": "bool", "internalType": "bool" }
+              { "name": "forbidInfiniteApprove", "type": "bool", "internalType": "bool" },
+              { "name": "allowExplorerMode", "type": "bool", "internalType": "bool" },
+              { "name": "explorerMaxTradeLimit", "type": "uint96", "internalType": "uint96" },
+              { "name": "explorerMaxDailyLimit", "type": "uint96", "internalType": "uint96" },
+              { "name": "allowParamsUpdate", "type": "bool", "internalType": "bool" }
             ]
           }
         ],
         "stateMutability": "view"
       },
-      {
-        "type": "function",
-        "name": "getActionRule",
-        "inputs": [
-          { "name": "policyId", "type": "uint32", "internalType": "uint32" },
-          { "name": "version", "type": "uint16", "internalType": "uint16" },
-          { "name": "target", "type": "address", "internalType": "address" },
-          { "name": "selector", "type": "bytes4", "internalType": "bytes4" }
-        ],
-        "outputs": [
-          {
-            "name": "",
-            "type": "tuple",
-            "internalType": "struct PolicyRegistry.ActionRule",
-            "components": [
-              { "name": "moduleMask", "type": "uint256", "internalType": "uint256" },
-              { "name": "exists", "type": "bool", "internalType": "bool" }
-            ]
-          }
-        ],
-        "stateMutability": "view"
-      }
-    ] as const,
-  },
-  InstanceConfig: {
-    address: getRuntimeEnv("NEXT_PUBLIC_INSTANCE_CONFIG", "0x0000000000000000000000000000000000000000") as Address,
-    abi: [
       {
         "type": "function",
         "name": "getInstanceParams",
@@ -3028,7 +3008,7 @@ export const CONTRACTS = {
           {
             "name": "ref",
             "type": "tuple",
-            "internalType": "struct InstanceConfig.PolicyRef",
+            "internalType": "struct PolicyGuardV3.PolicyRef",
             "components": [
               { "name": "policyId", "type": "uint32", "internalType": "uint32" },
               { "name": "version", "type": "uint16", "internalType": "uint16" }
@@ -3037,12 +3017,78 @@ export const CONTRACTS = {
           { "name": "params", "type": "bytes", "internalType": "bytes" }
         ],
         "stateMutability": "view"
-      }
-    ] as const,
-  },
-  GroupRegistry: {
-    address: getRuntimeEnv("NEXT_PUBLIC_GROUP_REGISTRY", "0x0000000000000000000000000000000000000000") as Address,
-    abi: [
+      },
+      {
+        "type": "function",
+        "name": "executionMode",
+        "inputs": [{ "name": "tokenId", "type": "uint256", "internalType": "uint256" }],
+        "outputs": [{ "name": "", "type": "uint8", "internalType": "enum PolicyGuardV3.ExecutionMode" }],
+        "stateMutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "setExecutionMode",
+        "inputs": [
+          { "name": "tokenId", "type": "uint256", "internalType": "uint256" },
+          { "name": "mode", "type": "uint8", "internalType": "enum PolicyGuardV3.ExecutionMode" }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+      },
+      {
+        "type": "function",
+        "name": "updateParams",
+        "inputs": [
+          { "name": "instanceId", "type": "uint256", "internalType": "uint256" },
+          { "name": "newParamsPacked", "type": "bytes", "internalType": "bytes" }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+      },
+      {
+        "type": "function",
+        "name": "tokenPermissions",
+        "inputs": [{ "name": "tokenId", "type": "uint256", "internalType": "uint256" }],
+        "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+        "stateMutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "grantTokenPermission",
+        "inputs": [
+          { "name": "tokenId", "type": "uint256", "internalType": "uint256" },
+          { "name": "bits", "type": "uint256", "internalType": "uint256" }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+      },
+      {
+        "type": "function",
+        "name": "revokeTokenPermission",
+        "inputs": [
+          { "name": "tokenId", "type": "uint256", "internalType": "uint256" },
+          { "name": "bits", "type": "uint256", "internalType": "uint256" }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
+      },
+      {
+        "type": "function",
+        "name": "dailySpent",
+        "inputs": [
+          { "name": "tokenId", "type": "uint256", "internalType": "uint256" },
+          { "name": "dayIndex", "type": "uint32", "internalType": "uint32" }
+        ],
+        "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+        "stateMutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "paramsVersion",
+        "inputs": [{ "name": "instanceId", "type": "uint256", "internalType": "uint256" }],
+        "outputs": [{ "name": "", "type": "uint32", "internalType": "uint32" }],
+        "stateMutability": "view"
+      },
       {
         "type": "function",
         "name": "isInGroup",
@@ -3052,12 +3098,7 @@ export const CONTRACTS = {
         ],
         "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
         "stateMutability": "view"
-      }
-    ] as const,
-  },
-  PolicyGuardV2: {
-    address: getRuntimeEnv("NEXT_PUBLIC_POLICY_GUARD_V2", "0x0000000000000000000000000000000000000000") as Address,
-    abi: [
+      },
       {
         "type": "function",
         "name": "validate",
@@ -3082,7 +3123,346 @@ export const CONTRACTS = {
           { "name": "reason", "type": "string", "internalType": "string" }
         ],
         "stateMutability": "view"
+      },
+      {
+        "type": "event",
+        "name": "ParamsUpdated",
+        "inputs": [
+          { "name": "instanceId", "type": "uint256", "indexed": true, "internalType": "uint256" },
+          { "name": "paramsVersion", "type": "uint32", "indexed": false, "internalType": "uint32" },
+          { "name": "paramsHash", "type": "bytes32", "indexed": false, "internalType": "bytes32" }
+        ],
+        "anonymous": false
+      },
+      {
+        "type": "event",
+        "name": "ExecutionModeChanged",
+        "inputs": [
+          { "name": "tokenId", "type": "uint256", "indexed": true, "internalType": "uint256" },
+          { "name": "mode", "type": "uint8", "indexed": false, "internalType": "enum PolicyGuardV3.ExecutionMode" }
+        ],
+        "anonymous": false
+      },
+      {
+        "type": "event",
+        "name": "PermissionGranted",
+        "inputs": [
+          { "name": "tokenId", "type": "uint256", "indexed": true, "internalType": "uint256" },
+          { "name": "bits", "type": "uint256", "indexed": false, "internalType": "uint256" }
+        ],
+        "anonymous": false
+      },
+      {
+        "type": "event",
+        "name": "PermissionRevoked",
+        "inputs": [
+          { "name": "tokenId", "type": "uint256", "indexed": true, "internalType": "uint256" },
+          { "name": "bits", "type": "uint256", "indexed": false, "internalType": "uint256" }
+        ],
+        "anonymous": false
       }
     ] as const,
   },
+};
+
+// ═══════════════════════════════════════════════════════════
+// Admin-only ABIs (used by /admin panel, not imported by regular hooks)
+// ═══════════════════════════════════════════════════════════
+
+export const ADMIN_ABI = {
+  PolicyGuardV3: [
+    // createPolicy
+    {
+      "type": "function",
+      "name": "createPolicy",
+      "inputs": [
+        { "name": "policyId", "type": "uint32" },
+        { "name": "version", "type": "uint16" },
+        {
+          "name": "schema", "type": "tuple",
+          "components": [
+            { "name": "maxSlippageBps", "type": "uint16" },
+            { "name": "maxTradeLimit", "type": "uint96" },
+            { "name": "maxDailyLimit", "type": "uint96" },
+            { "name": "allowedTokenGroups", "type": "uint32[]" },
+            { "name": "allowedDexGroups", "type": "uint32[]" },
+            { "name": "receiverMustBeVault", "type": "bool" },
+            { "name": "forbidInfiniteApprove", "type": "bool" },
+            { "name": "allowExplorerMode", "type": "bool" },
+            { "name": "explorerMaxTradeLimit", "type": "uint96" },
+            { "name": "explorerMaxDailyLimit", "type": "uint96" },
+            { "name": "allowParamsUpdate", "type": "bool" }
+          ]
+        },
+        { "name": "policyModules", "type": "uint256" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    // setActionRule
+    {
+      "type": "function",
+      "name": "setActionRule",
+      "inputs": [
+        { "name": "policyId", "type": "uint32" },
+        { "name": "version", "type": "uint16" },
+        { "name": "target", "type": "address" },
+        { "name": "selector", "type": "bytes4" },
+        { "name": "moduleMask", "type": "uint256" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    // freezePolicy
+    {
+      "type": "function",
+      "name": "freezePolicy",
+      "inputs": [
+        { "name": "policyId", "type": "uint32" },
+        { "name": "version", "type": "uint16" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    // setGroupMembers (batch)
+    {
+      "type": "function",
+      "name": "setGroupMembers",
+      "inputs": [
+        { "name": "groupId", "type": "uint32" },
+        { "name": "members", "type": "address[]" },
+        { "name": "allowed", "type": "bool" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    // setGroupMember (single)
+    {
+      "type": "function",
+      "name": "setGroupMember",
+      "inputs": [
+        { "name": "groupId", "type": "uint32" },
+        { "name": "member", "type": "address" },
+        { "name": "allowed", "type": "bool" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    // setTargetBlocked
+    {
+      "type": "function",
+      "name": "setTargetBlocked",
+      "inputs": [
+        { "name": "target", "type": "address" },
+        { "name": "blocked", "type": "bool" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    // setMinter
+    {
+      "type": "function",
+      "name": "setMinter",
+      "inputs": [{ "name": "_minter", "type": "address" }],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    // setAllowedCaller
+    {
+      "type": "function",
+      "name": "setAllowedCaller",
+      "inputs": [{ "name": "_caller", "type": "address" }],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    // setSchemaAllowedBits
+    {
+      "type": "function",
+      "name": "setSchemaAllowedBits",
+      "inputs": [
+        { "name": "policyId", "type": "uint32" },
+        { "name": "version", "type": "uint16" },
+        { "name": "allowedBits", "type": "uint256" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    // owner (read)
+    {
+      "type": "function",
+      "name": "owner",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "address" }],
+      "stateMutability": "view"
+    },
+    // groupSize (read)
+    {
+      "type": "function",
+      "name": "groupSize",
+      "inputs": [{ "name": "groupId", "type": "uint32" }],
+      "outputs": [{ "name": "", "type": "uint256" }],
+      "stateMutability": "view"
+    },
+    // policyExists (read)
+    {
+      "type": "function",
+      "name": "policyExists",
+      "inputs": [
+        { "name": "policyId", "type": "uint32" },
+        { "name": "version", "type": "uint16" }
+      ],
+      "outputs": [{ "name": "", "type": "bool" }],
+      "stateMutability": "view"
+    },
+    // isFrozen (read)
+    {
+      "type": "function",
+      "name": "isFrozen",
+      "inputs": [
+        { "name": "policyId", "type": "uint32" },
+        { "name": "version", "type": "uint16" }
+      ],
+      "outputs": [{ "name": "", "type": "bool" }],
+      "stateMutability": "view"
+    },
+  ] as const,
+
+  AgentNFA: [
+    // registerTemplate
+    {
+      "type": "function",
+      "name": "registerTemplate",
+      "inputs": [
+        { "name": "tokenId", "type": "uint256" },
+        { "name": "policyId", "type": "bytes32" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    // pauseAgent
+    {
+      "type": "function",
+      "name": "pauseAgent",
+      "inputs": [{ "name": "tokenId", "type": "uint256" }],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    // unpauseAgent
+    {
+      "type": "function",
+      "name": "unpauseAgent",
+      "inputs": [{ "name": "tokenId", "type": "uint256" }],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    // pause (global)
+    {
+      "type": "function",
+      "name": "pause",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    // unpause (global)
+    {
+      "type": "function",
+      "name": "unpause",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    // setListingManager
+    {
+      "type": "function",
+      "name": "setListingManager",
+      "inputs": [{ "name": "_listingManager", "type": "address" }],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    // setPolicyGuard
+    {
+      "type": "function",
+      "name": "setPolicyGuard",
+      "inputs": [{ "name": "_policyGuard", "type": "address" }],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    // owner (read)
+    {
+      "type": "function",
+      "name": "owner",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "address" }],
+      "stateMutability": "view"
+    },
+    // totalSupply (read)
+    {
+      "type": "function",
+      "name": "totalSupply",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "uint256" }],
+      "stateMutability": "view"
+    },
+  ] as const,
+
+  ListingManager: [
+    // listAgent
+    {
+      "type": "function",
+      "name": "listAgent",
+      "inputs": [
+        { "name": "nfa", "type": "address" },
+        { "name": "tokenId", "type": "uint256" },
+        { "name": "pricePerDay", "type": "uint256" },
+        { "name": "minDays", "type": "uint256" },
+        { "name": "isTemplate", "type": "bool" }
+      ],
+      "outputs": [{ "name": "listingId", "type": "bytes32" }],
+      "stateMutability": "nonpayable"
+    },
+    // updateListing
+    {
+      "type": "function",
+      "name": "updateListing",
+      "inputs": [
+        { "name": "listingId", "type": "bytes32" },
+        { "name": "pricePerDay", "type": "uint256" },
+        { "name": "minDays", "type": "uint256" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    // delistAgent
+    {
+      "type": "function",
+      "name": "delistAgent",
+      "inputs": [{ "name": "listingId", "type": "bytes32" }],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    // pauseRenting
+    {
+      "type": "function",
+      "name": "pauseRenting",
+      "inputs": [{ "name": "listingId", "type": "bytes32" }],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    // setInstanceConfig
+    {
+      "type": "function",
+      "name": "setInstanceConfig",
+      "inputs": [{ "name": "_instanceConfig", "type": "address" }],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    // owner (read)
+    {
+      "type": "function",
+      "name": "owner",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "address" }],
+      "stateMutability": "view"
+    },
+  ] as const,
 };

@@ -27,6 +27,8 @@ export default function RootLayout({
     NEXT_PUBLIC_RUNNER_OPERATOR: process.env.NEXT_PUBLIC_RUNNER_OPERATOR || "",
     NEXT_PUBLIC_EXPLORER_TX_BASE_URL: process.env.NEXT_PUBLIC_EXPLORER_TX_BASE_URL || "",
     NEXT_PUBLIC_EXTRA_TOKENS: process.env.NEXT_PUBLIC_EXTRA_TOKENS || "",
+    NEXT_PUBLIC_POLICY_GUARD_V3: process.env.NEXT_PUBLIC_POLICY_GUARD_V3 || "",
+    NEXT_PUBLIC_ADMIN_WALLET: process.env.NEXT_PUBLIC_ADMIN_WALLET || "",
   };
   const runtimeEnvScript = `window.__SHLL_RUNTIME_ENV__ = ${JSON.stringify(runtimeEnv).replace(/</g, "\\u003c")};`;
 

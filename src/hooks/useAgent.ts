@@ -263,14 +263,14 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
         query: { enabled: canQuery }
     });
 
-    // V1.4 Instance Data from InstanceConfig
+    // V1.4 Instance Data — V2.0: reads from PolicyGuardV3 (merged contract)
     // getInstanceParams returns [PolicyRef{policyId,version}, bytes paramsPacked]
     const { data: v14InstanceData } = useReadContract({
-        address: CONTRACTS.InstanceConfig.address,
-        abi: CONTRACTS.InstanceConfig.abi,
+        address: CONTRACTS.PolicyGuardV3.address,
+        abi: CONTRACTS.PolicyGuardV3.abi,
         functionName: "getInstanceParams",
         args: isInstance ? [tokenIdBigInt] : undefined,
-        query: { enabled: isInstance && !!CONTRACTS.InstanceConfig.address }
+        query: { enabled: isInstance && !!CONTRACTS.PolicyGuardV3.address }
     });
 
 

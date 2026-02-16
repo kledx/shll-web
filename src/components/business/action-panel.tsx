@@ -8,9 +8,12 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { useRentToMint } from "@/hooks/useRentToMint";
-import { Hex } from "viem";
+import { Hex, parseEther } from "viem";
 import { getConsoleCopy } from "@/lib/console/console-copy";
 import { usePolicy, InstanceParams } from "@/hooks/usePolicy";
+import { useCapabilityPack } from "@/hooks/useCapabilityPack";
+import { useMemo } from "react";
+import { encodeInstanceParamsWithEncoding } from "@/lib/pack/instance-params";
 
 interface ActionPanelProps {
     nfaAddress: string;
@@ -30,10 +33,57 @@ export function ActionPanel({ nfaAddress, tokenId, isActive, isListed, isTemplat
     const { rentToMintAgent, isLoading: isRenting } = useRentToMint();
     const { t, language } = useTranslation();
     const ui = getConsoleCopy(language);
+    const tokenIdBigInt = useMemo(() => {
+        try {
+            return BigInt(tokenId);
+        } catch {
+            return undefined;
+        }
+    }, [tokenId]);
+    const capabilityPack = useCapabilityPack(tokenIdBigInt, nfaAddress);
+    const manifest = capabilityPack.manifest;
+    const isV11Pack = manifest?.schemaVersion === "1.1";
+    const policyRef = manifest?.policyRef;
+    const instance = manifest?.instance;
+    const hasPackInstanceEncoding =
+        !!instance?.encoding?.abiTypes?.length &&
+        !!instance?.encoding?.fieldOrder?.length;
 
-    // V1.4 Policy Support: Fetching schema for Pilot Policy (ID 1, Ver 1)
-    // In production, this would come from agent data or listing info.
-    const { schema, encodeParams } = usePolicy(isTemplateListing ? 1 : undefined, 1);
+    // V1.4 policy source priority: pack.policyRef -> fallback 1/1
+    const policyId = isTemplateListing ? (policyRef?.policyId ?? 1) : undefined;
+    const policyVersion = isTemplateListing ? (policyRef?.version ?? 1) : undefined;
+    const { schema, encodeParams } = usePolicy(policyId, policyVersion);
+
+    const initialInstanceParams = useMemo<Partial<InstanceParams> | undefined>(() => {
+        const defaults = instance?.defaults;
+        if (!defaults) return undefined;
+
+        const out: Partial<InstanceParams> = {};
+        if (typeof defaults.slippageBps === "number") out.slippageBps = defaults.slippageBps;
+        if (typeof defaults.tokenGroupId === "number") out.tokenGroupId = defaults.tokenGroupId;
+        if (typeof defaults.dexGroupId === "number") out.dexGroupId = defaults.dexGroupId;
+        if (typeof defaults.riskTier === "number") out.riskTier = defaults.riskTier;
+
+        try {
+            if (typeof defaults.tradeLimit === "string" || typeof defaults.tradeLimit === "number") {
+                out.tradeLimit = parseEther(String(defaults.tradeLimit));
+            }
+        } catch {
+            // ignore malformed defaults
+        }
+
+        try {
+            if (typeof defaults.dailyLimit === "string" || typeof defaults.dailyLimit === "number") {
+                out.dailyLimit = parseEther(String(defaults.dailyLimit));
+            }
+        } catch {
+            // ignore malformed defaults
+        }
+
+        return out;
+    }, [instance?.defaults]);
+
+    const enableInstanceParams = isTemplateListing && (isV11Pack || !!schema);
 
     const canRent = isActive && isListed && isTemplateListing && !isOwner && !isRenter;
     const roleLabel = isOwner
@@ -61,13 +111,28 @@ export function ActionPanel({ nfaAddress, tokenId, isActive, isListed, isTemplat
             return;
         }
 
-        if (params && schema) {
-            // V1.4 Parameterized Rental
+        if (params && hasPackInstanceEncoding && policyRef) {
+            // V1.4 pack-driven parameterized rental
+            const paramsPacked = encodeInstanceParamsWithEncoding(
+                params as unknown as Record<string, unknown>,
+                {
+                    abiTypes: instance!.encoding!.abiTypes!,
+                    fieldOrder: instance!.encoding!.fieldOrder!,
+                    units: instance!.encoding!.units,
+                },
+            );
+            await rentToMintAgent(listingId as Hex, days, pricePerDayRaw, {
+                policyId: policyRef.policyId,
+                version: policyRef.version,
+                paramsPacked
+            });
+        } else if (params && schema && policyId !== undefined && policyVersion !== undefined) {
+            // Legacy fallback: policy schema from chain + local fixed ABI encode
             const paramsPacked = encodeParams(params);
             await rentToMintAgent(listingId as Hex, days, pricePerDayRaw, {
-                policyId: 1,
-                version: 1,
-                paramsPacked
+                policyId,
+                version: policyVersion,
+                paramsPacked,
             });
         } else {
             // V1.3 Default Rental
@@ -93,6 +158,8 @@ export function ActionPanel({ nfaAddress, tokenId, isActive, isListed, isTemplat
                         onRent={handleRent}
                         isRenting={isRenting}
                         schema={schema}
+                        enableInstanceParams={enableInstanceParams}
+                        initialParams={initialInstanceParams}
                     />
                 ) : (
                     <Card className="border-dashed border-[var(--color-border)] bg-white/70">

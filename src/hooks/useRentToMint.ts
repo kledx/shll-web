@@ -123,12 +123,13 @@ export function useRentToMint() {
                     value: totalValue,
                 });
             } else {
+                // V2.0: always use rentToMintWithParams with default policy
                 requestResult = await publicClient.simulateContract({
                     account: address,
                     address: CONTRACTS.ListingManager.address,
                     abi: CONTRACTS.ListingManager.abi,
-                    functionName: "rentToMint",
-                    args: [listingId, days, initParams],
+                    functionName: "rentToMintWithParams",
+                    args: [listingId, days, 1, 1, initParams],
                     value: totalValue,
                 });
             }

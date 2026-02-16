@@ -43,6 +43,19 @@ export interface CapabilityPack {
     name: string;
     version: string;
     description?: string;
+    policyRef?: {
+        policyId: number;
+        version: number;
+    };
+    instance?: {
+        paramsSchema?: Record<string, unknown>;
+        defaults?: Record<string, unknown>;
+        encoding?: {
+            abiTypes?: string[];
+            fieldOrder?: string[];
+            units?: Record<string, string>;
+        };
+    };
     console?: {
         templates: string[];
         manualExecute?: {
