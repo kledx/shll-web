@@ -162,7 +162,29 @@ export function useCapabilityPack(tokenId: bigint | undefined, nfaAddress?: stri
         error: Error | null;
     };
 
-    // 1.1 If this token is an instance, resolve templateId for metadata fallback.
+    // 1.1 Check if this token is an instance (not a template itself)
+    const {
+        data: isTemplateFlag,
+        isLoading: isTemplateFlagLoading,
+        error: isTemplateFlagError,
+    } = useReadContract({
+        address: resolvedNfaAddress,
+        abi: nfaAbi,
+        functionName: "isTemplate",
+        args: tokenId !== undefined ? [tokenId] : undefined,
+        query: {
+            enabled: tokenId !== undefined,
+            staleTime: 30_000,
+        },
+    }) as {
+        data: boolean | undefined;
+        isLoading: boolean;
+        error: Error | null;
+    };
+
+    const isInstance = isTemplateFlag === false; // explicitly false means it's an instance
+
+    // 1.2 Resolve templateId for instances (tokenId 0 is valid!)
     const {
         data: templateId,
         isLoading: isTemplateIdLoading,
@@ -173,7 +195,7 @@ export function useCapabilityPack(tokenId: bigint | undefined, nfaAddress?: stri
         functionName: "templateOf",
         args: tokenId !== undefined ? [tokenId] : undefined,
         query: {
-            enabled: tokenId !== undefined,
+            enabled: tokenId !== undefined && isInstance,
             staleTime: 30_000,
         },
     }) as {
@@ -182,10 +204,11 @@ export function useCapabilityPack(tokenId: bigint | undefined, nfaAddress?: stri
         error: Error | null;
     };
 
+    // tokenId 0 is a valid template — use isInstance to determine validity, not > 0
     const templateTokenId = useMemo(() => {
-        if (typeof templateId === "bigint" && templateId > BigInt(0)) return templateId;
+        if (isInstance && typeof templateId === "bigint") return templateId;
         return undefined;
-    }, [templateId]);
+    }, [isInstance, templateId]);
 
     const {
         data: templateMetadata,
@@ -247,8 +270,7 @@ export function useCapabilityPack(tokenId: bigint | undefined, nfaAddress?: stri
                         // ignore parse error, fallback to status text only
                     }
                     throw new Error(
-                        `Failed to fetch manifest: ${response.status} ${response.statusText}${
-                            detail ? ` (${detail})` : ""
+                        `Failed to fetch manifest: ${response.status} ${response.statusText}${detail ? ` (${detail})` : ""
                         }`
                     );
                 }
@@ -269,8 +291,12 @@ export function useCapabilityPack(tokenId: bigint | undefined, nfaAddress?: stri
     const isHashValid = useMemo(() => {
         if (!manifest || !resolvedMetadata?.vaultHash) return null;
 
-        // Empty hash means no verification required
-        if (resolvedMetadata.vaultHash === ZERO_HASH) {
+        // Skip verification for zero hash or placeholder hash
+        const hash = resolvedMetadata.vaultHash.toLowerCase();
+        if (
+            hash === ZERO_HASH ||
+            hash === "0x0000000000000000000000000000000000000000000000000000000000000001"
+        ) {
             return true;
         }
 
@@ -300,8 +326,8 @@ export function useCapabilityPack(tokenId: bigint | undefined, nfaAddress?: stri
     return {
         // Metadata
         metadata: resolvedMetadata,
-        isMetadataLoading: isMetadataLoading || isTemplateIdLoading || isTemplateMetadataLoading,
-        metadataError: metadataError || templateIdError || templateMetadataError,
+        isMetadataLoading: isMetadataLoading || isTemplateFlagLoading || isTemplateIdLoading || isTemplateMetadataLoading,
+        metadataError: metadataError || isTemplateFlagError || templateIdError || templateMetadataError,
 
         // Manifest
         manifest,

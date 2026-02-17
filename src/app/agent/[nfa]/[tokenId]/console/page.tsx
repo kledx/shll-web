@@ -80,7 +80,7 @@ export default function ConsolePage() {
     const readOnlyMessage = ui.readOnlyMessage;
 
     const packStatus: PackStatus = useMemo(() => {
-        if (!agent?.metadata?.vaultURI) return "PACK_NONE";
+        if (!agent?.metadata?.vaultURI && !capabilityPack.hasCapabilityPack) return "PACK_NONE";
         if (capabilityPack.isLoading) return "PACK_LOADING";
         if (capabilityPack.error) return "PACK_INVALID";
         if (capabilityPack.isHashValid === false) return "PACK_INVALID";
@@ -88,6 +88,7 @@ export default function ConsolePage() {
         return "PACK_INVALID";
     }, [
         agent?.metadata?.vaultURI,
+        capabilityPack.hasCapabilityPack,
         capabilityPack.error,
         capabilityPack.isHashValid,
         capabilityPack.isLoading,

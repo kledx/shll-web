@@ -16,6 +16,25 @@ export async function GET(request: NextRequest) {
         );
     }
 
+    if (uri === "swap-v1") {
+        return NextResponse.json({
+            schemaVersion: "1.0.0",
+            name: "PancakeSwap V3 Agent",
+            version: "1.0.0",
+            description: "Automated trading agent with PolicyGuard protection",
+            runner: {
+                mode: "managed",
+                strategyId: "manual_swap",
+                tickSec: 60,
+                dataSource: { type: "chain" }
+            },
+            console: {
+                templates: ["swap"],
+                manualExecute: { enabled: true }
+            }
+        });
+    }
+
     let targetUrl: URL;
     try {
         targetUrl = new URL(uri);

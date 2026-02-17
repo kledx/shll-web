@@ -173,7 +173,7 @@ export function AgentSettings({ tokenId, isRenter, isOwner, v14Params }: AgentSe
                         <div className="grid grid-cols-3 gap-3">
                             <div className="space-y-1">
                                 <label className="text-xs text-blue-600/70 font-medium">
-                                    {language === "zh" ? "滑点 (%)" : "Slippage (%)"}
+                                    {language === "zh" ? "最大滑点 (%)" : "Max Slippage (%)"}
                                 </label>
                                 <input
                                     type="number"
@@ -186,7 +186,7 @@ export function AgentSettings({ tokenId, isRenter, isOwner, v14Params }: AgentSe
                             </div>
                             <div className="space-y-1">
                                 <label className="text-xs text-blue-600/70 font-medium">
-                                    {language === "zh" ? "单笔限额 (BNB)" : "Trade Limit (BNB)"}
+                                    {language === "zh" ? "单笔上限 (BNB)" : "Per-Trade Limit (BNB)"}
                                 </label>
                                 <input
                                     type="text"
@@ -198,7 +198,7 @@ export function AgentSettings({ tokenId, isRenter, isOwner, v14Params }: AgentSe
                             </div>
                             <div className="space-y-1">
                                 <label className="text-xs text-blue-600/70 font-medium">
-                                    {language === "zh" ? "每日限额 (BNB)" : "Daily Limit (BNB)"}
+                                    {language === "zh" ? "每日预算 (BNB)" : "Daily Budget (BNB)"}
                                 </label>
                                 <input
                                     type="text"

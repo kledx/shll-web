@@ -49,7 +49,7 @@ export function InstanceConfigPanel({ tokenId, runnerStatus, language = "en" }: 
                         </CardTitle>
                     </div>
                     {instanceConfig?.found && (
-                        <Chip className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-[10px] font-bold">
+                        <Chip className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-xs font-bold">
                             Policy #{instanceConfig.policyId} v{instanceConfig.version}
                         </Chip>
                     )}
@@ -60,19 +60,19 @@ export function InstanceConfigPanel({ tokenId, runnerStatus, language = "en" }: 
                 {instanceConfig?.found && (
                     <div className="grid grid-cols-2 gap-y-2 gap-x-3">
                         <ParamRow
-                            label={isZh ? "滑点限制" : "Slippage"}
+                            label={isZh ? "最大滑点" : "Max Slippage"}
                             value={`${((instanceConfig.slippageBps ?? 0) / 100).toFixed(2)}%`}
                         />
                         <ParamRow
-                            label={isZh ? "单笔限额" : "Trade Limit"}
+                            label={isZh ? "单笔上限" : "Per-Trade Limit"}
                             value={formatBigValue(instanceConfig.tradeLimit)}
                         />
                         <ParamRow
-                            label={isZh ? "每日限额" : "Daily Limit"}
+                            label={isZh ? "每日预算" : "Daily Budget"}
                             value={formatBigValue(instanceConfig.dailyLimit)}
                         />
                         <ParamRow
-                            label={isZh ? "风险档位" : "Risk Tier"}
+                            label={isZh ? "风险偏好" : "Risk Preference"}
                             value={`Tier ${instanceConfig.riskTier ?? 0}`}
                         />
                         <ParamRow
@@ -89,11 +89,11 @@ export function InstanceConfigPanel({ tokenId, runnerStatus, language = "en" }: 
                 {/* ParamsHash*/}
                 {(instanceConfig?.paramsHash || runnerStatus?.paramsHash) && (
                     <div className="rounded-lg bg-slate-100/80 px-3 py-2">
-                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
                             <Shield className="h-3 w-3" />
                             paramsHash
                         </div>
-                        <div className="font-mono text-[11px] text-slate-600 break-all mt-1">
+                        <div className="font-mono text-xs text-slate-600 break-all mt-1">
                             {instanceConfig?.paramsHash || runnerStatus?.paramsHash}
                         </div>
                     </div>
@@ -102,7 +102,7 @@ export function InstanceConfigPanel({ tokenId, runnerStatus, language = "en" }: 
                 {/* Strategy Explain (from Runner) */}
                 {latestRun?.strategyExplain && (
                     <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 px-3 py-2">
-                        <div className="flex items-center gap-1.5 text-[11px] text-emerald-700 font-medium">
+                        <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-medium">
                             <Activity className="h-3 w-3" />
                             {isZh ? "策略决策说明" : "Strategy Explanation"}
                         </div>
@@ -115,7 +115,7 @@ export function InstanceConfigPanel({ tokenId, runnerStatus, language = "en" }: 
                 {/* Failure Category (from Runner) */}
                 {latestRun?.failureCategory && (
                     <div className="rounded-lg border border-amber-200 bg-amber-50/50 px-3 py-2">
-                        <div className="flex items-center gap-1.5 text-[11px] text-amber-700 font-medium">
+                        <div className="flex items-center gap-1.5 text-xs text-amber-700 font-medium">
                             <AlertTriangle className="h-3 w-3" />
                             {isZh ? "失败归因" : "Failure Category"}
                         </div>
@@ -127,9 +127,9 @@ export function InstanceConfigPanel({ tokenId, runnerStatus, language = "en" }: 
 
                 {/* Strategy ID */}
                 {runnerStatus?.strategyId && (
-                    <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
                         <span className="font-medium">strategyId:</span>
-                        <Chip className="bg-violet-500/10 text-violet-600 border-violet-500/20 text-[10px]">
+                        <Chip className="bg-violet-500/10 text-violet-600 border-violet-500/20 text-xs">
                             {runnerStatus.strategyId}
                         </Chip>
                     </div>
@@ -142,7 +142,7 @@ export function InstanceConfigPanel({ tokenId, runnerStatus, language = "en" }: 
 function ParamRow({ label, value }: { label: string; value: string }) {
     return (
         <div className="flex items-baseline justify-between gap-2">
-            <span className="text-[11px] text-slate-500 font-medium">{label}</span>
+            <span className="text-xs text-slate-500 font-medium">{label}</span>
             <span className="font-mono text-sm font-semibold text-slate-800 truncate">{value}</span>
         </div>
     );

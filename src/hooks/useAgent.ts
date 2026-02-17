@@ -235,10 +235,11 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
     const isInstance = isReadSuccess<boolean>(isTemplateResult) ? !isTemplateResult.result : false;
 
     const templateIdResult = reads?.[10] as ContractRead | undefined;
+    // tokenId 0 is a valid template — use isInstance to gate, not > 0
     const templateId =
-        isReadSuccess<bigint>(templateIdResult) &&
-            typeof templateIdResult.result === "bigint" &&
-            templateIdResult.result > BigInt(0)
+        isInstance &&
+            isReadSuccess<bigint>(templateIdResult) &&
+            typeof templateIdResult.result === "bigint"
             ? templateIdResult.result
             : undefined;
 

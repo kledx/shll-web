@@ -43,8 +43,8 @@ export function RentForm({
         slippageBps: 100, // 1% default
         tradeLimit: parseEther("0.1"),
         dailyLimit: parseEther("1"),
-        tokenGroupId: 0,
-        dexGroupId: 0,
+        tokenGroupId: 100,
+        dexGroupId: 200,
         riskTier: 1,
     });
 
@@ -130,33 +130,46 @@ export function RentForm({
                     </div>
                 </div>
 
-                {/* V1.4 Parameter Inputs */}
+                {/* Instance Risk Parameters */}
                 {schema && (
                     <div className="space-y-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)]/15 p-4">
                         <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-foreground)]">
                             <ShieldAlert className="h-4 w-4 text-orange-500" />
-                            {language === 'zh' ? '实例风险参数' : 'Instance Risk Parameters'}
+                            {language === 'zh' ? '安全防护参数' : 'Security Parameters'}
                         </div>
+                        <p className="text-xs text-[var(--color-muted-foreground)] -mt-2">
+                            {language === 'zh'
+                                ? '以下参数限制 Agent 的链上交易行为，保护你的资金安全'
+                                : 'These parameters limit what the Agent can do on-chain to protect your funds'}
+                        </p>
 
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <label className="text-[11px] uppercase tracking-wider text-[var(--color-muted-foreground)] font-bold">
-                                    {language === 'zh' ? '滑点 (BPS)' : 'Slippage (BPS)'}
+                            {/* Slippage - now uses percentage input */}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-[var(--color-muted-foreground)]">
+                                    {language === 'zh' ? '最大滑点 (%)' : 'Max Slippage (%)'}
                                 </label>
                                 <Input
                                     type="number"
+                                    step="0.1"
                                     className="h-9 font-mono text-sm"
-                                    value={params.slippageBps}
-                                    onChange={(e) => setParams({ ...params, slippageBps: parseInt(e.target.value) || 0 })}
+                                    value={(params.slippageBps / 100).toFixed(2)}
+                                    onChange={(e) => {
+                                        const pct = parseFloat(e.target.value) || 0;
+                                        setParams({ ...params, slippageBps: Math.round(pct * 100) });
+                                    }}
                                 />
-                                <p className="text-[10px] text-[var(--color-muted-foreground)]">
-                                    MAX: {schema ? schema.maxSlippageBps : "—"}
+                                <p className="text-xs text-[var(--color-muted-foreground)]">
+                                    {language === 'zh'
+                                        ? `Swap 价格偏差上限，最大 ${(schema.maxSlippageBps / 100).toFixed(1)}%`
+                                        : `Max price deviation for swaps, up to ${(schema.maxSlippageBps / 100).toFixed(1)}%`}
                                 </p>
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-[11px] uppercase tracking-wider text-[var(--color-muted-foreground)] font-bold">
-                                    {language === 'zh' ? '单笔交易限制' : 'Trade Limit'}
+                            {/* Trade Limit */}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-[var(--color-muted-foreground)]">
+                                    {language === 'zh' ? '单笔上限 (BNB)' : 'Per-Trade Limit (BNB)'}
                                 </label>
                                 <Input
                                     className="h-9 font-mono text-sm"
@@ -165,14 +178,17 @@ export function RentForm({
                                         try { setParams({ ...params, tradeLimit: parseEther(e.target.value || "0") }); } catch (e) { }
                                     }}
                                 />
-                                <p className="text-[10px] text-[var(--color-muted-foreground)]">
-                                    MAX: {schema ? formatEther(schema.maxTradeLimit) : "—"}
+                                <p className="text-xs text-[var(--color-muted-foreground)]">
+                                    {language === 'zh'
+                                        ? `Agent 每次 Swap 最多投入的金额，上限 ${formatEther(schema.maxTradeLimit)} BNB`
+                                        : `Max amount per swap, up to ${formatEther(schema.maxTradeLimit)} BNB`}
                                 </p>
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-[11px] uppercase tracking-wider text-[var(--color-muted-foreground)] font-bold">
-                                    {language === 'zh' ? '每日额度' : 'Daily Limit'}
+                            {/* Daily Budget */}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-[var(--color-muted-foreground)]">
+                                    {language === 'zh' ? '每日预算 (BNB)' : 'Daily Budget (BNB)'}
                                 </label>
                                 <Input
                                     className="h-9 font-mono text-sm"
@@ -181,29 +197,37 @@ export function RentForm({
                                         try { setParams({ ...params, dailyLimit: parseEther(e.target.value || "0") }); } catch (e) { }
                                     }}
                                 />
-                                <p className="text-[10px] text-[var(--color-muted-foreground)]">
-                                    MAX: {schema ? formatEther(schema.maxDailyLimit) : "—"}
+                                <p className="text-xs text-[var(--color-muted-foreground)]">
+                                    {language === 'zh'
+                                        ? `Agent 当日累计交易上限，每天 UTC 0 点重置，上限 ${formatEther(schema.maxDailyLimit)} BNB`
+                                        : `Total daily trading cap, resets at UTC midnight, up to ${formatEther(schema.maxDailyLimit)} BNB`}
                                 </p>
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-[11px] uppercase tracking-wider text-[var(--color-muted-foreground)] font-bold">
-                                    {language === 'zh' ? '风险等级' : 'Risk Tier'}
+                            {/* Risk Tier */}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-[var(--color-muted-foreground)]">
+                                    {language === 'zh' ? '风险偏好' : 'Risk Preference'}
                                 </label>
                                 <select
                                     className="h-9 w-full rounded-md border border-[var(--color-border)] bg-transparent px-3 text-sm"
                                     value={params.riskTier}
                                     onChange={(e) => setParams({ ...params, riskTier: parseInt(e.target.value) })}
                                 >
-                                    <option value={1}>Tier 1 (Safe)</option>
-                                    <option value={2}>Tier 2 (Moderate)</option>
-                                    <option value={3}>Tier 3 (Aggressive)</option>
+                                    <option value={1}>{language === 'zh' ? '稳健 (Tier 1)' : 'Conservative (Tier 1)'}</option>
+                                    <option value={2}>{language === 'zh' ? '均衡 (Tier 2)' : 'Balanced (Tier 2)'}</option>
+                                    <option value={3}>{language === 'zh' ? '积极 (Tier 3)' : 'Aggressive (Tier 3)'}</option>
                                 </select>
+                                <p className="text-xs text-[var(--color-muted-foreground)]">
+                                    {language === 'zh'
+                                        ? 'Runner 策略决策时参考的风险偏好'
+                                        : 'Risk appetite used by Runner strategy decisions'}
+                                </p>
                             </div>
                         </div>
 
                         {(!isParamsValid) && (
-                            <p className="text-[11px] text-red-500 font-medium">
+                            <p className="text-xs text-red-500 font-medium">
                                 {language === 'zh' ? '⚠️ 参数超出了策略模板允许的最大限制' : '⚠️ Parameters exceed template maximums'}
                             </p>
                         )}

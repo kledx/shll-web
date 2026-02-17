@@ -70,27 +70,27 @@ export function PolicySummary({ rules, v14Policy }: PolicySummaryProps) {
                     <div className="space-y-3 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
                         <div className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-tight">
                             <Target className="h-3.5 w-3.5" />
-                            {language === 'zh' ? '当前实例专属限制' : 'Current Instance Limits'}
+                            {language === 'zh' ? '当前安全防护参数' : 'Active Security Parameters'}
                         </div>
                         <div className="grid grid-cols-2 gap-y-3 gap-x-4">
                             <div className="space-y-1">
-                                <div className="text-[11px] text-blue-600/70 font-medium">{language === 'zh' ? '允许滑点' : 'Slippage Limit'}</div>
+                                <div className="text-xs text-blue-600/70 font-medium">{language === 'zh' ? '最大滑点' : 'Max Slippage'}</div>
                                 <div className="font-mono text-blue-900 font-semibold">{(instanceParams.slippageBps / 100).toFixed(2)}%</div>
                             </div>
                             <div className="space-y-1">
-                                <div className="text-[11px] text-blue-600/70 font-medium">{language === 'zh' ? '单笔限额' : 'Trade Limit'}</div>
+                                <div className="text-xs text-blue-600/70 font-medium">{language === 'zh' ? '单笔上限' : 'Per-Trade Limit'}</div>
                                 <div className="font-mono text-blue-900 font-semibold truncate" title={formatEther(instanceParams.tradeLimit)}>
                                     {formatEther(instanceParams.tradeLimit)} BNB
                                 </div>
                             </div>
                             <div className="space-y-1">
-                                <div className="text-[11px] text-blue-600/70 font-medium">{language === 'zh' ? '每日总限额' : 'Daily Limit'}</div>
+                                <div className="text-xs text-blue-600/70 font-medium">{language === 'zh' ? '每日预算' : 'Daily Budget'}</div>
                                 <div className="font-mono text-blue-900 font-semibold truncate" title={formatEther(instanceParams.dailyLimit)}>
                                     {formatEther(instanceParams.dailyLimit)} BNB
                                 </div>
                             </div>
                             <div className="space-y-1">
-                                <div className="text-[11px] text-blue-600/70 font-medium">{language === 'zh' ? '风险偏好' : 'Risk Tier'}</div>
+                                <div className="text-xs text-blue-600/70 font-medium">{language === 'zh' ? '风险偏好' : 'Risk Preference'}</div>
                                 <div className="font-mono text-blue-900 font-semibold">Tier {instanceParams.riskTier}</div>
                             </div>
                         </div>
@@ -118,17 +118,17 @@ export function PolicySummary({ rules, v14Policy }: PolicySummaryProps) {
                 </div>
 
                 <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)]/35 p-3">
-                    <div className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[var(--color-muted-foreground)] flex items-center gap-1">
+                    <div className="mb-2 text-xs font-bold uppercase tracking-wider text-[var(--color-muted-foreground)] flex items-center gap-1">
                         <Waves className="h-3 w-3" />
                         {t.agent.policy.whitelist}
                     </div>
                     <div className="flex flex-wrap gap-1">
                         {rules.allowedTokens.length > 0 ? rules.allowedTokens.map((token, i) => (
-                            <Chip key={i} variant="outline" className="bg-white/65 text-[10px] h-5 py-0 px-2">
+                            <Chip key={i} variant="outline" className="bg-white/65 text-xs h-5 py-0 px-2">
                                 {token.slice(0, 6)}...{token.slice(-4)}
                             </Chip>
                         )) : (
-                            <span className="text-[10px] text-[var(--color-muted-foreground)] italic">All Tokens Allowed</span>
+                            <span className="text-xs text-[var(--color-muted-foreground)] italic">All Tokens Allowed</span>
                         )}
                     </div>
                 </div>
