@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RentForm } from "./rent-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Lock } from "lucide-react";
 import Link from "next/link";
 import { useRentToMint } from "@/hooks/useRentToMint";
 import { Hex, parseEther } from "viem";
@@ -14,6 +14,7 @@ import { usePolicy, InstanceParams } from "@/hooks/usePolicy";
 import { useCapabilityPack } from "@/hooks/useCapabilityPack";
 import { useMemo } from "react";
 import { encodeInstanceParamsWithEncoding } from "@/lib/pack/instance-params";
+import { useMyRentals } from "@/hooks/useMyRentals";
 
 interface ActionPanelProps {
     nfaAddress: string;
@@ -41,6 +42,17 @@ export function ActionPanel({ nfaAddress, tokenId, isActive, isListed, isTemplat
         }
     }, [tokenId]);
     const capabilityPack = useCapabilityPack(tokenIdBigInt, nfaAddress);
+    const { rentals } = useMyRentals();
+
+    // Find user's instance minted from this template
+    const myInstance = useMemo(() => {
+        if (!isTemplateListing || tokenIdBigInt === undefined) return undefined;
+        return rentals.find(
+            (r) => r.isInstance && r.templateId === tokenIdBigInt && r.isActive
+        ) ?? rentals.find(
+            (r) => r.isInstance && r.templateId === tokenIdBigInt
+        );
+    }, [isTemplateListing, tokenIdBigInt, rentals]);
     const manifest = capabilityPack.manifest;
     const isV11Pack = manifest?.schemaVersion === "1.1";
     const policyRef = manifest?.policyRef;
@@ -144,8 +156,9 @@ export function ActionPanel({ nfaAddress, tokenId, isActive, isListed, isTemplat
         <Tabs defaultValue="rent" className="w-full">
             <TabsList className="grid h-11 w-full grid-cols-2 rounded-xl border border-[var(--color-border)] bg-white/72 p-1">
                 <TabsTrigger value="rent">{t.agent.detail.tabs.rent}</TabsTrigger>
-                <TabsTrigger value="console" disabled={!isRenter && !isOwner}>
+                <TabsTrigger value="console" disabled={!isRenter && !isOwner && !isTemplateListing}>
                     {t.agent.detail.tabs.console}
+                    {!isRenter && !isOwner && !isTemplateListing && <Lock className="ml-1 h-3 w-3 opacity-50" />}
                 </TabsTrigger>
             </TabsList>
 
@@ -177,18 +190,52 @@ export function ActionPanel({ nfaAddress, tokenId, isActive, isListed, isTemplat
                 <Card className="border-dashed border-[var(--color-border)] bg-white/70">
                     <CardHeader>
                         <CardTitle className="text-base text-[var(--color-foreground)]">{t.agent.console.title}</CardTitle>
-                        <CardDescription className="text-[var(--color-muted-foreground)]">{t.agent.console.desc}</CardDescription>
+                        <CardDescription className="text-[var(--color-muted-foreground)]">
+                            {(isRenter || isOwner)
+                                ? t.agent.console.desc
+                                : isTemplateListing
+                                    ? myInstance
+                                        ? (language === "zh"
+                                            ? `您已拥有此 Agent 的副本 #${myInstance.tokenId.toString()}，点击下方按钮直接进入控制台。`
+                                            : `You have Agent #${myInstance.tokenId.toString()} from this listing. Click below to open its console.`)
+                                        : (language === "zh"
+                                            ? "租赁后会为您创建专属 Agent，请前往「我的」页面查看。"
+                                            : "Renting creates your own Agent. Check your Dashboard after renting.")
+                                    : (language === "zh"
+                                        ? "只有当前租户或所有者才能访问控制台。"
+                                        : "Only the active renter or owner can access the console.")}
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="flex flex-col gap-4">
-                            <p className="text-sm text-[var(--color-muted-foreground)]">
-                                {t.agent.console.view.replace("{role}", roleLabel)}
-                            </p>
-                            <Link href={`/agent/${nfaAddress}/${tokenId}/console`}>
-                                <Button className="w-full gap-2">
-                                    {t.agent.console.open} <ExternalLink className="w-4 h-4" />
-                                </Button>
-                            </Link>
+                            {(isRenter || isOwner) ? (
+                                <>
+                                    <p className="text-sm text-[var(--color-muted-foreground)]">
+                                        {t.agent.console.view.replace("{role}", roleLabel)}
+                                    </p>
+                                    <Link href={`/agent/${nfaAddress}/${tokenId}/console`}>
+                                        <Button className="w-full gap-2">
+                                            {t.agent.console.open} <ExternalLink className="w-4 h-4" />
+                                        </Button>
+                                    </Link>
+                                </>
+                            ) : isTemplateListing ? (
+                                myInstance ? (
+                                    <Link href={`/agent/${nfaAddress}/${myInstance.tokenId.toString()}/console`}>
+                                        <Button className="w-full gap-2">
+                                            {language === "zh" ? "进入我的 Agent 控制台" : "Open My Agent Console"}
+                                            {" "}(#{myInstance.tokenId.toString()})
+                                            <ExternalLink className="w-4 h-4" />
+                                        </Button>
+                                    </Link>
+                                ) : (
+                                    <Link href="/me">
+                                        <Button variant="outline" className="w-full gap-2">
+                                            {language === "zh" ? "前往我的 Agent" : "Go to My Agents"} <ExternalLink className="w-4 h-4" />
+                                        </Button>
+                                    </Link>
+                                )
+                            ) : null}
                         </div>
                     </CardContent>
                 </Card>
