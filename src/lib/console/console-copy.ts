@@ -26,10 +26,30 @@ export interface ConsoleCopy {
     actionBuilderHiddenInvalidPack: string;
     actionBuilderHiddenNoTemplates: string;
     actionScopeHint: string;
+    consoleBlockedRentedByOther: string;
+    consoleBlockedNotRented: string;
     sectionLabels: {
         control: string;
         vault: string;
         history: string;
+    };
+    guide: {
+        title: string;
+        dismiss: string;
+        step1Title: string;
+        step1Desc: string;
+        step2Title: string;
+        step2Desc: string;
+        step3Title: string;
+        step3Desc: string;
+    };
+    sectionDesc: {
+        status: string;
+        autopilot: string;
+        builder: string;
+        vault: string;
+        history: string;
+        settings: string;
     };
     autopilotErrors: {
         tokenNotAllowedByRunner: string;
@@ -198,11 +218,31 @@ const enCopy: ConsoleCopy = {
     packInvalidPolicyHint: "Capability pack hash validation failed. Autopilot is disabled by policy.",
     actionBuilderHiddenInvalidPack: "Capability pack validation failed. Transaction builder is hidden.",
     actionBuilderHiddenNoTemplates: "No supported console templates in capability pack.",
+    consoleBlockedRentedByOther: "This agent is currently rented by another user. Only the active renter or owner can access the console.",
+    consoleBlockedNotRented: "Rent this agent to access the console.",
     actionScopeHint: "Action templates define this agent's allowed action/permission boundary. They do not bypass controls. Every on-chain execution is still enforced by PolicyGuard.",
     sectionLabels: {
         control: "Control",
         vault: "Vault",
         history: "History",
+    },
+    guide: {
+        title: "Quick Guide",
+        dismiss: "Got it",
+        step1Title: "1. Check Status",
+        step1Desc: "Verify lease is active and capability pack is valid.",
+        step2Title: "2. Fund Vault",
+        step2Desc: "Deposit BNB to the agent vault for trading.",
+        step3Title: "3. Execute or Automate",
+        step3Desc: "Build a trade manually, or enable Autopilot.",
+    },
+    sectionDesc: {
+        status: "Lease, capability pack, and security policy overview.",
+        autopilot: "Authorize the Runner to auto-execute strategy trades.",
+        builder: "Pick a template, fill params, simulate, then execute.",
+        vault: "Deposit or withdraw funds from the agent vault.",
+        history: "On-chain transaction history for this agent.",
+        settings: "Adjust execution mode and instance parameters.",
     },
     autopilotErrors: {
         tokenNotAllowedByRunner: "Runner has not allowed this agent. Add the tokenId to runner `ALLOWED_TOKEN_IDS`.",
@@ -372,11 +412,31 @@ const zhOverrides: Partial<ConsoleCopy> = {
     packInvalidPolicyHint: "\u80fd\u529b\u5305\u6821\u9a8c\u5931\u8d25\uff0c\u6839\u636e\u7b56\u7565 Autopilot \u5df2\u7981\u7528\u3002",
     actionBuilderHiddenInvalidPack: "\u80fd\u529b\u5305\u6821\u9a8c\u5931\u8d25\uff0c\u4ea4\u6613\u6784\u5efa\u5668\u5df2\u9690\u85cf\u3002",
     actionBuilderHiddenNoTemplates: "\u80fd\u529b\u5305\u672a\u58f0\u660e\u53ef\u7528\u6a21\u677f\u3002",
+    consoleBlockedRentedByOther: "\u8be5 Agent \u5f53\u524d\u6b63\u88ab\u5176\u4ed6\u7528\u6237\u79df\u8d41\u4e2d\uff0c\u53ea\u6709\u5f53\u524d\u79df\u6237\u6216\u6240\u6709\u8005\u624d\u80fd\u8bbf\u95ee\u63a7\u5236\u53f0\u3002",
+    consoleBlockedNotRented: "\u8bf7\u5148\u79df\u8d41\u8be5 Agent\uff0c\u624d\u80fd\u8bbf\u95ee\u63a7\u5236\u53f0\u3002",
     actionScopeHint: "\u52a8\u4f5c\u6a21\u677f\u7528\u4e8e\u58f0\u660e\u5f53\u524d Agent \u7684\u53ef\u6267\u884c\u52a8\u4f5c/\u6743\u9650\u8fb9\u754c\uff0c\u5e76\u4e0d\u653e\u6743\u3002\u6240\u6709\u94fe\u4e0a\u6267\u884c\u4ecd\u4f1a\u88ab PolicyGuard \u4e8c\u6b21\u6821\u9a8c\u3002",
     sectionLabels: {
         control: "\u63a7\u5236",
         vault: "\u91d1\u5e93",
         history: "\u5386\u53f2",
+    },
+    guide: {
+        title: "\u5feb\u901f\u5f00\u59cb",
+        dismiss: "\u77e5\u9053\u4e86",
+        step1Title: "1. \u67e5\u770b\u72b6\u6001",
+        step1Desc: "\u786e\u8ba4\u79df\u7ea6\u751f\u6548\u3001\u80fd\u529b\u5305\u6709\u6548\u3002",
+        step2Title: "2. \u5145\u503c\u91d1\u5e93",
+        step2Desc: "\u5411 Agent \u91d1\u5e93\u5145\u5165 BNB \u4f5c\u4e3a\u4ea4\u6613\u8d44\u91d1\u3002",
+        step3Title: "3. \u6267\u884c\u6216\u81ea\u52a8\u5316",
+        step3Desc: "\u624b\u52a8\u6784\u5efa\u4ea4\u6613\uff0c\u6216\u5f00\u542f Autopilot \u81ea\u52a8\u6267\u884c\u3002",
+    },
+    sectionDesc: {
+        status: "\u79df\u7ea6\u3001\u80fd\u529b\u5305\u3001\u5b89\u5168\u7b56\u7565\u72b6\u6001\u6982\u89c8\u3002",
+        autopilot: "\u6388\u6743 Runner \u81ea\u52a8\u6267\u884c\u7b56\u7565\u4ea4\u6613\u3002",
+        builder: "\u9009\u62e9\u6a21\u677f \u2192 \u586b\u5199\u53c2\u6570 \u2192 \u6a21\u62df \u2192 \u6267\u884c\u3002",
+        vault: "\u7ba1\u7406 Agent \u91d1\u5e93\uff1a\u5145\u503c\u3001\u63d0\u73b0\u3002",
+        history: "\u8be5 Agent \u7684\u94fe\u4e0a\u4ea4\u6613\u8bb0\u5f55\u3002",
+        settings: "\u8c03\u6574\u6267\u884c\u6a21\u5f0f\u548c\u5b9e\u4f8b\u53c2\u6570\u3002",
     },
     autopilotErrors: {
         tokenNotAllowedByRunner: "Runner \u672a\u653e\u884c\u8be5 Agent\u3002\u8bf7\u5728 runner \u914d\u7f6e ALLOWED_TOKEN_IDS \u4e2d\u52a0\u5165\u5f53\u524d tokenId\u3002",
@@ -546,6 +606,14 @@ export function getConsoleCopy(language: string): ConsoleCopy {
         builder: {
             ...enCopy.builder,
             ...(zhOverrides.builder || {}),
+        },
+        guide: {
+            ...enCopy.guide,
+            ...(zhOverrides.guide || {}),
+        },
+        sectionDesc: {
+            ...enCopy.sectionDesc,
+            ...(zhOverrides.sectionDesc || {}),
         },
     };
 }
