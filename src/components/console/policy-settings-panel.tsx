@@ -2,11 +2,13 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
-import { Settings, Shield, Lock, Loader2, ChevronDown } from "lucide-react";
+import { Settings, Shield, Lock, Loader2, ChevronDown, Check, X, AlertTriangle, Info, Coins } from "lucide-react";
 import { useExecutionMode, EXECUTION_MODES, ExecutionModeName } from "@/hooks/useExecutionMode";
 import { usePolicy, ParamSchema, InstanceParams } from "@/hooks/usePolicy";
 import { useUpdateParams } from "@/hooks/useUpdateParams";
 import { useInstanceConfig } from "@/hooks/useInstanceConfig";
+import { useTokenPermissions } from "@/hooks/useTokenPermissions";
+import { resolveGroupDisplay, resolveGroupName, TOKEN_PERMISSION_SLOTS } from "@/config/policy-groups";
 import { formatEther, parseEther } from "viem";
 import { useState, useEffect, useMemo } from "react";
 
@@ -18,27 +20,76 @@ interface PolicySettingsPanelProps {
     language?: "zh" | "en";
 }
 
-const MODE_INFO: Record<ExecutionModeName, { label: string; labelZh: string; desc: string; descZh: string; color: string; chipColor: string }> = {
+interface ModeRule {
+    label: string;
+    labelZh: string;
+    status: "enforced" | "skipped" | "partial";
+    note?: string;
+    noteZh?: string;
+}
+
+interface ModeInfoEntry {
+    label: string;
+    labelZh: string;
+    desc: string;
+    descZh: string;
+    color: string;
+    chipColor: string;
+    icon: "shield" | "hand" | "compass";
+    rules: ModeRule[];
+}
+
+const MODE_INFO: Record<ExecutionModeName, ModeInfoEntry> = {
     STRICT: {
-        label: "Strict", labelZh: "严格",
-        desc: "Full token + DEX whitelist enforcement",
-        descZh: "完整白名单检查",
+        label: "Strict", labelZh: "严格模式",
+        desc: "Maximum protection — only whitelisted tokens/DEX",
+        descZh: "最高保护 — 仅白名单内的代币和交易所",
         color: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
         chipColor: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
+        icon: "shield",
+        rules: [
+            { label: "Token whitelist", labelZh: "代币白名单", status: "enforced", note: "Only whitelisted tokens", noteZh: "仅白名单代币可交易" },
+            { label: "DEX whitelist", labelZh: "DEX 白名单", status: "enforced", note: "Only whitelisted DEX", noteZh: "仅白名单交易所" },
+            { label: "Trade limit (per tx)", labelZh: "单笔限额", status: "enforced" },
+            { label: "Daily limit", labelZh: "每日限额", status: "enforced" },
+            { label: "Receiver = Vault", labelZh: "收款方 = Vault", status: "enforced", note: "Funds stay in agent", noteZh: "资金留在 Agent 内" },
+            { label: "Infinite approve", labelZh: "无限授权", status: "enforced", note: "Blocked", noteZh: "已禁止" },
+            { label: "Runner / Autopilot", labelZh: "Runner 自动执行", status: "enforced", note: "Allowed", noteZh: "允许" },
+        ],
     },
     MANUAL: {
-        label: "Manual", labelZh: "手动",
-        desc: "Skip token whitelist, keep receiver=vault",
-        descZh: "跳过 Token 白名单",
+        label: "Manual", labelZh: "手动模式",
+        desc: "Owner-only, trade any token freely",
+        descZh: "仅限 Owner 操作，可自由交易任意代币",
         color: "bg-amber-500/10 text-amber-700 border-amber-500/20",
         chipColor: "bg-amber-500/10 text-amber-700 border-amber-500/20",
+        icon: "hand",
+        rules: [
+            { label: "Token whitelist", labelZh: "代币白名单", status: "skipped", note: "Any token OK", noteZh: "任意代币均可" },
+            { label: "DEX whitelist", labelZh: "DEX 白名单", status: "skipped", note: "Any DEX OK", noteZh: "任意 DEX 均可" },
+            { label: "Trade limit (per tx)", labelZh: "单笔限额", status: "enforced" },
+            { label: "Daily limit", labelZh: "每日限额", status: "skipped", note: "No daily cap", noteZh: "无每日上限" },
+            { label: "Receiver = Vault", labelZh: "收款方 = Vault", status: "enforced", note: "Funds stay in agent", noteZh: "资金留在 Agent 内" },
+            { label: "Infinite approve", labelZh: "无限授权", status: "enforced", note: "Blocked", noteZh: "已禁止" },
+            { label: "Runner / Autopilot", labelZh: "Runner 自动执行", status: "skipped", note: "Disabled — owner only", noteZh: "已禁用 — 仅 Owner" },
+        ],
     },
     EXPLORER: {
-        label: "Explorer", labelZh: "探索",
-        desc: "Skip token whitelist, lower limits",
-        descZh: "跳过白名单，低限额",
+        label: "Explorer", labelZh: "探索模式",
+        desc: "Trade any token with tighter limits",
+        descZh: "可交易任意代币，但使用更低的限额",
         color: "bg-violet-500/10 text-violet-700 border-violet-500/20",
         chipColor: "bg-violet-500/10 text-violet-700 border-violet-500/20",
+        icon: "compass",
+        rules: [
+            { label: "Token whitelist", labelZh: "代币白名单", status: "skipped", note: "Any token OK", noteZh: "任意代币均可" },
+            { label: "DEX whitelist", labelZh: "DEX 白名单", status: "enforced", note: "Still checked", noteZh: "仍需白名单 DEX" },
+            { label: "Trade limit (per tx)", labelZh: "单笔限额", status: "partial", note: "Lower cap applied", noteZh: "使用更低的限额" },
+            { label: "Daily limit", labelZh: "每日限额", status: "partial", note: "Lower cap applied", noteZh: "使用更低的限额" },
+            { label: "Receiver = Vault", labelZh: "收款方 = Vault", status: "enforced", note: "Funds stay in agent", noteZh: "资金留在 Agent 内" },
+            { label: "Infinite approve", labelZh: "无限授权", status: "enforced", note: "Blocked", noteZh: "已禁止" },
+            { label: "Runner / Autopilot", labelZh: "Runner 自动执行", status: "enforced", note: "Allowed", noteZh: "允许" },
+        ],
     },
 };
 
@@ -75,6 +126,15 @@ export function PolicySettingsPanel({
 
     // Write params
     const { updateParams, isLoading: isParamsWriting, isConfirmed: paramsConfirmed } = useUpdateParams();
+
+    // Token permissions
+    const {
+        hasBit,
+        grantPermission,
+        revokePermission,
+        isWriting: isPermWriting,
+        isReading: isPermReading,
+    } = useTokenPermissions(tokenIdBigInt);
 
     // Editing state
     const [editSlippageBps, setEditSlippageBps] = useState("");
@@ -247,16 +307,18 @@ export function PolicySettingsPanel({
                                             </div>
                                         )}
                                     </div>
-                                    <div className="flex items-center gap-2 min-w-0">
-                                        <span className="font-semibold text-sm">
-                                            {isZh ? info.labelZh : info.label}
-                                        </span>
-                                        <span className="text-xs text-slate-500 truncate">
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-semibold text-sm">
+                                                {isZh ? info.labelZh : info.label}
+                                            </span>
+                                            {name === "EXPLORER" && !allowExplorerMode && (
+                                                <Lock className="h-3 w-3 text-slate-400 flex-shrink-0" />
+                                            )}
+                                        </div>
+                                        <span className="text-xs text-slate-500 block mt-0.5">
                                             {isZh ? info.descZh : info.desc}
                                         </span>
-                                        {name === "EXPLORER" && !allowExplorerMode && (
-                                            <Lock className="h-3 w-3 text-slate-400 flex-shrink-0" />
-                                        )}
                                     </div>
                                     {isModeWriting && isCurrent && (
                                         <Loader2 className="absolute right-2 h-3.5 w-3.5 animate-spin text-slate-400" />
@@ -265,6 +327,11 @@ export function PolicySettingsPanel({
                             );
                         })}
                     </div>
+
+                    {/* Details for selected mode */}
+                    {modeInfo && (
+                        <ModeDetails rules={modeInfo.rules} isZh={isZh} schema={schema} />
+                    )}
                 </div>
 
                 <hr className="border-slate-200/80" />
@@ -289,10 +356,16 @@ export function PolicySettingsPanel({
                             <div className="grid grid-cols-2 gap-x-3 gap-y-1">
                                 <PRow l={isZh ? "滑点" : "Slip"} v={`${((instanceConfig?.slippageBps ?? 0) / 100).toFixed(1)}%`} />
                                 <PRow l={isZh ? "风险" : "Risk"} v={`Tier ${instanceConfig?.riskTier ?? 0}`} />
-                                <PRow l={isZh ? "单笔" : "Trade"} v={`${safeFormatEther(instanceConfig?.tradeLimit)}`} />
-                                <PRow l={isZh ? "每日" : "Daily"} v={`${safeFormatEther(instanceConfig?.dailyLimit)}`} />
-                                <PRow l="Token" v={`#${instanceConfig?.tokenGroupId ?? 0}`} />
-                                <PRow l="DEX" v={`#${instanceConfig?.dexGroupId ?? 0}`} />
+                                <PRow l={isZh ? "单笔" : "Trade"} v={`${safeFormatEther(instanceConfig?.tradeLimit)} BNB`} />
+                                <PRow l={isZh ? "每日" : "Daily"} v={`${safeFormatEther(instanceConfig?.dailyLimit)} BNB`} />
+                                <PRow
+                                    l={isZh ? "代币" : "Token"}
+                                    v={resolveGroupDisplay(instanceConfig?.tokenGroupId, language)}
+                                />
+                                <PRow
+                                    l="DEX"
+                                    v={resolveGroupDisplay(instanceConfig?.dexGroupId, language)}
+                                />
                             </div>
                             {isInteractive && allowParamsUpdate && (
                                 <button
@@ -333,8 +406,148 @@ export function PolicySettingsPanel({
                         </div>
                     )}
                 </div>
+
+                <hr className="border-slate-200/80" />
+
+                {/* ── Token Permissions ── */}
+                <div className="space-y-2">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                        <Coins className="h-3 w-3" />
+                        {isZh ? "代币交易权限" : "Token Permissions"}
+                    </div>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                        {isZh
+                            ? "选择允许您的 Agent 交易的代币。开启后 Agent 可以自动交易该代币。"
+                            : "Choose which tokens your Agent is allowed to trade. Enabled tokens can be auto-traded by the Runner."}
+                    </p>
+                    <div className="space-y-1">
+                        {TOKEN_PERMISSION_SLOTS.map((slot) => {
+                            const enabled = hasBit(slot.bit);
+                            const isToggling = isPermWriting;
+                            return (
+                                <div
+                                    key={slot.bit}
+                                    className={`
+                                        flex items-center justify-between rounded-lg border px-3 py-2 transition-all
+                                        ${enabled
+                                            ? "border-emerald-200 bg-emerald-50/50"
+                                            : "border-slate-200 bg-white/80"
+                                        }
+                                    `}
+                                >
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <div className={`
+                                            h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold
+                                            ${enabled ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-400"}
+                                        `}>
+                                            {slot.symbol.charAt(0)}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <span className="text-sm font-semibold text-slate-700 block">{slot.symbol}</span>
+                                            <span className="text-xs text-slate-400 truncate block">
+                                                {isZh ? slot.nameZh : slot.name}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {isInteractive ? (
+                                        <button
+                                            onClick={() => {
+                                                const bitMask = BigInt(1) << BigInt(slot.bit);
+                                                if (enabled) {
+                                                    revokePermission(bitMask);
+                                                } else {
+                                                    grantPermission(bitMask);
+                                                }
+                                            }}
+                                            disabled={isToggling}
+                                            className={`
+                                                relative h-6 w-11 rounded-full transition-colors duration-200 flex-shrink-0
+                                                ${enabled ? "bg-emerald-500" : "bg-slate-300"}
+                                                ${isToggling ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+                                            `}
+                                        >
+                                            <span className={`
+                                                absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200
+                                                ${enabled ? "translate-x-5" : "translate-x-0.5"}
+                                            `} />
+                                            {isToggling && (
+                                                <Loader2 className="absolute inset-0 m-auto h-3 w-3 animate-spin text-white" />
+                                            )}
+                                        </button>
+                                    ) : (
+                                        <Chip className={`text-xs ${enabled ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                                            {enabled ? (isZh ? "已开启" : "On") : (isZh ? "已关闭" : "Off")}
+                                        </Chip>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
             </CardContent>
         </Card>
+    );
+}
+
+/* ── Mode details: per-rule breakdown ── */
+
+function ModeDetails({ rules, isZh, schema }: { rules: ModeRule[]; isZh: boolean; schema?: ParamSchema }) {
+    return (
+        <div className="rounded-lg border border-slate-200/80 bg-white/60 overflow-hidden">
+            <div className="px-3 py-1.5 bg-slate-50/80 border-b border-slate-200/60">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-1">
+                    <Info className="h-3 w-3" />
+                    {isZh ? "规则详情" : "Rule Details"}
+                </span>
+            </div>
+            <div className="divide-y divide-slate-100">
+                {rules.map((rule, i) => {
+                    const icon = rule.status === "enforced"
+                        ? <Check className="h-3.5 w-3.5 text-emerald-600 flex-shrink-0" />
+                        : rule.status === "skipped"
+                            ? <X className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />
+                            : <AlertTriangle className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />;
+                    const statusLabel = rule.status === "enforced"
+                        ? (isZh ? "已启用" : "On")
+                        : rule.status === "skipped"
+                            ? (isZh ? "已关闭" : "Off")
+                            : (isZh ? "受限" : "Limited");
+                    const statusColor = rule.status === "enforced"
+                        ? "text-emerald-700 bg-emerald-50"
+                        : rule.status === "skipped"
+                            ? "text-red-600 bg-red-50"
+                            : "text-amber-700 bg-amber-50";
+                    return (
+                        <div key={i} className="flex items-center gap-2 px-3 py-1.5 hover:bg-slate-50/50 transition-colors">
+                            {icon}
+                            <span className="text-sm text-slate-700 flex-1 min-w-0">
+                                {isZh ? rule.labelZh : rule.label}
+                            </span>
+                            <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${statusColor}`}>
+                                {statusLabel}
+                            </span>
+                            {(isZh ? rule.noteZh : rule.note) && (
+                                <span className="text-xs text-slate-400 hidden sm:inline truncate max-w-[140px]">
+                                    {isZh ? rule.noteZh : rule.note}
+                                </span>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+            {schema && (
+                <div className="px-3 py-1.5 bg-slate-50/60 border-t border-slate-200/60">
+                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-slate-500">
+                        {schema.explorerMaxTradeLimit > BigInt(0) && (
+                            <span>{isZh ? "探索单笔上限" : "Explorer trade cap"}: {safeFormatEther(schema.explorerMaxTradeLimit)} BNB</span>
+                        )}
+                        {schema.explorerMaxDailyLimit > BigInt(0) && (
+                            <span>{isZh ? "探索每日上限" : "Explorer daily cap"}: {safeFormatEther(schema.explorerMaxDailyLimit)} BNB</span>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
     );
 }
 

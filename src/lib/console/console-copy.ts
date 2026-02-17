@@ -18,14 +18,7 @@ export interface ConsoleCopy {
     roleHintRenter: string;
     roleHintGuest: string;
     readOnlyMessage: string;
-    executeDisabledByAutopilot: string;
-    executeDisabledByModeExternal: string;
-    executeDisabledByModePack: string;
-    templateBoundaryHint: string;
     packInvalidPolicyHint: string;
-    actionBuilderHiddenInvalidPack: string;
-    actionBuilderHiddenNoTemplates: string;
-    actionScopeHint: string;
     consoleBlockedRentedByOther: string;
     consoleBlockedNotRented: string;
     sectionLabels: {
@@ -46,7 +39,8 @@ export interface ConsoleCopy {
     sectionDesc: {
         status: string;
         autopilot: string;
-        builder: string;
+        dashboard: string;
+        strategy: string;
         vault: string;
         history: string;
         settings: string;
@@ -147,26 +141,7 @@ export interface ConsoleCopy {
             txPrefix: string;
         };
     };
-    builder: {
-        title: string;
-        readOnlyFallback: string;
-        preflight: {
-            issuesFound: (count: number) => string;
-            blockedHint: string;
-            simulateBlockedToast: string;
-            checking: string;
-        };
-        policyHints: {
-            targetNotAllowed: string;
-            selectorNotAllowed: string;
-            tokenNotAllowed: string;
-            spenderNotAllowed: string;
-            policyViolation: string;
-            amountOutMinZero: string;
-            slippageExceeds: string;
-            quoteUnavailable: string;
-        };
-    };
+
     history: {
         loading: string;
         sourceIndexer: string;
@@ -210,17 +185,10 @@ const enCopy: ConsoleCopy = {
     roleHintOwner: "You can inspect history and disable autopilot, but only active renter can sign enable permit.",
     roleHintRenter: "You can simulate, execute, and enable autopilot with signature.",
     roleHintGuest: "Switch to owner/renter wallet or rent this agent first.",
-    readOnlyMessage: "Read-only mode. Simulation and execution require active renter with valid lease.",
-    executeDisabledByAutopilot: "Autopilot is ON: only Simulate is allowed and manual Execute is disabled.",
-    executeDisabledByModeExternal: "External mode disables manual Execute by default. Enable it explicitly in capability pack.",
-    executeDisabledByModePack: "Manual Execute is disabled by capability pack policy.",
-    templateBoundaryHint: "Templates define executable action boundaries only. Every execution is still enforced by PolicyGuard.",
-    packInvalidPolicyHint: "Capability pack hash validation failed. Autopilot is disabled by policy.",
-    actionBuilderHiddenInvalidPack: "Capability pack validation failed. Transaction builder is hidden.",
-    actionBuilderHiddenNoTemplates: "No supported console templates in capability pack.",
+    readOnlyMessage: "Read-only mode. Active renter with valid lease required.",
+    packInvalidPolicyHint: "Capability pack hash validation failed. Agent execution is blocked by policy.",
     consoleBlockedRentedByOther: "This agent is currently rented by another user. Only the active renter or owner can access the console.",
     consoleBlockedNotRented: "Rent this agent to access the console.",
-    actionScopeHint: "Action templates define this agent's allowed action/permission boundary. They do not bypass controls. Every on-chain execution is still enforced by PolicyGuard.",
     sectionLabels: {
         control: "Control",
         vault: "Vault",
@@ -230,19 +198,20 @@ const enCopy: ConsoleCopy = {
         title: "Quick Guide",
         dismiss: "Got it",
         step1Title: "1. Check Status",
-        step1Desc: "Verify lease is active and capability pack is valid.",
+        step1Desc: "Verify lease is active and policy is valid.",
         step2Title: "2. Fund Vault",
-        step2Desc: "Deposit BNB to the agent vault for trading.",
-        step3Title: "3. Execute or Automate",
-        step3Desc: "Build a trade manually, or enable Autopilot.",
+        step2Desc: "Deposit BNB to the agent vault for operations.",
+        step3Title: "3. Start Agent",
+        step3Desc: "Configure strategy, set guardrails, and start the agent.",
     },
     sectionDesc: {
-        status: "Lease, capability pack, and security policy overview.",
-        autopilot: "Authorize the Runner to auto-execute strategy trades.",
-        builder: "Pick a template, fill params, simulate, then execute.",
+        status: "Lease, security policy, and agent safety overview.",
+        autopilot: "Start, pause, or emergency-stop the agent.",
+        dashboard: "Agent execution stats, strategy status, and recent activity.",
+        strategy: "Configure the agent's automated execution strategy.",
         vault: "Deposit or withdraw funds from the agent vault.",
         history: "On-chain transaction history for this agent.",
-        settings: "Adjust execution mode and instance parameters.",
+        settings: "Configure guardrails: execution mode and policy parameters.",
     },
     autopilotErrors: {
         tokenNotAllowedByRunner: "Runner has not allowed this agent. Add the tokenId to runner `ALLOWED_TOKEN_IDS`.",
@@ -363,26 +332,7 @@ const enCopy: ConsoleCopy = {
         depositStep: "2. Deposit",
         depositNative: "Deposit BNB",
     },
-    builder: {
-        title: "Action Builder",
-        readOnlyFallback: "Console is currently in read-only mode.",
-        preflight: {
-            issuesFound: (count: number) => `Preflight found ${count} policy issue(s)`,
-            blockedHint: "Please adjust template, tokens, or parameters before simulation.",
-            simulateBlockedToast: "Current parameters are blocked by policy. Please adjust and try again.",
-            checking: "Checking policy preflight...",
-        },
-        policyHints: {
-            targetNotAllowed: "Current policy does not allow this target. Please try another template or pair.",
-            selectorNotAllowed: "Current policy does not allow this action type. Try a different operation.",
-            tokenNotAllowed: "Current policy does not allow this token pair. Please choose different tokens.",
-            spenderNotAllowed: "Current policy does not allow this approval route. Try a different action.",
-            policyViolation: "Policy validation did not pass. Please adjust parameters and try again.",
-            amountOutMinZero: "Slippage guard triggered: minimum output cannot be zero.",
-            slippageExceeds: "Slippage exceeds policy limit. Please adjust trade parameters.",
-            quoteUnavailable: "Quote unavailable right now. Please retry or change the pair.",
-        },
-    },
+
 };
 
 const zhOverrides: Partial<ConsoleCopy> = {
@@ -404,17 +354,10 @@ const zhOverrides: Partial<ConsoleCopy> = {
     roleHintOwner: "\u53ef\u67e5\u770b\u5386\u53f2\u5e76\u5173\u95ed Autopilot\uff0c\u4f46\u53ea\u6709\u5f53\u524d\u79df\u6237\u53ef\u7b7e\u540d\u5f00\u542f\u3002",
     roleHintRenter: "\u53ef\u6a21\u62df\u3001\u6267\u884c\uff0c\u5e76\u901a\u8fc7\u7b7e\u540d\u5f00\u542f Autopilot\u3002",
     roleHintGuest: "\u8bf7\u5207\u6362\u4e3a\u6240\u6709\u8005/\u79df\u6237\u94b1\u5305\uff0c\u6216\u5148\u5b8c\u6210\u79df\u7528\u3002",
-    readOnlyMessage: "\u5f53\u524d\u4e3a\u53ea\u8bfb\u6a21\u5f0f\u3002\u53ea\u6709\u5f53\u524d\u79df\u6237\u4e14\u79df\u671f\u6709\u6548\u65f6\u53ef\u6a21\u62df/\u6267\u884c\u4ea4\u6613\u3002",
-    executeDisabledByAutopilot: "Autopilot \u5df2\u5f00\u542f\uff1a\u5f53\u524d\u4ec5\u5141\u8bb8 Simulate\uff0c\u624b\u52a8 Execute \u5df2\u7981\u7528\u3002",
-    executeDisabledByModeExternal: "\u5916\u90e8\u6a21\u5f0f\u9ed8\u8ba4\u7981\u7528\u624b\u52a8 Execute\uff0c\u8bf7\u5728 capability pack \u4e2d\u663e\u5f0f\u5f00\u542f\u3002",
-    executeDisabledByModePack: "\u5f53\u524d capability pack \u5df2\u7981\u7528\u624b\u52a8 Execute\u3002",
-    templateBoundaryHint: "\u6a21\u677f\u7528\u4e8e\u5b9a\u4e49\u53ef\u6267\u884c\u52a8\u4f5c\u8fb9\u754c\uff0c\u4e0d\u4ee3\u8868\u53ef\u7ed5\u8fc7\u98ce\u63a7\u3002\u6bcf\u6b21\u6267\u884c\u4ecd\u4f1a\u88ab PolicyGuard \u6821\u9a8c\u3002",
-    packInvalidPolicyHint: "\u80fd\u529b\u5305\u6821\u9a8c\u5931\u8d25\uff0c\u6839\u636e\u7b56\u7565 Autopilot \u5df2\u7981\u7528\u3002",
-    actionBuilderHiddenInvalidPack: "\u80fd\u529b\u5305\u6821\u9a8c\u5931\u8d25\uff0c\u4ea4\u6613\u6784\u5efa\u5668\u5df2\u9690\u85cf\u3002",
-    actionBuilderHiddenNoTemplates: "\u80fd\u529b\u5305\u672a\u58f0\u660e\u53ef\u7528\u6a21\u677f\u3002",
+    readOnlyMessage: "\u5f53\u524d\u4e3a\u53ea\u8bfb\u6a21\u5f0f\u3002\u53ea\u6709\u5f53\u524d\u79df\u6237\u4e14\u79df\u671f\u6709\u6548\u65f6\u53ef\u64cd\u4f5c\u3002",
+    packInvalidPolicyHint: "\u80fd\u529b\u5305\u6821\u9a8c\u5931\u8d25\uff0cAgent \u6267\u884c\u5df2\u88ab\u7b56\u7565\u963b\u6b62\u3002",
     consoleBlockedRentedByOther: "\u8be5 Agent \u5f53\u524d\u6b63\u88ab\u5176\u4ed6\u7528\u6237\u79df\u8d41\u4e2d\uff0c\u53ea\u6709\u5f53\u524d\u79df\u6237\u6216\u6240\u6709\u8005\u624d\u80fd\u8bbf\u95ee\u63a7\u5236\u53f0\u3002",
     consoleBlockedNotRented: "\u8bf7\u5148\u79df\u8d41\u8be5 Agent\uff0c\u624d\u80fd\u8bbf\u95ee\u63a7\u5236\u53f0\u3002",
-    actionScopeHint: "\u52a8\u4f5c\u6a21\u677f\u7528\u4e8e\u58f0\u660e\u5f53\u524d Agent \u7684\u53ef\u6267\u884c\u52a8\u4f5c/\u6743\u9650\u8fb9\u754c\uff0c\u5e76\u4e0d\u653e\u6743\u3002\u6240\u6709\u94fe\u4e0a\u6267\u884c\u4ecd\u4f1a\u88ab PolicyGuard \u4e8c\u6b21\u6821\u9a8c\u3002",
     sectionLabels: {
         control: "\u63a7\u5236",
         vault: "\u91d1\u5e93",
@@ -424,19 +367,20 @@ const zhOverrides: Partial<ConsoleCopy> = {
         title: "\u5feb\u901f\u5f00\u59cb",
         dismiss: "\u77e5\u9053\u4e86",
         step1Title: "1. \u67e5\u770b\u72b6\u6001",
-        step1Desc: "\u786e\u8ba4\u79df\u7ea6\u751f\u6548\u3001\u80fd\u529b\u5305\u6709\u6548\u3002",
+        step1Desc: "\u786e\u8ba4\u79df\u7ea6\u751f\u6548\u3001\u7b56\u7565\u6709\u6548\u3002",
         step2Title: "2. \u5145\u503c\u91d1\u5e93",
-        step2Desc: "\u5411 Agent \u91d1\u5e93\u5145\u5165 BNB \u4f5c\u4e3a\u4ea4\u6613\u8d44\u91d1\u3002",
-        step3Title: "3. \u6267\u884c\u6216\u81ea\u52a8\u5316",
-        step3Desc: "\u624b\u52a8\u6784\u5efa\u4ea4\u6613\uff0c\u6216\u5f00\u542f Autopilot \u81ea\u52a8\u6267\u884c\u3002",
+        step2Desc: "\u5411 Agent \u91d1\u5e93\u5145\u5165 BNB \u4f5c\u4e3a\u8fd0\u884c\u8d44\u91d1\u3002",
+        step3Title: "3. \u542f\u52a8 Agent",
+        step3Desc: "\u914d\u7f6e\u7b56\u7565\uff0c\u8bbe\u7f6e Guardrails\uff0c\u542f\u52a8 Agent\u3002",
     },
     sectionDesc: {
-        status: "\u79df\u7ea6\u3001\u80fd\u529b\u5305\u3001\u5b89\u5168\u7b56\u7565\u72b6\u6001\u6982\u89c8\u3002",
-        autopilot: "\u6388\u6743 Runner \u81ea\u52a8\u6267\u884c\u7b56\u7565\u4ea4\u6613\u3002",
-        builder: "\u9009\u62e9\u6a21\u677f \u2192 \u586b\u5199\u53c2\u6570 \u2192 \u6a21\u62df \u2192 \u6267\u884c\u3002",
+        status: "\u79df\u7ea6\u3001\u5b89\u5168\u7b56\u7565\u3001Agent \u72b6\u6001\u6982\u89c8\u3002",
+        autopilot: "\u542f\u52a8\u3001\u6682\u505c\u6216\u7d27\u6025\u505c\u6b62 Agent\u3002",
+        dashboard: "Agent \u6267\u884c\u7edf\u8ba1\u3001\u7b56\u7565\u72b6\u6001\u3001\u8fd1\u671f\u6d3b\u52a8\u3002",
+        strategy: "\u914d\u7f6e Agent \u7684\u81ea\u52a8\u6267\u884c\u7b56\u7565\u3002",
         vault: "\u7ba1\u7406 Agent \u91d1\u5e93\uff1a\u5145\u503c\u3001\u63d0\u73b0\u3002",
         history: "\u8be5 Agent \u7684\u94fe\u4e0a\u4ea4\u6613\u8bb0\u5f55\u3002",
-        settings: "\u8c03\u6574\u6267\u884c\u6a21\u5f0f\u548c\u5b9e\u4f8b\u53c2\u6570\u3002",
+        settings: "\u914d\u7f6e Guardrails\uff1a\u6267\u884c\u6a21\u5f0f\u548c\u7b56\u7565\u53c2\u6570\u3002",
     },
     autopilotErrors: {
         tokenNotAllowedByRunner: "Runner \u672a\u653e\u884c\u8be5 Agent\u3002\u8bf7\u5728 runner \u914d\u7f6e ALLOWED_TOKEN_IDS \u4e2d\u52a0\u5165\u5f53\u524d tokenId\u3002",
@@ -557,26 +501,7 @@ const zhOverrides: Partial<ConsoleCopy> = {
         depositStep: "2. \u5165\u91d1",
         depositNative: "\u5165\u91d1 BNB",
     },
-    builder: {
-        title: "\u52a8\u4f5c\u6784\u5efa\u5668",
-        readOnlyFallback: "\u63a7\u5236\u53f0\u5f53\u524d\u5904\u4e8e\u53ea\u8bfb\u6a21\u5f0f\u3002",
-        preflight: {
-            issuesFound: (count: number) => `\u5df2\u53d1\u73b0 ${count} \u9879\u7b56\u7565\u9650\u5236`,
-            blockedHint: "\u8bf7\u5148\u8c03\u6574\u6a21\u677f\u3001\u4ee3\u5e01\u6216\u53c2\u6570\uff0c\u518d\u8fdb\u884c\u6a21\u62df\u3002",
-            simulateBlockedToast: "\u5f53\u524d\u53c2\u6570\u4e0d\u6ee1\u8db3\u7b56\u7565\u9650\u5236\uff0c\u8bf7\u5148\u6309\u63d0\u793a\u8c03\u6574\u3002",
-            checking: "\u6b63\u5728\u68c0\u67e5\u7b56\u7565\u9650\u5236...",
-        },
-        policyHints: {
-            targetNotAllowed: "\u5f53\u524d\u7b56\u7565\u4e0d\u652f\u6301\u8fd9\u4e2a\u76ee\u6807\uff0c\u8bf7\u6362\u4e00\u4e2a\u6a21\u677f\u6216\u4ea4\u6613\u5bf9\u3002",
-            selectorNotAllowed: "\u5f53\u524d\u7b56\u7565\u4e0d\u652f\u6301\u8be5\u52a8\u4f5c\u7c7b\u578b\uff0c\u8bf7\u5c1d\u8bd5\u5176\u4ed6\u64cd\u4f5c\u3002",
-            tokenNotAllowed: "\u5f53\u524d\u7b56\u7565\u4e0d\u5141\u8bb8\u8be5\u4ee3\u5e01\u7ec4\u5408\uff0c\u8bf7\u66f4\u6362\u4ee3\u5e01\u3002",
-            spenderNotAllowed: "\u5f53\u524d\u7b56\u7565\u4e0d\u652f\u6301\u8be5\u6388\u6743\u8def\u5f84\uff0c\u8bf7\u66f4\u6362\u64cd\u4f5c\u540e\u91cd\u8bd5\u3002",
-            policyViolation: "\u5f53\u524d\u7b56\u7565\u6821\u9a8c\u672a\u901a\u8fc7\uff0c\u8bf7\u8c03\u6574\u53c2\u6570\u540e\u91cd\u8bd5\u3002",
-            amountOutMinZero: "\u6ed1\u70b9\u4fdd\u62a4\u89e6\u53d1\uff1a\u6700\u5c0f\u8f93\u51fa\u4e0d\u80fd\u4e3a 0\u3002",
-            slippageExceeds: "\u6ed1\u70b9\u8d85\u8fc7\u7b56\u7565\u9650\u5236\uff0c\u8bf7\u8c03\u6574\u4ea4\u6613\u53c2\u6570\u3002",
-            quoteUnavailable: "\u6682\u65f6\u65e0\u6cd5\u83b7\u53d6\u62a5\u4ef7\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5\u6216\u66f4\u6362\u4ea4\u6613\u5bf9\u3002",
-        },
-    },
+
 };
 
 export function getConsoleCopy(language: string): ConsoleCopy {
@@ -602,10 +527,6 @@ export function getConsoleCopy(language: string): ConsoleCopy {
         vault: {
             ...enCopy.vault,
             ...(zhOverrides.vault || {}),
-        },
-        builder: {
-            ...enCopy.builder,
-            ...(zhOverrides.builder || {}),
         },
         guide: {
             ...enCopy.guide,

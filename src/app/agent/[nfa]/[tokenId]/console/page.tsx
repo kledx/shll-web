@@ -1,15 +1,11 @@
 ﻿"use client";
 
 import { AppShell } from "@/components/layout/app-shell";
-import { ActionBuilder } from "@/components/console/action-builder";
-import { Action, TemplateKey } from "@/components/console/action-types";
 import { useAgentAccount } from "@/hooks/useAgentAccount";
 import { useAgent } from "@/hooks/useAgent";
-import { useExecute } from "@/hooks/useExecute";
 import { TransactionHistory } from "@/components/console/transaction-history";
 import { StatusCard, LeaseStatus, PackStatus, RunnerMode } from "@/components/console/status-card";
-import { AutopilotCard } from "@/components/console/autopilot-card";
-import { useSimulate } from "@/hooks/useSimulate";
+import { AutopilotCard } from "@/components/console/agent-controls";
 import { useAccount } from "wagmi";
 import { useParams } from "next/navigation";
 import { type ComponentProps, type ReactNode, useEffect, useMemo, useState } from "react";
@@ -29,10 +25,12 @@ import { PageTransition } from "@/components/layout/page-transition";
 import { PageHeader } from "@/components/layout/page-header";
 import { PageSection } from "@/components/layout/page-section";
 import { getRuntimeEnv } from "@/lib/runtime-env";
-import { InstanceConfigPanel } from "@/components/console/instance-config-panel";
-import { PolicySettingsPanel } from "@/components/console/policy-settings-panel";
+import { GuardrailsPanel } from "@/components/console/guardrails-panel";
 import { ConsoleGuide } from "@/components/console/console-guide";
 import { useInstanceConfig } from "@/hooks/useInstanceConfig";
+import { AgentDashboard } from "@/components/console/agent-dashboard";
+import { StrategyConfig } from "@/components/console/strategy-config";
+import { useAgentDashboard } from "@/hooks/useAgentDashboard";
 
 export default function ConsolePage() {
     const { t, language } = useTranslation();
@@ -55,12 +53,6 @@ export default function ConsolePage() {
     const { account: agentAccount, isLoading: isAccountLoading } = useAgentAccount(tokenId, nfaAddress);
     const capabilityPack = useCapabilityPack(tokenIdBigInt, nfaAddress);
     const { data: policyConfigData } = useInstanceConfig(tokenId);
-    const {
-        executeAction,
-        isLoading: isExecuting,
-        isSuccess: isExecuteSuccess,
-        hash: executeHash,
-    } = useExecute(nfaAddress);
 
     // Derive permissions from on-chain data
     const isOwner = !!address && !!agent && address.toLowerCase() === agent.owner.toLowerCase();
@@ -106,44 +98,8 @@ export default function ConsolePage() {
         return "manual";
     }, [capabilityPack.capabilities?.runnerMode]);
 
-    const enabledTemplates = useMemo<TemplateKey[]>(() => {
-        const templateMap: Record<string, TemplateKey> = {
-            "swap": "swap",
-            "swap.pancakev2": "swap",
-            "repay": "repay",
-            "repay.venus": "repay",
-            "raw": "raw",
-        };
-
-        const normalizeTemplate = (value: string): TemplateKey | null => {
-            const key = value.trim().toLowerCase();
-            return templateMap[key] ?? null;
-        };
-
-        if (packStatus !== "PACK_VALID") {
-            return [];
-        }
-
-        const rawEnabled = capabilityPack.capabilities?.rawEnabled === true;
-        const templates = (capabilityPack.capabilities?.consoleTemplates || [])
-            .map(normalizeTemplate)
-            .filter((item): item is TemplateKey => item !== null)
-            .filter((item) => item !== "raw" || rawEnabled);
-
-        const deduped = Array.from(new Set(templates));
-        return deduped;
-    }, [capabilityPack.capabilities?.consoleTemplates, capabilityPack.capabilities?.rawEnabled, packStatus]);
-
-    // Simulation State Management
-    const [simAction, setSimAction] = useState<Action | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
 
-    const {
-        simulate,
-        result: simulationResult,
-        error: simulationError,
-        isLoading: isSimulating
-    } = useSimulate(tokenId, simAction, nfaAddress);
     const {
         enableAutopilot,
         clearAutopilot,
@@ -158,39 +114,8 @@ export default function ConsolePage() {
         data: runnerStatus,
         isLoading: isRunnerStatusLoading,
     } = useAutopilotStatus(tokenId, nfaAddress, refreshKey);
-    const isAutopilotOn = runnerStatus?.autopilot?.enabled === true;
+    const { data: dashboardData } = useAgentDashboard(tokenId, refreshKey);
     const strictPackValid = packStatus === "PACK_VALID";
-    const manualExecuteEnabledByPack = capabilityPack.capabilities?.manualExecuteEnabled;
-    const disableWhenAutopilotOn =
-        capabilityPack.capabilities?.manualExecuteDisableWhenAutopilotOn ?? true;
-    const executeAllowedByMode = (() => {
-        if (runnerMode === "external") {
-            return manualExecuteEnabledByPack === true;
-        }
-        return manualExecuteEnabledByPack ?? true;
-    })();
-    const executeDisabledByAutopilot =
-        (runnerMode === "managed" || runnerMode === "external") &&
-        disableWhenAutopilotOn &&
-        isAutopilotOn;
-    const executeDisabledByMode = !executeAllowedByMode;
-    const executeDisabled = executeDisabledByAutopilot || executeDisabledByMode;
-    const executeDisabledByModeMessage =
-        runnerMode === "external"
-            ? ui.executeDisabledByModeExternal
-            : ui.executeDisabledByModePack;
-    const executeDisabledMessage = executeDisabledByAutopilot
-        ? ui.executeDisabledByAutopilot
-        : executeDisabledByMode
-            ? executeDisabledByModeMessage
-            : undefined;
-    const showActionBuilder =
-        strictPackValid && enabledTemplates.length > 0 && isInteractiveConsole;
-    const actionBuilderHiddenHint = !strictPackValid
-        ? ui.actionBuilderHiddenInvalidPack
-        : enabledTemplates.length === 0
-            ? ui.actionBuilderHiddenNoTemplates
-            : null;
     const autopilotBlockedByPack = !strictPackValid;
     const [autopilotOperator, setAutopilotOperator] = useState<string>(
         getRuntimeEnv("NEXT_PUBLIC_RUNNER_OPERATOR", "")
@@ -232,30 +157,7 @@ export default function ConsolePage() {
         }
         return raw.slice(0, 160);
     };
-    const actionScopeHint = ui.actionScopeHint;
     const sectionLabels = ui.sectionLabels;
-    const handleSimulate = (action: Action) => {
-        if (!isInteractiveConsole) {
-            toast.error(readOnlyMessage);
-            return;
-        }
-        setSimAction(action);
-        setTimeout(() => {
-            simulate();
-        }, 0);
-    };
-
-    const handleExecute = (action: Action) => {
-        if (!isInteractiveConsole) {
-            toast.error(readOnlyMessage);
-            return;
-        }
-        if (executeDisabled) {
-            toast.error(executeDisabledMessage || ui.executeDisabledByAutopilot);
-            return;
-        }
-        executeAction(tokenId, action);
-    };
 
     const formatLocalInput = (unixSeconds: number) => {
         const date = new Date(unixSeconds * 1000);
@@ -326,11 +228,7 @@ export default function ConsolePage() {
         }
     };
 
-    useEffect(() => {
-        if (isExecuteSuccess && executeHash) {
-            setRefreshKey((k) => k + 1);
-        }
-    }, [isExecuteSuccess, executeHash]);
+
 
     useEffect(() => {
         const leaseExpires = agent?.expires;
@@ -512,24 +410,14 @@ export default function ConsolePage() {
                                 setAutopilotExpiresAt={setAutopilotExpiresAt}
                                 handleEnableAutopilot={handleEnableAutopilot}
                                 handleDisableAutopilot={handleDisableAutopilot}
-                                actionScopeHint={actionScopeHint}
-                                showActionBuilder={showActionBuilder}
-                                handleSimulate={handleSimulate}
-                                handleExecute={handleExecute}
-                                isSimulating={isSimulating}
-                                isExecuting={isExecuting}
-                                simulationResult={simulationResult}
-                                simulationError={simulationError}
-                                agentAccount={agentAccount}
-                                enabledTemplates={enabledTemplates}
-                                executeDisabled={executeDisabled}
-                                executeDisabledMessage={executeDisabledMessage}
-                                actionBuilderHiddenHint={actionBuilderHiddenHint}
-                                readOnly={!isInteractiveConsole}
-                                readOnlyMessage={readOnlyMessage}
+                                tokenId={tokenId}
+                                dashboardStrategy={dashboardData?.strategy ?? null}
+                                language={language === "zh" ? "zh" : "en"}
+                                refreshKey={refreshKey}
+                                onStrategyChanged={() => setRefreshKey((k) => k + 1)}
                             />
                             {/* Settings folded into Control tab on mobile */}
-                            <PolicySettingsPanel
+                            <GuardrailsPanel
                                 tokenId={tokenId}
                                 policyId={policyConfigData?.policyId}
                                 version={policyConfigData?.version}
@@ -594,43 +482,42 @@ export default function ConsolePage() {
                             />
                         </CollapsibleSection>
 
-                        {/* Action Builder (collapsible, default closed) */}
+                        {/* Agent Dashboard (collapsible, default open) */}
                         <CollapsibleSection
-                            title={ui.builder.title}
-                            desc={ui.sectionDesc.builder}
+                            title={language === "zh" ? "Agent 仪表盘" : "Agent Dashboard"}
+                            desc={language === "zh" ? "执行统计、策略状态和近期活动。" : "Execution stats, strategy status, and recent activity."}
+                            defaultOpen={true}
+                        >
+                            <AgentDashboard
+                                tokenId={tokenId}
+                                refreshKey={refreshKey}
+                                language={language === "zh" ? "zh" : "en"}
+                            />
+                        </CollapsibleSection>
+
+                        {/* Strategy Configuration (collapsible, default closed) */}
+                        <CollapsibleSection
+                            title={language === "zh" ? "策略配置" : "Strategy Configuration"}
+                            desc={language === "zh" ? "配置 Agent 的自动执行策略。" : "Configure the agent's automated execution strategy."}
                             defaultOpen={false}
                         >
-                            <PageSection tone="muted" className="text-xs text-[var(--color-muted-foreground)]">
-                                {actionScopeHint}
-                            </PageSection>
-
-                            {showActionBuilder ? (
-                                <ActionBuilder
-                                    onSimulate={handleSimulate}
-                                    onExecute={handleExecute}
-                                    isSimulating={isSimulating}
-                                    isExecuting={isExecuting}
-                                    simulationResult={simulationResult}
-                                    simulationError={simulationError}
-                                    agentAccount={agentAccount}
-                                    enabledTemplates={enabledTemplates}
-                                    renterAddress={agent?.renter}
-                                    readOnly={!isInteractiveConsole}
-                                    readOnlyMessage={readOnlyMessage}
-                                    executeDisabled={executeDisabled}
-                                    executeDisabledMessage={executeDisabledMessage}
-                                    templateBoundaryHint={ui.templateBoundaryHint}
-                                />
-                            ) : actionBuilderHiddenHint ? (
-                                <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                                    {actionBuilderHiddenHint}
-                                </div>
-                            ) : null}
+                            <StrategyConfig
+                                tokenId={tokenId}
+                                currentStrategy={dashboardData?.strategy ? {
+                                    strategyType: dashboardData.strategy.strategyType,
+                                    enabled: dashboardData.strategy.enabled,
+                                    strategyParams: dashboardData.strategy.strategyParams,
+                                    minIntervalMs: dashboardData.strategy.minIntervalMs,
+                                } : null}
+                                isInteractive={isInteractiveConsole}
+                                language={language === "zh" ? "zh" : "en"}
+                                onSaved={() => setRefreshKey((k) => k + 1)}
+                            />
                         </CollapsibleSection>
 
                         {/* Policy Settings (collapsible) */}
                         <section className="space-y-2">
-                            <PolicySettingsPanel
+                            <GuardrailsPanel
                                 tokenId={tokenId}
                                 policyId={policyConfigData?.policyId}
                                 version={policyConfigData?.version}
@@ -747,9 +634,7 @@ function ConsoleControlSection({
     autopilotOperator, autopilotExpiresAt, runnerOperatorDefault, runnerStatus, isRunnerStatusLoading,
     autopilotBlockedByPack, isInteractiveConsole, isRenter, isOwner, isEnablingAutopilot, isClearingAutopilot,
     setAutopilotOperator, setAutopilotExpiresAt, handleEnableAutopilot, handleDisableAutopilot,
-    actionScopeHint, showActionBuilder, handleSimulate, handleExecute, isSimulating, isExecuting,
-    simulationResult, simulationError, agentAccount, enabledTemplates, executeDisabled, executeDisabledMessage,
-    actionBuilderHiddenHint, readOnly, readOnlyMessage
+    tokenId, dashboardStrategy, language, refreshKey, onStrategyChanged,
 }: ConsoleControlSectionProps) {
     return (
         <div className="space-y-4">
@@ -780,32 +665,24 @@ function ConsoleControlSection({
                 onDisableAutopilot={handleDisableAutopilot}
             />
 
-            <PageSection tone="muted" className="text-xs text-[var(--color-muted-foreground)]">
-                {actionScopeHint}
-            </PageSection>
+            <AgentDashboard
+                tokenId={tokenId}
+                refreshKey={refreshKey}
+                language={language}
+            />
 
-            {showActionBuilder ? (
-                <ActionBuilder
-                    onSimulate={handleSimulate}
-                    onExecute={handleExecute}
-                    isSimulating={isSimulating}
-                    isExecuting={isExecuting}
-                    simulationResult={simulationResult}
-                    simulationError={simulationError}
-                    agentAccount={agentAccount}
-                    enabledTemplates={enabledTemplates}
-                    renterAddress={agent?.renter}
-                    readOnly={readOnly}
-                    readOnlyMessage={readOnlyMessage}
-                    executeDisabled={executeDisabled}
-                    executeDisabledMessage={executeDisabledMessage}
-                    templateBoundaryHint={ui.templateBoundaryHint}
-                />
-            ) : actionBuilderHiddenHint ? (
-                <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                    {actionBuilderHiddenHint}
-                </div>
-            ) : null}
+            <StrategyConfig
+                tokenId={tokenId}
+                currentStrategy={dashboardStrategy ? {
+                    strategyType: dashboardStrategy.strategyType,
+                    enabled: dashboardStrategy.enabled,
+                    strategyParams: dashboardStrategy.strategyParams,
+                    minIntervalMs: dashboardStrategy.minIntervalMs,
+                } : null}
+                isInteractive={isInteractiveConsole}
+                language={language}
+                onSaved={onStrategyChanged}
+            />
         </div>
     );
 }
@@ -833,19 +710,14 @@ type ConsoleControlSectionProps = {
     setAutopilotExpiresAt: (value: string) => void;
     handleEnableAutopilot: () => void;
     handleDisableAutopilot: () => void;
-    actionScopeHint: string;
-    showActionBuilder: boolean;
-    handleSimulate: (action: Action) => void;
-    handleExecute: (action: Action) => void;
-    isSimulating: boolean;
-    isExecuting: boolean;
-    simulationResult: ComponentProps<typeof ActionBuilder>["simulationResult"];
-    simulationError: ComponentProps<typeof ActionBuilder>["simulationError"];
-    agentAccount: ComponentProps<typeof ActionBuilder>["agentAccount"];
-    enabledTemplates: TemplateKey[] | undefined;
-    executeDisabled: boolean;
-    executeDisabledMessage?: string;
-    actionBuilderHiddenHint: string | null;
-    readOnly: boolean;
-    readOnlyMessage: string;
+    tokenId: string;
+    dashboardStrategy: {
+        strategyType: string;
+        enabled: boolean;
+        strategyParams: Record<string, unknown>;
+        minIntervalMs: number;
+    } | null;
+    language: "en" | "zh";
+    refreshKey: number;
+    onStrategyChanged: () => void;
 };
