@@ -1,0 +1,53 @@
+﻿鈻?Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+鉁?Compiled successfully in 6.2s
+  Running TypeScript ...
+  Collecting page data using 27 workers ...
+npx : 鈿?Using edge runtime on a page currently disables static generation for 
+that page
+所在位置 行:1 字符: 1
++ npx next build 2>&1 | Out-File -Encoding utf8 build-output.txt; Get-C ...
++ ~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (鈿?Using edge ru...n for that pag 
+   e:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  Generating static pages using 27 workers (0/21) ...
+  Generating static pages using 27 workers (5/21) 
+  Generating static pages using 27 workers (10/21) 
+  Generating static pages using 27 workers (15/21) 
+鉁?Generating static pages using 27 workers (21/21) in 621.4ms
+  Finalizing page optimization ...
+
+Route (app)
+鈹?鈼?/
+鈹?鈼?/_not-found
+鈹?鈼?/admin
+鈹?茠 /agent/[nfa]/[tokenId]
+鈹?茠 /agent/[nfa]/[tokenId]/console
+鈹?茠 /api/activity
+鈹?茠 /api/agent-policies
+鈹?茠 /api/agent-summary
+鈹?茠 /api/agent/activity
+鈹?茠 /api/agent/dashboard
+鈹?茠 /api/agents
+鈹?茠 /api/autopilot/disable
+鈹?茠 /api/autopilot/enable
+鈹?茠 /api/autopilot/status
+鈹?茠 /api/indexer
+鈹?茠 /api/listings
+鈹?茠 /api/metadata/[id]
+鈹?茠 /api/safety-config
+鈹?茠 /api/strategy/clear-goal
+鈹?茠 /api/strategy/upsert
+鈹?鈼?/docs
+鈹?茠 /icon
+鈹?鈼?/market
+鈹?鈼?/me
+
+
+鈼? (Static)   prerendered as static content
+茠  (Dynamic)  server-rendered on demand
+

@@ -4,11 +4,12 @@ import { AppShell } from "@/components/layout/app-shell";
 import { useAgentAccount } from "@/hooks/useAgentAccount";
 import { useAgent } from "@/hooks/useAgent";
 import { TransactionHistory } from "@/components/console/transaction-history";
+import { AgentActivityFeed } from "@/components/console/activity-feed";
 import { StatusCard, LeaseStatus } from "@/components/console/status-card";
 import { AutopilotCard } from "@/components/console/agent-controls";
 import { useAccount } from "wagmi";
 import { useParams } from "next/navigation";
-import { type ComponentProps, type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ComponentProps, type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { ChevronRight, ShieldAlert } from "lucide-react";
@@ -207,6 +208,22 @@ export default function ConsolePage() {
         }
     };
 
+    // P-2026-018: Auto-enable autopilot if not fully active
+    // Must check BOTH on-chain operator AND runner DB state to avoid desync
+    const autoEnableAutopilot = useCallback(async () => {
+        const nowSec = BigInt(Math.floor(Date.now() / 1000));
+        const onchainOk = onchainOperator
+            && onchainOperator !== "0x0000000000000000000000000000000000000000"
+            && operatorExpires > nowSec;
+        const runnerDbOk = runnerStatus?.autopilot?.enabled === true;
+
+        if (onchainOk && runnerDbOk) {
+            return; // Fully active — no signing needed
+        }
+        // Either chain or runner DB needs re-sync → trigger full enable flow
+        await handleEnableAutopilot();
+    }, [onchainOperator, operatorExpires, runnerStatus, handleEnableAutopilot]);
+
 
 
     useEffect(() => {
@@ -394,6 +411,7 @@ export default function ConsolePage() {
                                 language={language === "zh" ? "zh" : "en"}
                                 refreshKey={refreshKey}
                                 onStrategyChanged={() => setRefreshKey((k) => k + 1)}
+                                autoEnableAutopilot={autoEnableAutopilot}
                             />
                             {/* Settings folded into Control tab on mobile */}
                             <GuardrailsPanel
@@ -417,49 +435,18 @@ export default function ConsolePage() {
                             />
                         </TabsContent>
 
-                        <TabsContent value="history" className="mt-4">
+                        <TabsContent value="history" className="mt-4 space-y-4">
+                            {/* AgentActivityFeed removed — chat UI already shows agent reasoning (P-2026-018) */}
                             <TransactionHistory tokenId={tokenId} nfaAddress={nfaAddress} refreshKey={refreshKey} />
                         </TabsContent>
                     </Tabs>
                 </div>
 
                 {/* ═══ Desktop View: 2-Column Grid ═══ */}
-                <div className="hidden lg:grid lg:grid-cols-[3fr_2fr] lg:gap-8">
+                <div className="hidden lg:grid lg:grid-cols-2 lg:gap-6">
                     {/* Left Column: Primary Operations */}
-                    <div className="space-y-6">
-                        {/* Autopilot (collapsible, first position) */}
-                        <CollapsibleSection
-                            title={ui.autopilot.title}
-                            desc={ui.sectionDesc.autopilot}
-                            defaultOpen={true}
-                        >
-                            <AutopilotCard
-                                ui={ui.autopilot}
-                                runnerMode={runnerMode}
-                                enableState={enableState}
-                                operatorNonce={operatorNonce}
-                                onchainOperator={onchainOperator}
-                                operatorExpires={operatorExpires}
-                                leaseExpires={agent?.expires}
-                                autopilotOperator={autopilotOperator}
-                                autopilotExpiresAt={autopilotExpiresAt}
-                                runnerOperatorDefault={runnerOperatorDefault}
-                                runnerStatus={runnerStatus}
-                                runnerStatusLoading={isRunnerStatusLoading}
-                                lockOperatorInput
-                                lockExpiryInput
-                                blockedByPack={false}
-                                isInteractiveConsole={isInteractiveConsole}
-                                isRenter={isRenter}
-                                isOwner={isOwner}
-                                isEnablingAutopilot={isEnablingAutopilot}
-                                isClearingAutopilot={isClearingAutopilot}
-                                onSetAutopilotOperator={setAutopilotOperator}
-                                onSetAutopilotExpiresAt={setAutopilotExpiresAt}
-                                onEnableAutopilot={handleEnableAutopilot}
-                                onDisableAutopilot={handleDisableAutopilot}
-                            />
-                        </CollapsibleSection>
+                    <div className="min-w-0 space-y-6">
+                        {/* Autopilot — hidden: all agents are instruction-driven (P-2026-018) */}
 
                         {/* Strategy Configuration — for all supported agent types */}
                         {agent?.agentType && AGENT_TYPE_TO_STRATEGY[agent.agentType] && (
@@ -468,7 +455,7 @@ export default function ConsolePage() {
                                 desc={language === "zh"
                                     ? `配置 ${agent.agentType} 策略参数。`
                                     : `Configure ${agent.agentType} strategy parameters.`}
-                                defaultOpen={!dashboardData?.strategy}
+                                defaultOpen={true}
                             >
                                 <StrategyConfig
                                     tokenId={tokenId}
@@ -478,10 +465,12 @@ export default function ConsolePage() {
                                         enabled: dashboardData.strategy.enabled,
                                         strategyParams: dashboardData.strategy.strategyParams,
                                         minIntervalMs: dashboardData.strategy.minIntervalMs,
+                                        updatedAt: dashboardData.strategy.updatedAt,
                                     } : null}
                                     isInteractive={isInteractiveConsole}
                                     language={language === "zh" ? "zh" : "en"}
                                     onSaved={() => setRefreshKey((k) => k + 1)}
+                                    onAutoEnable={autoEnableAutopilot}
                                 />
                             </CollapsibleSection>
                         )}
@@ -499,7 +488,7 @@ export default function ConsolePage() {
                     </div>
 
                     {/* Right Column: Info Panel (Tabbed) */}
-                    <div>
+                    <div className="min-w-0 overflow-hidden">
                         <Tabs defaultValue="dashboard" className="w-full">
                             <TabsList className="grid h-10 w-full grid-cols-4 rounded-lg border border-[var(--color-border)] bg-white/72 p-0.5">
                                 <TabsTrigger value="dashboard" className="text-sm font-semibold">{language === "zh" ? "仪表盘" : "Dashboard"}</TabsTrigger>
@@ -542,6 +531,7 @@ export default function ConsolePage() {
 
                             <TabsContent value="history" className="mt-3 space-y-4">
                                 <p className="text-xs text-[var(--color-muted-foreground)]">{ui.sectionDesc.history}</p>
+                                {/* AgentActivityFeed removed — chat UI already shows agent reasoning (P-2026-018) */}
                                 <TransactionHistory tokenId={tokenId} nfaAddress={nfaAddress} refreshKey={refreshKey} />
                             </TabsContent>
                         </Tabs>
@@ -605,45 +595,18 @@ function ConsoleControlSection({
     autopilotOperator, autopilotExpiresAt, runnerOperatorDefault, runnerStatus, isRunnerStatusLoading,
     autopilotBlockedByPack, isInteractiveConsole, isRenter, isOwner, isEnablingAutopilot, isClearingAutopilot,
     setAutopilotOperator, setAutopilotExpiresAt, handleEnableAutopilot, handleDisableAutopilot,
-    tokenId, dashboardStrategy, language, refreshKey, onStrategyChanged,
+    tokenId, dashboardStrategy, language, refreshKey, onStrategyChanged, autoEnableAutopilot,
 }: ConsoleControlSectionProps) {
+    const llmNeedsGoal =
+        ["llm_trader", "llm_defi"].includes(dashboardStrategy?.strategyType ?? "") &&
+        !dashboardStrategy?.strategyParams?.tradingGoal;
+
     return (
         <div className="space-y-4">
-            <AutopilotCard
-                ui={ui.autopilot}
-                runnerMode={runnerMode}
-                enableState={enableState}
-                operatorNonce={operatorNonce}
-                onchainOperator={onchainOperator}
-                operatorExpires={operatorExpires}
-                leaseExpires={agent?.expires}
-                autopilotOperator={autopilotOperator}
-                autopilotExpiresAt={autopilotExpiresAt}
-                runnerOperatorDefault={runnerOperatorDefault}
-                runnerStatus={runnerStatus}
-                runnerStatusLoading={isRunnerStatusLoading}
-                lockOperatorInput
-                lockExpiryInput
-                blockedByPack={false}
-                isInteractiveConsole={isInteractiveConsole}
-                isRenter={isRenter}
-                isOwner={isOwner}
-                isEnablingAutopilot={isEnablingAutopilot}
-                isClearingAutopilot={isClearingAutopilot}
-                onSetAutopilotOperator={setAutopilotOperator}
-                onSetAutopilotExpiresAt={setAutopilotExpiresAt}
-                onEnableAutopilot={handleEnableAutopilot}
-                onDisableAutopilot={handleDisableAutopilot}
-            />
+            {/* Autopilot & DCA — hidden: all agents are instruction-driven (P-2026-018) */}
 
-            <AgentDashboard
-                tokenId={tokenId}
-                refreshKey={refreshKey}
-                language={language}
-            />
-
-            {/* Execution Parameters — only for DCA agents */}
-            {dashboardStrategy?.strategyType === "dca" && (
+            {/* LLM Agent Instructions — chat-based */}
+            {dashboardStrategy && ["llm_trader", "llm_defi"].includes(dashboardStrategy.strategyType) && (
                 <StrategyConfig
                     tokenId={tokenId}
                     agentType={dashboardStrategy.strategyType}
@@ -652,10 +615,12 @@ function ConsoleControlSection({
                         enabled: dashboardStrategy.enabled,
                         strategyParams: dashboardStrategy.strategyParams,
                         minIntervalMs: dashboardStrategy.minIntervalMs,
+                        updatedAt: dashboardStrategy.updatedAt,
                     }}
                     isInteractive={isInteractiveConsole}
                     language={language}
                     onSaved={onStrategyChanged}
+                    onAutoEnable={autoEnableAutopilot}
                 />
             )}
         </div>
@@ -691,8 +656,10 @@ type ConsoleControlSectionProps = {
         enabled: boolean;
         strategyParams: Record<string, unknown>;
         minIntervalMs: number;
+        updatedAt?: string;
     } | null;
     language: "en" | "zh";
     refreshKey: number;
     onStrategyChanged: () => void;
+    autoEnableAutopilot?: () => Promise<void>;
 };

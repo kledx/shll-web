@@ -7,7 +7,7 @@ type RunnerMode = "managed" | "manual" | "external";
 import { EnableState } from "@/hooks/useAutopilot";
 import { RunnerAutopilotStatus } from "@/hooks/useAutopilotStatus";
 import {
-    Play, Pause, ShieldAlert, ChevronDown, ChevronUp, AlertTriangle, Loader2,
+    Play, Pause, ShieldAlert, ChevronDown, ChevronUp, AlertTriangle, Loader2, CheckCircle2,
 } from "lucide-react";
 
 // ── i18n ─────────────────────────────────────────────────────
@@ -93,6 +93,8 @@ interface AgentControlsProps {
     onSetAutopilotExpiresAt: (value: string) => void;
     onEnableAutopilot: () => void;
     onDisableAutopilot: () => void;
+    /** When true, Start Agent is disabled because the LLM agent has no active trading goal */
+    needsGoal?: boolean;
     language?: "en" | "zh";
 }
 
@@ -141,6 +143,8 @@ const agentLabels = {
         confirmToConfirm: "to confirm.",
         cancel: "Cancel",
         ownerEmergencyNote: "Renter can pause directly. Owner pause is emergency-only with confirmation.",
+        taskCompleted: "Task Completed",
+        taskCompletedHint: "Agent finished the task and stopped automatically.",
     },
     zh: {
         startAgent: "启动 Agent",
@@ -159,6 +163,8 @@ const agentLabels = {
         confirmToConfirm: "以确认。",
         cancel: "取消",
         ownerEmergencyNote: "租户可直接暂停。Owner 暂停为紧急操作，需确认。",
+        taskCompleted: "任务已完成",
+        taskCompletedHint: "Agent 已完成任务并自动停止。",
     },
 };
 
@@ -206,6 +212,7 @@ export function AgentControls({
     onSetAutopilotExpiresAt,
     onEnableAutopilot,
     onDisableAutopilot,
+    needsGoal = false,
     language = "en",
 }: AgentControlsProps) {
     const t = agentLabels[language];
@@ -241,25 +248,34 @@ export function AgentControls({
         ownerDisableConfirmText.trim().toUpperCase() === t.confirmPhrase;
 
     const isRunning = runtimeState === "AUTO_ON";
+    const isTaskDone = !runnerEnabled && /task completed/i.test(lastReason);
 
     return (
         <div className="rounded-xl border border-[var(--color-border)] bg-white/60 p-4 space-y-4">
             {/* Header: Status + Mode */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className={`h-3 w-3 rounded-full ${stateColor(runtimeState)}`} />
+                    <div className={`h-3 w-3 rounded-full ${isTaskDone ? "bg-emerald-500" : stateColor(runtimeState)}`} />
                     <span className="text-sm font-semibold text-[var(--color-foreground)]">
-                        {isRunning ? t.running
-                            : runtimeState === "AUTO_ENABLING" ? t.activating
-                                : runtimeState === "AUTO_EXPIRED" ? t.expired
-                                    : t.paused}
+                        {isTaskDone ? t.taskCompleted
+                            : isRunning ? t.running
+                                : runtimeState === "AUTO_ENABLING" ? t.activating
+                                    : runtimeState === "AUTO_EXPIRED" ? t.expired
+                                        : t.paused}
                     </span>
                 </div>
                 <div className="flex items-center gap-2">
                     <Chip variant="sticker">{modeLabel}</Chip>
-                    <Chip variant={stateChipVariant(runtimeState)}>
-                        {ui.runtimeStateLabels[runtimeState]}
-                    </Chip>
+                    {isTaskDone ? (
+                        <Chip variant="burgundy">
+                            <CheckCircle2 className="h-3 w-3 mr-0.5" />
+                            {t.taskCompleted}
+                        </Chip>
+                    ) : (
+                        <Chip variant={stateChipVariant(runtimeState)}>
+                            {ui.runtimeStateLabels[runtimeState]}
+                        </Chip>
+                    )}
                 </div>
             </div>
 
@@ -268,6 +284,11 @@ export function AgentControls({
                 <div className="flex items-center gap-2 text-sm text-[var(--color-muted-foreground)]">
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     {ui.runnerLoading}
+                </div>
+            ) : isTaskDone ? (
+                <div className="flex items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                    {t.taskCompletedHint}
                 </div>
             ) : lastReason ? (
                 <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]/30 px-3 py-2 text-sm text-[var(--color-muted-foreground)] truncate">
@@ -287,11 +308,21 @@ export function AgentControls({
 
             {/* Primary action buttons */}
             <div className="flex flex-wrap gap-3">
+                {/* Needs-goal hint for LLM agents */}
+                {needsGoal && !isRunning && (
+                    <div className="flex items-center gap-2 rounded-lg border border-violet-300 bg-violet-50 px-3 py-2 text-sm text-violet-800">
+                        <AlertTriangle className="h-4 w-4 shrink-0" />
+                        {language === "zh"
+                            ? "请先在下方发送指令，然后再启动 Agent"
+                            : "Please send an instruction below before starting the agent"}
+                    </div>
+                )}
+
                 {!isRunning ? (
                     <button
                         type="button"
                         onClick={onEnableAutopilot}
-                        disabled={!modeSupportsEnable || !isInteractiveConsole || isEnablingAutopilot || blockedByPack}
+                        disabled={!modeSupportsEnable || !isInteractiveConsole || isEnablingAutopilot || blockedByPack || needsGoal}
                         className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 text-white px-5 py-2.5 text-sm font-medium transition-colors hover:bg-emerald-700 disabled:opacity-50"
                     >
                         {isEnablingAutopilot ? (

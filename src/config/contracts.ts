@@ -3473,3 +3473,91 @@ export const ADMIN_ABI = {
     },
   ] as const,
 };
+
+// ═══════════════════════════════════════════════════════════
+//  V4 Admin ABIs — PolicyGuardV4 + Policy Plugins + V3.1 AgentNFA
+// ═══════════════════════════════════════════════════════════
+
+export const V4_ABI = {
+  PolicyGuardV4: [
+    { type: "function", name: "owner", inputs: [], outputs: [{ name: "", type: "address" }], stateMutability: "view" },
+    { type: "function", name: "agentNFA", inputs: [], outputs: [{ name: "", type: "address" }], stateMutability: "view" },
+    { type: "function", name: "approvedPolicyContracts", inputs: [{ name: "", type: "address" }], outputs: [{ name: "", type: "bool" }], stateMutability: "view" },
+    { type: "function", name: "approvePolicyContract", inputs: [{ name: "policy", type: "address" }], outputs: [], stateMutability: "nonpayable" },
+    { type: "function", name: "addTemplatePolicy", inputs: [{ name: "templateId", type: "bytes32" }, { name: "policy", type: "address" }], outputs: [], stateMutability: "nonpayable" },
+    { type: "function", name: "removeTemplatePolicy", inputs: [{ name: "templateId", type: "bytes32" }, { name: "index", type: "uint256" }], outputs: [], stateMutability: "nonpayable" },
+    { type: "function", name: "addInstancePolicy", inputs: [{ name: "instanceId", type: "uint256" }, { name: "policy", type: "address" }], outputs: [], stateMutability: "nonpayable" },
+    { type: "function", name: "getTemplatePolicies", inputs: [{ name: "templateId", type: "bytes32" }], outputs: [{ name: "", type: "address[]" }], stateMutability: "view" },
+    { type: "function", name: "getActivePolicies", inputs: [{ name: "instanceId", type: "uint256" }], outputs: [{ name: "", type: "address[]" }], stateMutability: "view" },
+  ] as const,
+
+  SpendingLimitPolicy: [
+    { type: "function", name: "setTemplateCeiling", inputs: [{ name: "templateId", type: "bytes32" }, { name: "maxPerTx", type: "uint256" }, { name: "maxPerDay", type: "uint256" }, { name: "maxSlippageBps", type: "uint256" }], outputs: [], stateMutability: "nonpayable" },
+    { type: "function", name: "templateCeiling", inputs: [{ name: "", type: "bytes32" }], outputs: [{ name: "maxPerTx", type: "uint256" }, { name: "maxPerDay", type: "uint256" }, { name: "maxSlippageBps", type: "uint256" }], stateMutability: "view" },
+  ] as const,
+
+  TokenWhitelistPolicy: [
+    { type: "function", name: "addToken", inputs: [{ name: "instanceId", type: "uint256" }, { name: "token", type: "address" }], outputs: [], stateMutability: "nonpayable" },
+    { type: "function", name: "removeToken", inputs: [{ name: "instanceId", type: "uint256" }, { name: "token", type: "address" }], outputs: [], stateMutability: "nonpayable" },
+    { type: "function", name: "getTokenList", inputs: [{ name: "instanceId", type: "uint256" }], outputs: [{ name: "", type: "address[]" }], stateMutability: "view" },
+  ] as const,
+
+  DexWhitelistPolicy: [
+    { type: "function", name: "addDex", inputs: [{ name: "instanceId", type: "uint256" }, { name: "dex", type: "address" }], outputs: [], stateMutability: "nonpayable" },
+    { type: "function", name: "removeDex", inputs: [{ name: "instanceId", type: "uint256" }, { name: "dex", type: "address" }], outputs: [], stateMutability: "nonpayable" },
+    { type: "function", name: "getDexList", inputs: [{ name: "instanceId", type: "uint256" }], outputs: [{ name: "", type: "address[]" }], stateMutability: "view" },
+  ] as const,
+
+  CooldownPolicy: [
+    { type: "function", name: "setCooldown", inputs: [{ name: "instanceId", type: "uint256" }, { name: "seconds_", type: "uint256" }], outputs: [], stateMutability: "nonpayable" },
+    { type: "function", name: "cooldowns", inputs: [{ name: "", type: "uint256" }], outputs: [{ name: "", type: "uint256" }], stateMutability: "view" },
+  ] as const,
+
+  // V3.1 AgentNFA extra functions (5-param mintAgent, registerTemplate)
+  AgentNFA_V31: [
+    {
+      type: "function", name: "mintAgent", inputs: [
+        { name: "to", type: "address" },
+        { name: "policyId", type: "bytes32" },
+        { name: "_agentType", type: "bytes32" },
+        { name: "uri", type: "string" },
+        {
+          name: "metadata", type: "tuple", components: [
+            { name: "persona", type: "string" },
+            { name: "experience", type: "string" },
+            { name: "voiceHash", type: "string" },
+            { name: "animationURI", type: "string" },
+            { name: "vaultURI", type: "string" },
+            { name: "vaultHash", type: "bytes32" },
+          ]
+        },
+      ], outputs: [{ name: "tokenId", type: "uint256" }], stateMutability: "nonpayable"
+    },
+    {
+      type: "function", name: "registerTemplate", inputs: [
+        { name: "tokenId", type: "uint256" },
+        { name: "templateKey", type: "bytes32" },
+        { name: "templateName", type: "string" },
+      ], outputs: [], stateMutability: "nonpayable"
+    },
+    { type: "function", name: "nextTokenId", inputs: [], outputs: [{ name: "", type: "uint256" }], stateMutability: "view" },
+    { type: "function", name: "isTemplate", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ name: "", type: "bool" }], stateMutability: "view" },
+    { type: "function", name: "agentType", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ name: "", type: "bytes32" }], stateMutability: "view" },
+    { type: "function", name: "agentPaused", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ name: "", type: "bool" }], stateMutability: "view" },
+    { type: "function", name: "totalSupply", inputs: [], outputs: [{ name: "", type: "uint256" }], stateMutability: "view" },
+    { type: "function", name: "owner", inputs: [], outputs: [{ name: "", type: "address" }], stateMutability: "view" },
+  ] as const,
+
+  ListingManager_V4: [
+    {
+      type: "function", name: "createTemplateListing", inputs: [
+        { name: "nfa", type: "address" },
+        { name: "tokenId", type: "uint256" },
+        { name: "pricePerDay", type: "uint96" },
+        { name: "minDays", type: "uint32" },
+      ], outputs: [{ name: "listingId", type: "bytes32" }], stateMutability: "nonpayable"
+    },
+    { type: "function", name: "owner", inputs: [], outputs: [{ name: "", type: "address" }], stateMutability: "view" },
+    { type: "function", name: "getListingCount", inputs: [], outputs: [{ name: "", type: "uint256" }], stateMutability: "view" },
+  ] as const,
+};

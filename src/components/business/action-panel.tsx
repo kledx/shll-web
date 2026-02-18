@@ -174,6 +174,53 @@ export function ActionPanel({ nfaAddress, tokenId, isActive, isListed, isTemplat
                         enableInstanceParams={enableInstanceParams}
                         initialParams={initialInstanceParams}
                     />
+                ) : isRenter ? (
+                    <Card className="border-emerald-200 bg-emerald-50/60">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="flex items-center gap-2 text-base text-emerald-700">
+                                <span className="text-lg">✅</span>
+                                {language === "zh" ? "你已租赁此 Agent" : "You are renting this Agent"}
+                            </CardTitle>
+                            <CardDescription className="text-emerald-600/80">
+                                {language === "zh"
+                                    ? "前往控制台发送指令、查看执行记录和管理 Vault。"
+                                    : "Go to the console to send instructions, view history, and manage your vault."}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Link href={`/agent/${nfaAddress}/${tokenId}/console`}>
+                                <Button className="w-full gap-2">
+                                    {language === "zh" ? "进入控制台" : "Open Console"}
+                                    <ExternalLink className="h-4 w-4" />
+                                </Button>
+                            </Link>
+                        </CardContent>
+                    </Card>
+                ) : isTemplateListing && myInstance ? (
+                    <Card className="border-sky-200 bg-sky-50/60">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="flex items-center gap-2 text-base text-sky-700">
+                                <span className="text-lg">🤖</span>
+                                {language === "zh"
+                                    ? `你已拥有此 Agent 的副本 #${myInstance.tokenId.toString()}`
+                                    : `You own Agent #${myInstance.tokenId.toString()} from this template`}
+                            </CardTitle>
+                            <CardDescription className="text-sky-600/80">
+                                {language === "zh"
+                                    ? "前往控制台管理你的 Agent。"
+                                    : "Go to the console to manage your Agent."}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Link href={`/agent/${nfaAddress}/${myInstance.tokenId.toString()}/console`}>
+                                <Button className="w-full gap-2">
+                                    {language === "zh" ? "进入我的 Agent 控制台" : "Open My Agent Console"}
+                                    {" "}(#{myInstance.tokenId.toString()})
+                                    <ExternalLink className="h-4 w-4" />
+                                </Button>
+                            </Link>
+                        </CardContent>
+                    </Card>
                 ) : (
                     <Card className="border-dashed border-[var(--color-border)] bg-white/70">
                         <CardHeader>

@@ -33,6 +33,8 @@ interface StrategyRecord {
     minIntervalMs: number;
     lastRunAt?: string;
     lastError?: string;
+    nextCheckAt?: string;
+    updatedAt?: string;
     strategyParams: Record<string, unknown>;
 }
 

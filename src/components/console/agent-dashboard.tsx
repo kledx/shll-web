@@ -23,7 +23,6 @@ const copy = {
         interval: "Interval",
         enabled: "Enabled",
         disabled: "Disabled",
-        failures: "Failures",
 
         loading: "Loading dashboard...",
         error: "Failed to load dashboard",
@@ -33,6 +32,8 @@ const copy = {
         onChainExecs: "On-Chain Execs",
         successRate: "Success Rate",
         agentType: "Agent Type",
+        nextCheck: "Next Check",
+        taskDone: "Task Done",
     },
     zh: {
         title: "Agent 仪表盘",
@@ -46,7 +47,6 @@ const copy = {
         interval: "间隔",
         enabled: "已启用",
         disabled: "已停用",
-        failures: "失败次数",
 
         loading: "加载仪表盘中...",
         error: "加载仪表盘失败",
@@ -56,6 +56,8 @@ const copy = {
         onChainExecs: "链上执行",
         successRate: "成功率",
         agentType: "Agent 类型",
+        nextCheck: "下次检查",
+        taskDone: "任务完成",
     },
 };
 
@@ -67,10 +69,20 @@ function formatInterval(ms: number): string {
 
 function formatTimeAgo(iso: string, lang: "en" | "zh"): string {
     const diff = Date.now() - new Date(iso).getTime();
+    if (isNaN(diff)) return "N/A";
     if (diff < 60_000) return lang === "en" ? "just now" : "刚刚";
     if (diff < 3_600_000) return `${Math.round(diff / 60_000)}m ago`;
     if (diff < 86_400_000) return `${Math.round(diff / 3_600_000)}h ago`;
     return `${Math.round(diff / 86_400_000)}d ago`;
+}
+
+function formatTimeUntil(iso: string, lang: "en" | "zh"): string {
+    const diff = new Date(iso).getTime() - Date.now();
+    if (diff <= 0) return lang === "en" ? "now" : "现在";
+    if (diff < 60_000) return `${Math.round(diff / 1000)}s`;
+    if (diff < 3_600_000) return `${Math.round(diff / 60_000)}m`;
+    if (diff < 86_400_000) return `${(diff / 3_600_000).toFixed(1)}h`;
+    return `${Math.round(diff / 86_400_000)}d`;
 }
 
 
@@ -127,25 +139,8 @@ export function AgentDashboard({ tokenId, refreshKey = 0, language = "en" }: Age
                 />
             </div>
 
-            {/* On-Chain Stats (from Indexer) */}
-            {summary && (
-                <div className="rounded-xl border border-[var(--color-border)] bg-white/60 p-4">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-foreground)]">
-                        <BarChart3 className="h-4 w-4 text-sky-500" />
-                        {t.onChain}
-                    </div>
-                    <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                        <div className="text-[var(--color-muted-foreground)]">{t.onChainExecs}</div>
-                        <div className="font-medium">{summary.totalExecutions}</div>
-                        <div className="text-[var(--color-muted-foreground)]">{t.successRate}</div>
-                        <div className="font-medium">{summary.successRate}%</div>
-                        <div className="text-[var(--color-muted-foreground)]">{t.latestRun}</div>
-                        <div className="font-medium">
-                            {summary.lastExecution ? formatTimeAgo(summary.lastExecution, language) : t.never}
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* On-Chain Stats hidden — most LLM decisions never go on-chain (P-2026-018) */}
+
 
             {/* Strategy Card */}
             <div className="rounded-xl border border-[var(--color-border)] bg-white/60 p-4">
@@ -157,8 +152,6 @@ export function AgentDashboard({ tokenId, refreshKey = 0, language = "en" }: Age
                     <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                         <div className="text-[var(--color-muted-foreground)]">{t.strategyType}</div>
                         <div className="font-medium">{data.strategy.strategyType === "dca" ? "DCA" : data.strategy.strategyType === "llm_trader" ? "LLM Trader" : data.strategy.strategyType}</div>
-                        <div className="text-[var(--color-muted-foreground)]">{t.interval}</div>
-                        <div className="font-medium">{formatInterval(data.strategy.minIntervalMs)}</div>
                         <div className="text-[var(--color-muted-foreground)]">Status</div>
                         <div>
                             <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${data.strategy.enabled
@@ -168,8 +161,14 @@ export function AgentDashboard({ tokenId, refreshKey = 0, language = "en" }: Age
                                 {data.strategy.enabled ? t.enabled : t.disabled}
                             </span>
                         </div>
-                        <div className="text-[var(--color-muted-foreground)]">{t.failures}</div>
-                        <div className="font-medium">{data.strategy.failureCount}/{data.strategy.maxFailures}</div>
+                        {data.strategy.enabled && data.strategy.nextCheckAt && (
+                            <>
+                                <div className="text-[var(--color-muted-foreground)]">{t.nextCheck}</div>
+                                <div className="font-medium">
+                                    {formatTimeUntil(data.strategy.nextCheckAt, language)}
+                                </div>
+                            </>
+                        )}
                     </div>
                 ) : (
                     <p className="mt-2 text-sm text-[var(--color-muted-foreground)]">{t.noStrategy}</p>

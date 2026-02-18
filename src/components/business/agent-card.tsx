@@ -94,21 +94,7 @@ export function AgentCard({ listing }: { listing: AgentListing }) {
             </CardHeader>
 
             <CardContent className="relative flex-1 space-y-4 pb-2">
-                {/* Metrics Grid */}
-                <div className="grid grid-cols-2 gap-2 rounded-lg bg-[var(--color-surface)] p-2">
-                    <div className="flex flex-col">
-                        <span className="text-[10px] uppercase text-[var(--color-muted-foreground)]">{t.home.stats.successRate}</span>
-                        <span className="font-mono text-sm font-medium">
-                            {typeof listing.metrics?.successRate === "number" ? `${listing.metrics.successRate}%` : "-"}
-                        </span>
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="text-[10px] uppercase text-[var(--color-muted-foreground)]">{t.home.stats.totalExecutions}</span>
-                        <span className="font-mono text-sm font-medium">
-                            {typeof listing.metrics?.totalExecutions === "number" ? `${listing.metrics.totalExecutions}` : "-"}
-                        </span>
-                    </div>
-                </div>
+                {/* Metrics hidden — indexer data empty for LLM agents (P-2026-018) */}
 
                 {/* Tags */}
                 <div className="flex flex-wrap gap-1.5">

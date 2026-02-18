@@ -1,4 +1,4 @@
-// Centralized token registry for BSC Testnet
+﻿// Centralized token registry for BSC Testnet
 // All addresses must match PolicyGuard allowlist configuration
 // To add a new token:
 //   Option A: append to DEFAULT_TOKENS below and re-apply PolicyGuard config on-chain
@@ -15,7 +15,7 @@ export interface TokenConfig {
     isNative: boolean;
 }
 
-// BSC Testnet token addresses — single source of truth
+// BSC Testnet token addresses 鈥?single source of truth
 export const WBNB_ADDRESS =
     "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd" as const;
 export const USDT_ADDRESS =
@@ -27,6 +27,7 @@ export const ROUTER_ADDRESS =
 
 /**
  * Built-in token list. Native first, then ERC-20 alphabetically.
+ * TODO(mainnet): Replace with mainstream tokens (WBNB, USDT, USDC, BUSD, ETH, BTCB, etc.)
  */
 const DEFAULT_TOKENS: TokenConfig[] = [
     {
