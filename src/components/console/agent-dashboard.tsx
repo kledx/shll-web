@@ -1,6 +1,6 @@
 "use client";
 
-import { useAgentDashboard, type DashboardData } from "@/hooks/useAgentDashboard";
+import { useAgentDashboard } from "@/hooks/useAgentDashboard";
 import { useAgentSummary } from "@/hooks/useAgentSummary";
 import { Activity, CheckCircle, XCircle, Clock, TrendingUp, Loader2, BarChart3 } from "lucide-react";
 
@@ -24,8 +24,7 @@ const copy = {
         enabled: "Enabled",
         disabled: "Disabled",
         failures: "Failures",
-        recentActivity: "Recent Activity",
-        noActivity: "No activity recorded yet.",
+
         loading: "Loading dashboard...",
         error: "Failed to load dashboard",
         never: "Never",
@@ -48,8 +47,7 @@ const copy = {
         enabled: "已启用",
         disabled: "已停用",
         failures: "失败次数",
-        recentActivity: "近期活动",
-        noActivity: "暂无活动记录。",
+
         loading: "加载仪表盘中...",
         error: "加载仪表盘失败",
         never: "从未",
@@ -75,18 +73,7 @@ function formatTimeAgo(iso: string, lang: "en" | "zh"): string {
     return `${Math.round(diff / 86_400_000)}d ago`;
 }
 
-function strategyLabel(t: string): string {
-    const map: Record<string, string> = {
-        dca: "DCA",
-        llm_trader: "LLM Trader",
-        manual_swap: "Manual",
-        fixed_action: "Fixed",
-        hotpump_watchlist: "HotPump",
-        composite: "Composite",
-        wrap_native: "Wrap Native",
-    };
-    return map[t] || t;
-}
+
 
 export function AgentDashboard({ tokenId, refreshKey = 0, language = "en" }: AgentDashboardProps) {
     const { data, error, isLoading } = useAgentDashboard(tokenId, refreshKey);
@@ -169,7 +156,7 @@ export function AgentDashboard({ tokenId, refreshKey = 0, language = "en" }: Age
                 {data.strategy ? (
                     <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                         <div className="text-[var(--color-muted-foreground)]">{t.strategyType}</div>
-                        <div className="font-medium">{strategyLabel(data.strategy.strategyType)}</div>
+                        <div className="font-medium">{data.strategy.strategyType === "dca" ? "DCA" : data.strategy.strategyType === "llm_trader" ? "LLM Trader" : data.strategy.strategyType}</div>
                         <div className="text-[var(--color-muted-foreground)]">{t.interval}</div>
                         <div className="font-medium">{formatInterval(data.strategy.minIntervalMs)}</div>
                         <div className="text-[var(--color-muted-foreground)]">Status</div>
@@ -189,43 +176,6 @@ export function AgentDashboard({ tokenId, refreshKey = 0, language = "en" }: Age
                 )}
             </div>
 
-            {/* Recent Activity */}
-            <div className="space-y-2">
-                <h4 className="text-sm font-semibold text-[var(--color-muted-foreground)]">{t.recentActivity}</h4>
-                {data.recentRuns.length === 0 ? (
-                    <p className="py-4 text-center text-sm text-[var(--color-muted-foreground)]">{t.noActivity}</p>
-                ) : (
-                    <div className="space-y-1.5">
-                        {data.recentRuns.slice(0, 5).map((run: DashboardData["recentRuns"][number]) => (
-                            <div
-                                key={run.id}
-                                className="flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-white/40 px-3 py-2 text-sm"
-                            >
-                                <div className="flex items-center gap-2 min-w-0">
-                                    {run.txHash && !run.error ? (
-                                        <CheckCircle className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
-                                    ) : run.error ? (
-                                        <XCircle className="h-3.5 w-3.5 shrink-0 text-red-500" />
-                                    ) : (
-                                        <Clock className="h-3.5 w-3.5 shrink-0 text-[var(--color-muted-foreground)]" />
-                                    )}
-                                    <span className="truncate text-[var(--color-foreground)]">
-                                        {run.brainType ? strategyLabel(run.brainType) : run.actionType}
-                                    </span>
-                                    {run.decisionReason && (
-                                        <span className="hidden truncate text-xs text-[var(--color-muted-foreground)] sm:inline">
-                                            — {run.decisionReason}
-                                        </span>
-                                    )}
-                                </div>
-                                <span className="shrink-0 text-xs text-[var(--color-muted-foreground)]">
-                                    {formatTimeAgo(run.createdAt, language)}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
         </div>
     );
 }

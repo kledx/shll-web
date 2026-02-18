@@ -1,210 +1,570 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+/**
+ * SafetyConfigWizard — V3.0 Renter Policy Configuration
+ *
+ * Allows renters to set safety boundaries for their rented agents:
+ * - Token whitelist (allowed tokens for swaps)
+ * - Spending limits (per trade / per day / slippage)
+ * - Frequency control (cooldown + max runs/day)
+ * - DEX whitelist (allowed DEX routers)
+ *
+ * Data flow: Form → /api/safety-config (proxy) → Runner /v3/safety/:tokenId → PostgreSQL
+ * Runner checks these rules BEFORE submitting on-chain transactions.
+ * On-chain PolicyGuardV4 is the final hard enforcement layer.
+ */
+
 import { Card, CardContent } from "@/components/ui/card";
-import { Chip } from "@/components/ui/chip";
 import {
-    Shield, ChevronDown, Loader2, Info,
-    CheckCircle, XCircle, Puzzle,
+    Shield, ChevronDown, ChevronRight, Loader2, Plus, X, Save,
+    RotateCcw, Coins, Timer, ArrowLeftRight, Check, AlertCircle,
 } from "lucide-react";
-
-/* ── Types ── */
-
-interface PolicyPlugin {
-    pluginAddress: string;
-    pluginName: string;
-    active: boolean;
-    attachedAt: string;
-}
+import { useSafetyConfig, type SafetyConfig } from "@/hooks/useSafetyConfig";
+import { useState, useCallback, useEffect, useMemo } from "react";
 
 interface SafetyConfigWizardProps {
     tokenId: string;
-    language?: "en" | "zh";
+    language?: "zh" | "en";
 }
 
-/* ── Copy ── */
+// ═══════════════════════════════════════════════════════
+//           Well-known tokens & DEXes (BSC Testnet)
+// ═══════════════════════════════════════════════════════
 
-const copy = {
-    en: {
-        title: "Safety Config (V3)",
-        subtitle: "Policy plugins attached to this agent via PolicyGuardV4.",
-        loading: "Loading policy plugins...",
-        error: "Failed to load plugins",
-        noPlugins: "No policy plugins attached yet.",
-        pluginName: "Plugin",
-        status: "Status",
-        active: "Active",
-        inactive: "Inactive",
-        attachedAt: "Attached",
-        address: "Address",
-        version: "Contract",
-        v3: "V3.0 Composable",
-        v1: "V1.x Legacy",
-    },
-    zh: {
-        title: "安全配置 (V3)",
-        subtitle: "通过 PolicyGuardV4 挂载到此 Agent 的策略插件。",
-        loading: "加载策略插件中...",
-        error: "加载插件失败",
-        noPlugins: "暂无挂载的策略插件。",
-        pluginName: "插件",
-        status: "状态",
-        active: "已启用",
-        inactive: "未启用",
-        attachedAt: "挂载时间",
-        address: "地址",
-        version: "合约",
-        v3: "V3.0 可组合",
-        v1: "V1.x 旧版",
-    },
-};
+const KNOWN_TOKENS: { address: string; symbol: string; name: string }[] = [
+    { address: "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd", symbol: "WBNB", name: "Wrapped BNB" },
+    { address: "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd", symbol: "USDT", name: "Tether USD" },
+    { address: "0x64544969ed7EBf5f083679233325356EbE738930", symbol: "USDC", name: "USD Coin" },
+    { address: "0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee", symbol: "BUSD", name: "Binance USD" },
+    { address: "0x8babBb98678facC7342735486C851ABD7A0d17Ca", symbol: "ETH", name: "Ethereum" },
+];
 
-/* ── Component ── */
+const KNOWN_DEXES: { address: string; name: string }[] = [
+    { address: "0xD99D1c33F9fC3444f8101754aBC46c52416550D1", name: "PancakeSwap V2" },
+    { address: "0x1b81D678ffb9C0263b24A97847620C99d213eB14", name: "PancakeSwap V3" },
+    { address: "0x3380aE82e39E42Ca34EbEd69aF67fAa0683Bb5c1", name: "BiSwap" },
+];
+
+// ═══════════════════════════════════════════════════════
+//                   Main Component
+// ═══════════════════════════════════════════════════════
 
 export function SafetyConfigWizard({ tokenId, language = "en" }: SafetyConfigWizardProps) {
-    const t = copy[language];
-    const [isExpanded, setIsExpanded] = useState(false);
-    const [plugins, setPlugins] = useState<PolicyPlugin[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const isZh = language === "zh";
+    const {
+        config, isLoading, isDefault, isSaving,
+        error, saveError, save, reset, refetch,
+    } = useSafetyConfig(tokenId);
 
-    const fetchPlugins = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const res = await fetch(`/api/agent-policies?tokenId=${tokenId}`, { cache: "no-store" });
-            if (!res.ok) throw new Error(`${res.status}`);
-            const json = await res.json();
-            setPlugins(json.items ?? []);
-            setError(null);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : String(err));
-        } finally {
-            setIsLoading(false);
-        }
-    }, [tokenId]);
+    // ── Local editing state ──
+    const [draft, setDraft] = useState<Partial<SafetyConfig>>({});
+    const [isDirty, setIsDirty] = useState(false);
+    const [sections, setSections] = useState({
+        tokens: true,
+        limits: false,
+        frequency: false,
+        dex: false,
+    });
+    const [addTokenInput, setAddTokenInput] = useState("");
+    const [addDexInput, setAddDexInput] = useState("");
+    const [showTokenPicker, setShowTokenPicker] = useState(false);
+    const [showDexPicker, setShowDexPicker] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState(false);
 
+    // Sync config → draft when loaded
     useEffect(() => {
-        fetchPlugins();
-    }, [fetchPlugins]);
+        if (config && !isDirty) {
+            setDraft({
+                allowedTokens: [...(config.allowedTokens ?? [])],
+                blockedTokens: [...(config.blockedTokens ?? [])],
+                maxTradeAmount: config.maxTradeAmount ?? "0",
+                maxDailyAmount: config.maxDailyAmount ?? "0",
+                maxSlippageBps: config.maxSlippageBps ?? 0,
+                cooldownSeconds: config.cooldownSeconds ?? 0,
+                maxRunsPerDay: config.maxRunsPerDay ?? 0,
+                allowedDexes: [...(config.allowedDexes ?? [])],
+            });
+        }
+    }, [config, isDirty]);
 
-    /* ── Collapsed ── */
-    if (!isExpanded) {
+    const updateDraft = useCallback(<K extends keyof SafetyConfig>(key: K, value: SafetyConfig[K]) => {
+        setDraft((prev) => ({ ...prev, [key]: value }));
+        setIsDirty(true);
+        setSaveSuccess(false);
+    }, []);
+
+    const handleSave = useCallback(async () => {
+        const ok = await save(draft);
+        if (ok) {
+            setIsDirty(false);
+            setSaveSuccess(true);
+            setTimeout(() => setSaveSuccess(false), 3000);
+        }
+    }, [save, draft]);
+
+    const handleReset = useCallback(async () => {
+        const ok = await reset();
+        if (ok) {
+            setIsDirty(false);
+        }
+    }, [reset]);
+
+    const toggleSection = (key: keyof typeof sections) => {
+        setSections((prev) => ({ ...prev, [key]: !prev[key] }));
+    };
+
+    // ── Token helpers ──
+    const allowedTokens = useMemo(() => draft.allowedTokens ?? [], [draft.allowedTokens]);
+    const allowedDexes = useMemo(() => draft.allowedDexes ?? [], [draft.allowedDexes]);
+
+    const resolveTokenSymbol = (addr: string): string => {
+        const found = KNOWN_TOKENS.find((t) => t.address.toLowerCase() === addr.toLowerCase());
+        return found ? found.symbol : `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+    };
+
+    const resolveDexName = (addr: string): string => {
+        const found = KNOWN_DEXES.find((d) => d.address.toLowerCase() === addr.toLowerCase());
+        return found ? found.name : `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+    };
+
+    const addToken = (address: string) => {
+        const normalized = address.trim();
+        if (!normalized || allowedTokens.some((t) => t.toLowerCase() === normalized.toLowerCase())) return;
+        updateDraft("allowedTokens", [...allowedTokens, normalized]);
+        setAddTokenInput("");
+        setShowTokenPicker(false);
+    };
+
+    const removeToken = (address: string) => {
+        updateDraft("allowedTokens", allowedTokens.filter((t) => t.toLowerCase() !== address.toLowerCase()));
+    };
+
+    const addDex = (address: string) => {
+        const normalized = address.trim();
+        if (!normalized || allowedDexes.some((d) => d.toLowerCase() === normalized.toLowerCase())) return;
+        updateDraft("allowedDexes", [...allowedDexes, normalized]);
+        setAddDexInput("");
+        setShowDexPicker(false);
+    };
+
+    const removeDex = (address: string) => {
+        updateDraft("allowedDexes", allowedDexes.filter((d) => d.toLowerCase() !== address.toLowerCase()));
+    };
+
+    // ── Loading state ──
+    if (isLoading) {
         return (
-            <Card
-                className="border-[var(--color-border)] bg-white/72 hover:bg-white/90 transition-colors cursor-pointer"
-                onClick={() => setIsExpanded(true)}
-            >
-                <CardContent className="flex items-center justify-between py-3 px-4">
-                    <div className="flex items-center gap-2">
-                        <Shield className="h-4 w-4 text-sky-500" />
-                        <span className="text-sm font-semibold text-slate-700">
-                            {t.title}
-                        </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Chip className="bg-sky-500/10 text-sky-700 border-sky-500/20 text-xs font-bold">
-                            {t.v3}
-                        </Chip>
-                        <Chip className="bg-slate-100 text-slate-500 border-slate-200 text-xs">
-                            {plugins.length} {t.pluginName}
-                        </Chip>
-                        <ChevronDown className="h-4 w-4 text-slate-400" />
-                    </div>
+            <Card className="border-[var(--color-border)] bg-white/72">
+                <CardContent className="flex items-center justify-center gap-2 py-6">
+                    <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
+                    <span className="text-sm text-slate-500">
+                        {isZh ? "加载安全配置..." : "Loading safety config..."}
+                    </span>
                 </CardContent>
             </Card>
         );
     }
 
-    /* ── Expanded ── */
+    if (error) {
+        return (
+            <Card className="border-red-200 bg-red-50/50">
+                <CardContent className="flex items-center gap-2 py-4">
+                    <AlertCircle className="h-4 w-4 text-red-500" />
+                    <span className="text-sm text-red-700">{error}</span>
+                    <button onClick={refetch} className="ml-auto text-sm text-red-600 underline">
+                        {isZh ? "重试" : "Retry"}
+                    </button>
+                </CardContent>
+            </Card>
+        );
+    }
+
+    // ── Helper: Slippage in % for display ──
+    const slippagePercent = ((draft.maxSlippageBps ?? 0) / 100).toFixed(1);
+
     return (
-        <Card className="border-sky-500/20 bg-gradient-to-br from-sky-50/30 to-white/80">
-            {/* Header */}
-            <button
-                onClick={() => setIsExpanded(false)}
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-sky-50/50 transition-colors rounded-t-xl"
-            >
+        <Card className="border-indigo-500/20 bg-gradient-to-br from-indigo-50/30 to-white/80 overflow-hidden">
+            {/* ── Header ── */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-indigo-100/60">
                 <div className="flex items-center gap-2">
-                    <Shield className="h-4 w-4 text-sky-600" />
-                    <span className="text-sm font-bold text-slate-800">{t.title}</span>
+                    <Shield className="h-4 w-4 text-indigo-600" />
+                    <span className="text-sm font-bold text-slate-800">
+                        {isZh ? "安全边界配置" : "Safety Boundaries"}
+                    </span>
+                    {isDefault && (
+                        <span className="text-[11px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">
+                            {isZh ? "默认" : "Default"}
+                        </span>
+                    )}
                 </div>
-                <ChevronDown className="h-4 w-4 text-slate-400 rotate-180 transition-transform" />
-            </button>
+                <div className="flex items-center gap-1.5">
+                    {isDirty && (
+                        <span className="text-[11px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-medium animate-pulse">
+                            {isZh ? "未保存" : "Unsaved"}
+                        </span>
+                    )}
+                    {saveSuccess && (
+                        <span className="text-[11px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 font-medium flex items-center gap-0.5">
+                            <Check className="h-3 w-3" />
+                            {isZh ? "已保存" : "Saved"}
+                        </span>
+                    )}
+                </div>
+            </div>
 
-            <CardContent className="space-y-3 text-sm pt-0 pb-4">
-                <p className="text-xs text-slate-500 leading-relaxed">{t.subtitle}</p>
+            <CardContent className="p-0">
+                {/* ── Description ── */}
+                <div className="px-4 py-2.5 bg-indigo-50/30 border-b border-indigo-100/40">
+                    <p className="text-sm text-slate-600 leading-relaxed">
+                        {isZh
+                            ? "设置您租赁 Agent 的安全边界。Agent 的所有操作都会在这些规则范围内执行。"
+                            : "Configure safety boundaries for your rented Agent. All agent actions will be constrained by these rules."
+                        }
+                    </p>
+                </div>
 
-                {isLoading && (
-                    <div className="flex items-center justify-center gap-2 py-6 text-sm text-[var(--color-muted-foreground)]">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        {t.loading}
-                    </div>
-                )}
-
-                {error && (
-                    <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                        {t.error}: {error}
-                    </div>
-                )}
-
-                {!isLoading && !error && plugins.length === 0 && (
-                    <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-3 text-sm text-slate-500">
-                        <Info className="h-4 w-4 flex-shrink-0" />
-                        {t.noPlugins}
-                    </div>
-                )}
-
-                {/* Plugin List */}
-                {!isLoading && plugins.length > 0 && (
-                    <div className="space-y-1.5">
-                        {plugins.map((plugin, i) => (
-                            <div
-                                key={`${plugin.pluginAddress}-${i}`}
-                                className={`rounded-lg border px-3 py-2 transition-colors ${plugin.active
-                                        ? "border-emerald-200 bg-emerald-50/40"
-                                        : "border-slate-200 bg-white/60"
-                                    }`}
+                {/* ═══ Section: Token Whitelist ═══ */}
+                <SectionHeader
+                    icon={<Coins className="h-3.5 w-3.5" />}
+                    title={isZh ? "代币白名单" : "Token Whitelist"}
+                    subtitle={isZh
+                        ? `${allowedTokens.length} 个代币`
+                        : `${allowedTokens.length} token${allowedTokens.length !== 1 ? "s" : ""}`
+                    }
+                    isOpen={sections.tokens}
+                    onToggle={() => toggleSection("tokens")}
+                />
+                {sections.tokens && (
+                    <div className="px-4 pb-3 space-y-2">
+                        <p className="text-sm text-slate-500">
+                            {isZh
+                                ? "仅允许 Agent 交易以下代币。留空则不限制。"
+                                : "Agent can only trade these tokens. Leave empty for no restriction."}
+                        </p>
+                        {/* Token chips */}
+                        <div className="flex flex-wrap gap-1.5">
+                            {allowedTokens.map((addr) => (
+                                <span
+                                    key={addr}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-sm font-medium text-emerald-800"
+                                >
+                                    {resolveTokenSymbol(addr)}
+                                    <button onClick={() => removeToken(addr)} className="hover:text-red-600 transition-colors">
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                </span>
+                            ))}
+                            <button
+                                onClick={() => setShowTokenPicker(!showTokenPicker)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-dashed border-slate-300 text-sm text-slate-500 hover:border-indigo-400 hover:text-indigo-600 transition-colors"
                             >
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2 min-w-0">
-                                        <Puzzle className={`h-4 w-4 flex-shrink-0 ${plugin.active ? "text-emerald-600" : "text-slate-400"
-                                            }`} />
-                                        <span className="font-semibold text-slate-700 truncate">
-                                            {plugin.pluginName || `Plugin ${i + 1}`}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5">
-                                        {plugin.active ? (
-                                            <Chip className="bg-emerald-100 text-emerald-700 text-xs">
-                                                <CheckCircle className="h-3 w-3 mr-0.5" />
-                                                {t.active}
-                                            </Chip>
-                                        ) : (
-                                            <Chip className="bg-slate-100 text-slate-500 text-xs">
-                                                <XCircle className="h-3 w-3 mr-0.5" />
-                                                {t.inactive}
-                                            </Chip>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs text-slate-500">
-                                    <span>{t.address}</span>
-                                    <span className="font-mono truncate text-slate-700">
-                                        {plugin.pluginAddress.slice(0, 10)}...{plugin.pluginAddress.slice(-6)}
-                                    </span>
-                                    {plugin.attachedAt && (
-                                        <>
-                                            <span>{t.attachedAt}</span>
-                                            <span className="text-slate-700">
-                                                {new Date(Number(plugin.attachedAt) * 1000).toLocaleDateString()}
-                                            </span>
-                                        </>
-                                    )}
+                                <Plus className="h-3 w-3" />
+                                {isZh ? "添加" : "Add"}
+                            </button>
+                        </div>
+                        {/* Token picker */}
+                        {showTokenPicker && (
+                            <div className="rounded-lg border border-slate-200 bg-white p-2 space-y-1.5">
+                                {KNOWN_TOKENS.filter(
+                                    (t) => !allowedTokens.some((a) => a.toLowerCase() === t.address.toLowerCase())
+                                ).map((token) => (
+                                    <button
+                                        key={token.address}
+                                        onClick={() => addToken(token.address)}
+                                        className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md hover:bg-indigo-50 transition-colors text-left"
+                                    >
+                                        <div className="h-6 w-6 rounded-full bg-indigo-100 flex items-center justify-center text-[11px] font-bold text-indigo-700">
+                                            {token.symbol.charAt(0)}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <span className="text-sm font-semibold text-slate-800">{token.symbol}</span>
+                                            <span className="text-sm text-slate-400 ml-1.5">{token.name}</span>
+                                        </div>
+                                    </button>
+                                ))}
+                                {/* Custom address input */}
+                                <div className="flex gap-1.5 pt-1 border-t border-slate-100">
+                                    <input
+                                        type="text"
+                                        value={addTokenInput}
+                                        onChange={(e) => setAddTokenInput(e.target.value)}
+                                        placeholder={isZh ? "自定义地址 0x..." : "Custom address 0x..."}
+                                        className="flex-1 text-sm border border-slate-200 rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                                    />
+                                    <button
+                                        onClick={() => addToken(addTokenInput)}
+                                        disabled={!addTokenInput.startsWith("0x") || addTokenInput.length < 42}
+                                        className="px-2 py-1 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        {isZh ? "添加" : "Add"}
+                                    </button>
                                 </div>
                             </div>
-                        ))}
+                        )}
                     </div>
                 )}
+
+                {/* ═══ Section: Spending Limits ═══ */}
+                <SectionHeader
+                    icon={<ArrowLeftRight className="h-3.5 w-3.5" />}
+                    title={isZh ? "交易限额" : "Spending Limits"}
+                    subtitle={
+                        (draft.maxTradeAmount ?? "0") !== "0"
+                            ? `${weiToDisplay(draft.maxTradeAmount ?? "0")} BNB/tx`
+                            : (isZh ? "未设置" : "Not set")
+                    }
+                    isOpen={sections.limits}
+                    onToggle={() => toggleSection("limits")}
+                />
+                {sections.limits && (
+                    <div className="px-4 pb-3 space-y-3">
+                        <LimitInput
+                            label={isZh ? "单笔上限 (BNB)" : "Max per trade (BNB)"}
+                            value={weiToDisplay(draft.maxTradeAmount ?? "0")}
+                            onChange={(v) => updateDraft("maxTradeAmount", displayToWei(v))}
+                            hint={isZh ? "每笔交易的最大金额，0 = 不限" : "Max amount per swap, 0 = unlimited"}
+                        />
+                        <LimitInput
+                            label={isZh ? "每日上限 (BNB)" : "Max per day (BNB)"}
+                            value={weiToDisplay(draft.maxDailyAmount ?? "0")}
+                            onChange={(v) => updateDraft("maxDailyAmount", displayToWei(v))}
+                            hint={isZh ? "每日累计交易上限，0 = 不限" : "Daily cumulative limit, 0 = unlimited"}
+                        />
+                        <LimitInput
+                            label={isZh ? "最大滑点 (%)" : "Max slippage (%)"}
+                            value={slippagePercent}
+                            onChange={(v) => updateDraft("maxSlippageBps", Math.round(parseFloat(v || "0") * 100))}
+                            hint={isZh ? "允许的最大滑点百分比，0 = 不限" : "Max allowed slippage %, 0 = unlimited"}
+                        />
+                    </div>
+                )}
+
+                {/* ═══ Section: Frequency ═══ */}
+                <SectionHeader
+                    icon={<Timer className="h-3.5 w-3.5" />}
+                    title={isZh ? "频率控制" : "Frequency Control"}
+                    subtitle={
+                        (draft.cooldownSeconds ?? 0) > 0
+                            ? `${Math.round((draft.cooldownSeconds ?? 0) / 60)}min`
+                            : (isZh ? "未设置" : "Not set")
+                    }
+                    isOpen={sections.frequency}
+                    onToggle={() => toggleSection("frequency")}
+                />
+                {sections.frequency && (
+                    <div className="px-4 pb-3 space-y-3">
+                        <LimitInput
+                            label={isZh ? "冷却间隔 (分钟)" : "Cooldown (minutes)"}
+                            value={String(Math.round((draft.cooldownSeconds ?? 0) / 60))}
+                            onChange={(v) => updateDraft("cooldownSeconds", Math.round(parseFloat(v || "0") * 60))}
+                            hint={isZh ? "两次交易之间的最短间隔，0 = 不限" : "Min interval between trades, 0 = unlimited"}
+                        />
+                        <LimitInput
+                            label={isZh ? "每日最大执行次数" : "Max runs per day"}
+                            value={String(draft.maxRunsPerDay ?? 0)}
+                            onChange={(v) => updateDraft("maxRunsPerDay", parseInt(v || "0") || 0)}
+                            hint={isZh ? "Agent 每天最多执行几次，0 = 不限" : "Max agent executions per day, 0 = unlimited"}
+                        />
+                    </div>
+                )}
+
+                {/* ═══ Section: DEX Whitelist ═══ */}
+                <SectionHeader
+                    icon={<ArrowLeftRight className="h-3.5 w-3.5" />}
+                    title={isZh ? "DEX 白名单" : "DEX Whitelist"}
+                    subtitle={isZh
+                        ? `${allowedDexes.length} 个交易所`
+                        : `${allowedDexes.length} DEX${allowedDexes.length !== 1 ? "es" : ""}`
+                    }
+                    isOpen={sections.dex}
+                    onToggle={() => toggleSection("dex")}
+                />
+                {sections.dex && (
+                    <div className="px-4 pb-3 space-y-2">
+                        <p className="text-sm text-slate-500">
+                            {isZh
+                                ? "仅允许 Agent 在以下交易所执行。留空则不限制。"
+                                : "Agent can only trade on these DEXes. Leave empty for no restriction."}
+                        </p>
+                        <div className="space-y-1">
+                            {allowedDexes.map((addr) => (
+                                <div
+                                    key={addr}
+                                    className="flex items-center justify-between px-3 py-2 rounded-lg border border-emerald-200 bg-emerald-50/50"
+                                >
+                                    <div className="min-w-0">
+                                        <span className="text-sm font-semibold text-slate-800">{resolveDexName(addr)}</span>
+                                        <span className="text-sm text-slate-400 ml-2 font-mono">{addr.slice(0, 10)}...</span>
+                                    </div>
+                                    <button
+                                        onClick={() => removeDex(addr)}
+                                        className="text-slate-400 hover:text-red-600 transition-colors flex-shrink-0"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                        <button
+                            onClick={() => setShowDexPicker(!showDexPicker)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-dashed border-slate-300 text-sm text-slate-500 hover:border-indigo-400 hover:text-indigo-600 transition-colors"
+                        >
+                            <Plus className="h-3 w-3" />
+                            {isZh ? "添加 DEX" : "Add DEX"}
+                        </button>
+                        {showDexPicker && (
+                            <div className="rounded-lg border border-slate-200 bg-white p-2 space-y-1.5">
+                                {KNOWN_DEXES.filter(
+                                    (d) => !allowedDexes.some((a) => a.toLowerCase() === d.address.toLowerCase())
+                                ).map((dex) => (
+                                    <button
+                                        key={dex.address}
+                                        onClick={() => addDex(dex.address)}
+                                        className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md hover:bg-indigo-50 transition-colors text-left"
+                                    >
+                                        <span className="text-sm font-semibold text-slate-800">{dex.name}</span>
+                                        <span className="text-sm text-slate-400 font-mono">{dex.address.slice(0, 10)}...</span>
+                                    </button>
+                                ))}
+                                <div className="flex gap-1.5 pt-1 border-t border-slate-100">
+                                    <input
+                                        type="text"
+                                        value={addDexInput}
+                                        onChange={(e) => setAddDexInput(e.target.value)}
+                                        placeholder={isZh ? "自定义 DEX 地址 0x..." : "Custom DEX address 0x..."}
+                                        className="flex-1 text-sm border border-slate-200 rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                                    />
+                                    <button
+                                        onClick={() => addDex(addDexInput)}
+                                        disabled={!addDexInput.startsWith("0x") || addDexInput.length < 42}
+                                        className="px-2 py-1 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        {isZh ? "添加" : "Add"}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ═══ Action Buttons ═══ */}
+                {saveError && (
+                    <div className="mx-4 mb-2 p-2 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700 flex items-center gap-1.5">
+                        <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                        {saveError}
+                    </div>
+                )}
+                <div className="flex gap-2 px-4 py-3 border-t border-indigo-100/60 bg-white/40">
+                    <button
+                        onClick={handleReset}
+                        disabled={isSaving || isDefault}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        {isZh ? "重置" : "Reset"}
+                    </button>
+                    <button
+                        onClick={handleSave}
+                        disabled={isSaving || !isDirty}
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                        {isSaving ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                            <Save className="h-3.5 w-3.5" />
+                        )}
+                        {isSaving ? (isZh ? "保存中..." : "Saving...") : (isZh ? "保存配置" : "Save Config")}
+                    </button>
+                </div>
             </CardContent>
         </Card>
     );
+}
+
+// ═══════════════════════════════════════════════════════
+//                  Sub-Components
+// ═══════════════════════════════════════════════════════
+
+function SectionHeader({
+    icon, title, subtitle, isOpen, onToggle,
+}: {
+    icon: React.ReactNode;
+    title: string;
+    subtitle: string;
+    isOpen: boolean;
+    onToggle: () => void;
+}) {
+    return (
+        <button
+            onClick={onToggle}
+            className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-indigo-50/40 transition-colors border-t border-indigo-100/40 first:border-t-0"
+        >
+            {isOpen
+                ? <ChevronDown className="h-3.5 w-3.5 text-indigo-500" />
+                : <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+            }
+            <span className="text-indigo-600">{icon}</span>
+            <span className="text-sm font-semibold text-slate-700 flex-1 text-left">{title}</span>
+            <span className="text-sm text-slate-400">{subtitle}</span>
+        </button>
+    );
+}
+
+function LimitInput({
+    label, value, onChange, hint,
+}: {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    hint?: string;
+}) {
+    return (
+        <div>
+            <label className="text-sm font-medium text-slate-700">{label}</label>
+            <input
+                type="text"
+                inputMode="decimal"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className="w-full mt-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-indigo-300 focus:border-indigo-400 transition-colors"
+            />
+            {hint && <p className="text-sm text-slate-400 mt-0.5">{hint}</p>}
+        </div>
+    );
+}
+
+// ═══════════════════════════════════════════════════════
+//                  Utility Functions
+// ═══════════════════════════════════════════════════════
+
+function weiToDisplay(weiStr: string): string {
+    try {
+        const ZERO = BigInt(0);
+        const DECIMALS = BigInt(10) ** BigInt(18);
+        const wei = BigInt(weiStr || "0");
+        if (wei === ZERO) return "0";
+        const ethPart = wei / DECIMALS;
+        const remainder = wei % DECIMALS;
+        if (remainder === ZERO) return ethPart.toString();
+
+        // Show up to 4 decimal places
+        const fracStr = remainder.toString().padStart(18, "0").slice(0, 4).replace(/0+$/, "");
+        return fracStr ? `${ethPart}.${fracStr}` : ethPart.toString();
+    } catch {
+        return "0";
+    }
+}
+
+function displayToWei(display: string): string {
+    try {
+        const num = parseFloat(display || "0");
+        if (num <= 0 || isNaN(num)) return "0";
+        const DECIMALS = BigInt(10) ** BigInt(18);
+        // Convert to wei (18 decimals)
+        const [intPart, fracPart = ""] = display.split(".");
+        const padded = fracPart.padEnd(18, "0").slice(0, 18);
+        return (BigInt(intPart || "0") * DECIMALS + BigInt(padded)).toString();
+    } catch {
+        return "0";
+    }
 }

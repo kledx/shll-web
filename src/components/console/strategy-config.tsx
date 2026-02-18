@@ -28,21 +28,14 @@ const copy = {
         amountPerExec: "Amount Per Execution",
         routerAddress: "Router Address",
         slippageBps: "Max Slippage (bps)",
-        interval: "Execution Interval",
+
         save: "Save Parameters",
         saving: "Saving...",
         saved: "Parameters saved",
         saveFailed: "Failed to save",
         readOnly: "Read-only mode. Only the current renter can configure parameters.",
         noConfig: "This agent type does not require parameter configuration.",
-        intervals: {
-            "60000": "1 minute",
-            "300000": "5 minutes",
-            "900000": "15 minutes",
-            "3600000": "1 hour",
-            "14400000": "4 hours",
-            "86400000": "24 hours",
-        },
+
         addressPlaceholder: "0x...",
         amountPlaceholder: "e.g. 1000000000000000 (wei)",
         slippageHint: "100 = 1%, 50 = 0.5%",
@@ -54,21 +47,14 @@ const copy = {
         amountPerExec: "每次执行数量",
         routerAddress: "路由合约地址",
         slippageBps: "最大滑点 (bps)",
-        interval: "执行间隔",
+
         save: "保存参数",
         saving: "保存中...",
         saved: "参数已保存",
         saveFailed: "保存失败",
         readOnly: "只读模式。只有当前租户可以配置参数。",
         noConfig: "此 Agent 类型不需要参数配置。",
-        intervals: {
-            "60000": "1 分钟",
-            "300000": "5 分钟",
-            "900000": "15 分钟",
-            "3600000": "1 小时",
-            "14400000": "4 小时",
-            "86400000": "24 小时",
-        },
+
         addressPlaceholder: "0x...",
         amountPlaceholder: "例如 1000000000000000 (wei)",
         slippageHint: "100 = 1%, 50 = 0.5%",
@@ -78,7 +64,6 @@ const copy = {
 // Agent type labels
 const AGENT_TYPE_LABELS: Record<string, string> = {
     dca: "DCA (Dollar-Cost Averaging)",
-    hotpump_watchlist: "HotPump Watchlist",
     llm_trader: "LLM Trader",
 };
 
@@ -113,9 +98,7 @@ export function StrategyConfig({
     const [slippageBps, setSlippageBps] = useState(
         String(currentStrategy?.strategyParams?.slippageBps ?? "100")
     );
-    const [minIntervalMs, setMinIntervalMs] = useState(
-        String(currentStrategy?.minIntervalMs ?? "3600000")
-    );
+
     const [isSaving, setIsSaving] = useState(false);
 
     const isValidAddress = (v: string) => /^0x[a-fA-F0-9]{40}$/.test(v);
@@ -149,7 +132,7 @@ export function StrategyConfig({
                     tokenId,
                     strategyType,
                     strategyParams: params,
-                    minIntervalMs: Number(minIntervalMs),
+
                     enabled: true,
                 }),
             });
@@ -247,22 +230,7 @@ export function StrategyConfig({
                 </div>
             )}
 
-            {/* Execution Interval */}
-            {strategyType && (
-                <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-[var(--color-foreground)]">{t.interval}</label>
-                    <select
-                        value={minIntervalMs}
-                        onChange={(e) => setMinIntervalMs(e.target.value)}
-                        disabled={!isInteractive}
-                        className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] disabled:opacity-60"
-                    >
-                        {Object.entries(t.intervals).map(([val, label]) => (
-                            <option key={val} value={val}>{label}</option>
-                        ))}
-                    </select>
-                </div>
-            )}
+
 
             {/* Save Button */}
             {isInteractive && strategyType && (

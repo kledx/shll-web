@@ -491,26 +491,28 @@ export default function ConsolePage() {
                             />
                         </CollapsibleSection>
 
-                        {/* Execution Parameters (collapsible, default closed) */}
-                        <CollapsibleSection
-                            title={language === "zh" ? "执行参数" : "Execution Parameters"}
-                            desc={language === "zh" ? "配置 Agent 的自动执行参数。" : "Configure the agent's execution parameters."}
-                            defaultOpen={false}
-                        >
-                            <StrategyConfig
-                                tokenId={tokenId}
-                                agentType={dashboardData?.strategy?.strategyType}
-                                currentStrategy={dashboardData?.strategy ? {
-                                    strategyType: dashboardData.strategy.strategyType,
-                                    enabled: dashboardData.strategy.enabled,
-                                    strategyParams: dashboardData.strategy.strategyParams,
-                                    minIntervalMs: dashboardData.strategy.minIntervalMs,
-                                } : null}
-                                isInteractive={isInteractiveConsole}
-                                language={language === "zh" ? "zh" : "en"}
-                                onSaved={() => setRefreshKey((k) => k + 1)}
-                            />
-                        </CollapsibleSection>
+                        {/* Execution Parameters — only for DCA agents */}
+                        {dashboardData?.strategy?.strategyType === "dca" && (
+                            <CollapsibleSection
+                                title={language === "zh" ? "执行参数" : "Execution Parameters"}
+                                desc={language === "zh" ? "配置 DCA 策略的交易参数。" : "Configure DCA strategy trading parameters."}
+                                defaultOpen={false}
+                            >
+                                <StrategyConfig
+                                    tokenId={tokenId}
+                                    agentType={dashboardData.strategy.strategyType}
+                                    currentStrategy={{
+                                        strategyType: dashboardData.strategy.strategyType,
+                                        enabled: dashboardData.strategy.enabled,
+                                        strategyParams: dashboardData.strategy.strategyParams,
+                                        minIntervalMs: dashboardData.strategy.minIntervalMs,
+                                    }}
+                                    isInteractive={isInteractiveConsole}
+                                    language={language === "zh" ? "zh" : "en"}
+                                    onSaved={() => setRefreshKey((k) => k + 1)}
+                                />
+                            </CollapsibleSection>
+                        )}
 
                         {/* Policy Settings (collapsible) */}
                         <section className="space-y-2">
@@ -668,19 +670,22 @@ function ConsoleControlSection({
                 language={language}
             />
 
-            <StrategyConfig
-                tokenId={tokenId}
-                agentType={dashboardStrategy?.strategyType}
-                currentStrategy={dashboardStrategy ? {
-                    strategyType: dashboardStrategy.strategyType,
-                    enabled: dashboardStrategy.enabled,
-                    strategyParams: dashboardStrategy.strategyParams,
-                    minIntervalMs: dashboardStrategy.minIntervalMs,
-                } : null}
-                isInteractive={isInteractiveConsole}
-                language={language}
-                onSaved={onStrategyChanged}
-            />
+            {/* Execution Parameters — only for DCA agents */}
+            {dashboardStrategy?.strategyType === "dca" && (
+                <StrategyConfig
+                    tokenId={tokenId}
+                    agentType={dashboardStrategy.strategyType}
+                    currentStrategy={{
+                        strategyType: dashboardStrategy.strategyType,
+                        enabled: dashboardStrategy.enabled,
+                        strategyParams: dashboardStrategy.strategyParams,
+                        minIntervalMs: dashboardStrategy.minIntervalMs,
+                    }}
+                    isInteractive={isInteractiveConsole}
+                    language={language}
+                    onSaved={onStrategyChanged}
+                />
+            )}
         </div>
     );
 }
