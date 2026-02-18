@@ -491,14 +491,15 @@ export default function ConsolePage() {
                             />
                         </CollapsibleSection>
 
-                        {/* Strategy Configuration (collapsible, default closed) */}
+                        {/* Execution Parameters (collapsible, default closed) */}
                         <CollapsibleSection
-                            title={language === "zh" ? "策略配置" : "Strategy Configuration"}
-                            desc={language === "zh" ? "配置 Agent 的自动执行策略。" : "Configure the agent's automated execution strategy."}
+                            title={language === "zh" ? "执行参数" : "Execution Parameters"}
+                            desc={language === "zh" ? "配置 Agent 的自动执行参数。" : "Configure the agent's execution parameters."}
                             defaultOpen={false}
                         >
                             <StrategyConfig
                                 tokenId={tokenId}
+                                agentType={dashboardData?.strategy?.strategyType}
                                 currentStrategy={dashboardData?.strategy ? {
                                     strategyType: dashboardData.strategy.strategyType,
                                     enabled: dashboardData.strategy.enabled,
@@ -669,6 +670,7 @@ function ConsoleControlSection({
 
             <StrategyConfig
                 tokenId={tokenId}
+                agentType={dashboardStrategy?.strategyType}
                 currentStrategy={dashboardStrategy ? {
                     strategyType: dashboardStrategy.strategyType,
                     enabled: dashboardStrategy.enabled,

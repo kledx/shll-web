@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import { Settings, Save, Loader2 } from "lucide-react";
+import { Chip } from "@/components/ui/chip";
 import { toast } from "sonner";
 
 interface StrategyConfigProps {
     tokenId: string;
+    /** V3.0: agentType from template — determines which param form to show */
+    agentType?: string;
     currentStrategy?: {
         strategyType: string;
         enabled: boolean;
@@ -19,20 +22,19 @@ interface StrategyConfigProps {
 
 const copy = {
     en: {
-        title: "Strategy Configuration",
-        strategyType: "Strategy Type",
-        selectStrategy: "Select strategy...",
+        title: "Execution Parameters",
         tokenToBuy: "Token to Buy",
         tokenToSpend: "Token to Spend",
         amountPerExec: "Amount Per Execution",
         routerAddress: "Router Address",
         slippageBps: "Max Slippage (bps)",
         interval: "Execution Interval",
-        save: "Save Strategy",
+        save: "Save Parameters",
         saving: "Saving...",
-        saved: "Strategy saved",
-        saveFailed: "Failed to save strategy",
-        readOnly: "Read-only mode. Only the current renter can configure strategies.",
+        saved: "Parameters saved",
+        saveFailed: "Failed to save",
+        readOnly: "Read-only mode. Only the current renter can configure parameters.",
+        noConfig: "This agent type does not require parameter configuration.",
         intervals: {
             "60000": "1 minute",
             "300000": "5 minutes",
@@ -42,24 +44,23 @@ const copy = {
             "86400000": "24 hours",
         },
         addressPlaceholder: "0x...",
-        amountPlaceholder: "e.g. 1000000000000000000",
+        amountPlaceholder: "e.g. 1000000000000000 (wei)",
         slippageHint: "100 = 1%, 50 = 0.5%",
     },
     zh: {
-        title: "策略配置",
-        strategyType: "策略类型",
-        selectStrategy: "选择策略...",
+        title: "执行参数",
         tokenToBuy: "买入代币",
         tokenToSpend: "卖出代币",
         amountPerExec: "每次执行数量",
         routerAddress: "路由合约地址",
         slippageBps: "最大滑点 (bps)",
         interval: "执行间隔",
-        save: "保存策略",
+        save: "保存参数",
         saving: "保存中...",
-        saved: "策略已保存",
-        saveFailed: "保存策略失败",
-        readOnly: "只读模式。只有当前租户可以配置策略。",
+        saved: "参数已保存",
+        saveFailed: "保存失败",
+        readOnly: "只读模式。只有当前租户可以配置参数。",
+        noConfig: "此 Agent 类型不需要参数配置。",
         intervals: {
             "60000": "1 分钟",
             "300000": "5 分钟",
@@ -69,21 +70,23 @@ const copy = {
             "86400000": "24 小时",
         },
         addressPlaceholder: "0x...",
-        amountPlaceholder: "例如 1000000000000000000",
+        amountPlaceholder: "例如 1000000000000000 (wei)",
         slippageHint: "100 = 1%, 50 = 0.5%",
     },
 };
 
-const STRATEGY_TYPES = [
-    { value: "dca", label: "DCA (Dollar-Cost Averaging)" },
-    { value: "hotpump_watchlist", label: "HotPump Watchlist" },
-    { value: "llm_trader", label: "LLM Trader" },
-] as const;
+// Agent type labels
+const AGENT_TYPE_LABELS: Record<string, string> = {
+    dca: "DCA (Dollar-Cost Averaging)",
+    hotpump_watchlist: "HotPump Watchlist",
+    llm_trader: "LLM Trader",
+};
 
-const DEFAULT_ROUTER = "0x10ED43C718714eb63d5aA57B78B54704E256024E"; // PancakeSwap V2
+const DEFAULT_ROUTER = "0xD99D1c33F9fC3444f8101754aBC46c52416550D1"; // PancakeSwap V2 Testnet
 
 export function StrategyConfig({
     tokenId,
+    agentType,
     currentStrategy,
     isInteractive,
     language = "en",
@@ -91,7 +94,10 @@ export function StrategyConfig({
 }: StrategyConfigProps) {
     const t = copy[language];
 
-    const [strategyType, setStrategyType] = useState(currentStrategy?.strategyType || "");
+    // V3.0: strategy type is determined by template, not user selection
+    const strategyType = agentType || currentStrategy?.strategyType || "";
+    const isDCA = strategyType === "dca";
+
     const [tokenToBuy, setTokenToBuy] = useState(
         (currentStrategy?.strategyParams?.tokenToBuy as string) || ""
     );
@@ -113,7 +119,6 @@ export function StrategyConfig({
     const [isSaving, setIsSaving] = useState(false);
 
     const isValidAddress = (v: string) => /^0x[a-fA-F0-9]{40}$/.test(v);
-    const isDCA = strategyType === "dca";
 
     const handleSave = async () => {
         if (!isInteractive || !strategyType) return;
@@ -165,9 +170,16 @@ export function StrategyConfig({
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-foreground)]">
-                <Settings className="h-4 w-4 text-[var(--color-primary)]" />
-                {t.title}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-foreground)]">
+                    <Settings className="h-4 w-4 text-[var(--color-primary)]" />
+                    {t.title}
+                </div>
+                {strategyType && (
+                    <Chip className="bg-sky-500/10 text-sky-700 border-sky-500/20 text-sm font-bold">
+                        {AGENT_TYPE_LABELS[strategyType] ?? strategyType}
+                    </Chip>
+                )}
             </div>
 
             {!isInteractive && (
@@ -176,27 +188,7 @@ export function StrategyConfig({
                 </div>
             )}
 
-            {/* Strategy Type Select */}
-            <div className="space-y-1.5">
-                <label className="text-sm font-medium text-[var(--color-foreground)]">
-                    {t.strategyType}
-                </label>
-                <select
-                    value={strategyType}
-                    onChange={(e) => setStrategyType(e.target.value)}
-                    disabled={!isInteractive}
-                    className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] disabled:opacity-60"
-                >
-                    <option value="">{t.selectStrategy}</option>
-                    {STRATEGY_TYPES.map((st) => (
-                        <option key={st.value} value={st.value}>
-                            {st.label}
-                        </option>
-                    ))}
-                </select>
-            </div>
-
-            {/* DCA Parameters */}
+            {/* DCA Parameters — shown automatically for DCA agents */}
             {isDCA && (
                 <div className="space-y-3 rounded-xl border border-[var(--color-border)] bg-white/40 p-4">
                     <FieldInput
@@ -248,6 +240,13 @@ export function StrategyConfig({
                 </div>
             )}
 
+            {/* Unsupported agent type */}
+            {strategyType && !isDCA && (
+                <div className="rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-500">
+                    {t.noConfig}
+                </div>
+            )}
+
             {/* Execution Interval */}
             {strategyType && (
                 <div className="space-y-1.5">
@@ -270,7 +269,7 @@ export function StrategyConfig({
                 <button
                     type="button"
                     onClick={handleSave}
-                    disabled={isSaving || !strategyType}
+                    disabled={isSaving}
                     className="inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary)]/90 disabled:opacity-60"
                 >
                     {isSaving ? (
