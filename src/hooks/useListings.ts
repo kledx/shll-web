@@ -1,8 +1,27 @@
 import { useQuery } from "@tanstack/react-query";
-import { Address, formatEther, zeroAddress } from "viem";
+import { Address, formatEther, keccak256, toHex, zeroAddress } from "viem";
 import { useReadContracts } from "wagmi";
 import { AgentListing } from "@/components/business/agent-card";
 import { CONTRACTS } from "@/config/contracts";
+
+// Map keccak256 bytes32 agent type hashes to human-readable labels
+const AGENT_TYPE_LABELS: Record<string, string> = {
+  [keccak256(toHex("dca"))]: "dca",
+  [keccak256(toHex("llm_trader"))]: "llm_trader",
+  [keccak256(toHex("hot_token"))]: "hot_token",
+  [keccak256(toHex("llm_defi"))]: "llm_defi",
+};
+
+function decodeAgentType(raw: string | undefined): string | undefined {
+  if (!raw || raw === "unknown") return undefined;
+  const lower = raw.toLowerCase();
+  // Check if it's a known keccak256 hash (hex string from contract)
+  if (AGENT_TYPE_LABELS[lower]) return AGENT_TYPE_LABELS[lower];
+  // If it looks like a clean ASCII label (e.g. "dca", "llm_trader"), use it
+  if (/^[a-z0-9_]+$/i.test(raw)) return raw;
+  // Everything else (garbled bytes, unknown hashes) — hide it
+  return undefined;
+}
 
 interface IndexerListingItem {
   id?: unknown;
@@ -156,7 +175,7 @@ export function useListings() {
       rented: isRented,
       renter: isRented ? effectiveRenter : undefined,
       isTemplate: Boolean(item.isTemplate),
-      agentType: typeof item.agentType === "string" ? item.agentType : undefined,
+      agentType: decodeAgentType(typeof item.agentType === "string" ? item.agentType : undefined),
       capabilities: ["swap"], // Hardcoded for now
       metadata: { name: agentName },
     };
