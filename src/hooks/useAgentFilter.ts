@@ -5,15 +5,16 @@ export type SortOption = "newest" | "oldest" | "price_asc" | "price_desc";
 
 export interface FilterState {
     status: "all" | "available" | "rented";
+    agentType: string;   // "all" | "dca" | "llm_trader" | "llm_defi" | "hot_token"
     search: string;
     sort: SortOption;
     minDays?: number;
-    // Future: minPrice, maxPrice
 }
 
 export function useAgentFilter(listings: AgentListing[]) {
     const [filters, setFilters] = useState<FilterState>({
         status: "all",
+        agentType: "all",
         search: "",
         sort: "newest",
     });
@@ -26,6 +27,11 @@ export function useAgentFilter(listings: AgentListing[]) {
             if (filters.status === "available" && listing.rented) return false;
             if (filters.status === "rented" && !listing.rented) return false;
 
+            // Agent type filter
+            if (filters.agentType !== "all") {
+                if ((listing.agentType ?? "unknown") !== filters.agentType) return false;
+            }
+
             // Search filter
             if (filters.search.trim()) {
                 const q = filters.search.toLowerCase().trim();
@@ -33,7 +39,6 @@ export function useAgentFilter(listings: AgentListing[]) {
                 const id = listing.tokenId.toLowerCase();
                 const owner = listing.owner.toLowerCase();
 
-                // Allow searching by exact capability (future proofing)
                 const hasCapability = listing.capabilities?.some(c => c.toLowerCase().includes(q));
 
                 if (!name.includes(q) && !id.includes(q) && !owner.includes(q) && !hasCapability) {
@@ -53,7 +58,6 @@ export function useAgentFilter(listings: AgentListing[]) {
         result.sort((a, b) => {
             switch (filters.sort) {
                 case "newest":
-                    // Assuming higher tokenId is newer
                     return Number(BigInt(b.tokenId) - BigInt(a.tokenId));
                 case "oldest":
                     return Number(BigInt(a.tokenId) - BigInt(b.tokenId));
@@ -72,6 +76,9 @@ export function useAgentFilter(listings: AgentListing[]) {
     const setStatus = (status: FilterState["status"]) =>
         setFilters(prev => ({ ...prev, status }));
 
+    const setAgentType = (agentType: string) =>
+        setFilters(prev => ({ ...prev, agentType }));
+
     const setSearch = (search: string) =>
         setFilters(prev => ({ ...prev, search }));
 
@@ -79,7 +86,7 @@ export function useAgentFilter(listings: AgentListing[]) {
         setFilters(prev => ({ ...prev, sort }));
 
     const clearFilters = () =>
-        setFilters({ status: "all", search: "", sort: "newest" });
+        setFilters({ status: "all", agentType: "all", search: "", sort: "newest" });
 
     // Computed stats for filters
     const stats = useMemo(() => {
@@ -90,13 +97,24 @@ export function useAgentFilter(listings: AgentListing[]) {
         };
     }, [listings]);
 
+    // Compute unique agent types for dynamic filter options
+    const agentTypes = useMemo(() => {
+        const types = new Set<string>();
+        for (const l of listings) {
+            if (l.agentType) types.add(l.agentType);
+        }
+        return Array.from(types).sort();
+    }, [listings]);
+
     return {
         filters,
         filteredListings,
         setStatus,
+        setAgentType,
         setSearch,
         setSort,
         clearFilters,
-        stats
+        stats,
+        agentTypes,
     };
 }

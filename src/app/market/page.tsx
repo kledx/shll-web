@@ -26,11 +26,14 @@ export default function MarketPage() {
         filters,
         filteredListings,
         setStatus,
+        setAgentType,
         setSearch,
         setSort,
         clearFilters,
-        stats
+        stats,
+        agentTypes,
     } = useAgentFilter(listings || []);
+
 
     const { chain, isConnected } = useAccount();
     const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
@@ -67,8 +70,10 @@ export default function MarketPage() {
                             <AgentFilters
                                 filters={filters}
                                 setStatus={setStatus}
+                                setAgentType={setAgentType}
                                 clearFilters={clearFilters}
                                 stats={stats}
+                                agentTypes={agentTypes}
                             />
                         </div>
                     </aside>
@@ -90,11 +95,13 @@ export default function MarketPage() {
                                     <AgentFilters
                                         filters={filters}
                                         setStatus={setStatus}
+                                        setAgentType={setAgentType}
                                         clearFilters={() => {
                                             clearFilters();
                                             setIsMobileFiltersOpen(false);
                                         }}
                                         stats={stats}
+                                        agentTypes={agentTypes}
                                     />
                                 </div>
                             </SheetContent>

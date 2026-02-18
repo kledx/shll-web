@@ -24,6 +24,7 @@ export interface AgentListing {
     rented: boolean;
     renter?: string;
     isTemplate?: boolean;
+    agentType?: string;
     capabilities: ("swap" | "repay")[];
     metrics?: {
         successRate: number;
@@ -71,10 +72,15 @@ export function AgentCard({ listing }: { listing: AgentListing }) {
 
             <CardHeader className="relative pb-2">
                 <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                         <span className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium ${statusColor}`}>
                             {statusLabel}
                         </span>
+                        {listing.agentType && listing.agentType !== "unknown" && (
+                            <span className="inline-flex items-center rounded-md border border-sky-200 bg-sky-500/10 px-2 py-1 text-xs font-medium text-sky-600 dark:border-sky-800 dark:text-sky-400">
+                                {listing.agentType.toUpperCase().replace(/_/g, " ")}
+                            </span>
+                        )}
                         <span className="text-xs text-[var(--color-muted-foreground)]">#{listing.tokenId}</span>
                     </div>
                 </div>

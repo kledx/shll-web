@@ -15,6 +15,7 @@ interface IndexerListingItem {
   agentName?: unknown;
   owner?: unknown;
   isTemplate?: unknown;
+  agentType?: unknown;
 }
 
 interface MetadataResult {
@@ -155,6 +156,7 @@ export function useListings() {
       rented: isRented,
       renter: isRented ? effectiveRenter : undefined,
       isTemplate: Boolean(item.isTemplate),
+      agentType: typeof item.agentType === "string" ? item.agentType : undefined,
       capabilities: ["swap"], // Hardcoded for now
       metadata: { name: agentName },
     };

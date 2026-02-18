@@ -1,7 +1,8 @@
 "use client";
 
 import { useAgentDashboard, type DashboardData } from "@/hooks/useAgentDashboard";
-import { Activity, CheckCircle, XCircle, Clock, TrendingUp, Loader2 } from "lucide-react";
+import { useAgentSummary } from "@/hooks/useAgentSummary";
+import { Activity, CheckCircle, XCircle, Clock, TrendingUp, Loader2, BarChart3 } from "lucide-react";
 
 interface AgentDashboardProps {
     tokenId: string;
@@ -29,6 +30,10 @@ const copy = {
         error: "Failed to load dashboard",
         never: "Never",
         reason: "Reason",
+        onChain: "On-Chain Stats",
+        onChainExecs: "On-Chain Execs",
+        successRate: "Success Rate",
+        agentType: "Agent Type",
     },
     zh: {
         title: "Agent 仪表盘",
@@ -49,6 +54,10 @@ const copy = {
         error: "加载仪表盘失败",
         never: "从未",
         reason: "原因",
+        onChain: "链上统计",
+        onChainExecs: "链上执行",
+        successRate: "成功率",
+        agentType: "Agent 类型",
     },
 };
 
@@ -81,6 +90,7 @@ function strategyLabel(t: string): string {
 
 export function AgentDashboard({ tokenId, refreshKey = 0, language = "en" }: AgentDashboardProps) {
     const { data, error, isLoading } = useAgentDashboard(tokenId, refreshKey);
+    const { data: summary } = useAgentSummary(tokenId);
     const t = copy[language];
 
     if (isLoading) {
@@ -129,6 +139,26 @@ export function AgentDashboard({ tokenId, refreshKey = 0, language = "en" }: Age
                     color="text-[var(--color-muted-foreground)]"
                 />
             </div>
+
+            {/* On-Chain Stats (from Indexer) */}
+            {summary && (
+                <div className="rounded-xl border border-[var(--color-border)] bg-white/60 p-4">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-foreground)]">
+                        <BarChart3 className="h-4 w-4 text-sky-500" />
+                        {t.onChain}
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        <div className="text-[var(--color-muted-foreground)]">{t.onChainExecs}</div>
+                        <div className="font-medium">{summary.totalExecutions}</div>
+                        <div className="text-[var(--color-muted-foreground)]">{t.successRate}</div>
+                        <div className="font-medium">{summary.successRate}%</div>
+                        <div className="text-[var(--color-muted-foreground)]">{t.latestRun}</div>
+                        <div className="font-medium">
+                            {summary.lastExecution ? formatTimeAgo(summary.lastExecution, language) : t.never}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Strategy Card */}
             <div className="rounded-xl border border-[var(--color-border)] bg-white/60 p-4">
