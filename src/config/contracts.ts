@@ -1567,6 +1567,13 @@ export const CONTRACTS = {
       },
       {
         "type": "function",
+        "name": "agentType",
+        "inputs": [{ "name": "tokenId", "type": "uint256", "internalType": "uint256" }],
+        "outputs": [{ "name": "", "type": "bytes32", "internalType": "bytes32" }],
+        "stateMutability": "view"
+      },
+      {
+        "type": "function",
         "name": "templateOf",
         "inputs": [{ "name": "tokenId", "type": "uint256", "internalType": "uint256" }],
         "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],

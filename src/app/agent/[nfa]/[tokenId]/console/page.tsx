@@ -453,19 +453,6 @@ export default function ConsolePage() {
                             />
                         </CollapsibleSection>
 
-                        {/* Agent Dashboard (collapsible, default open) */}
-                        <CollapsibleSection
-                            title={language === "zh" ? "Agent 仪表盘" : "Agent Dashboard"}
-                            desc={language === "zh" ? "执行统计、策略状态和近期活动。" : "Execution stats, strategy status, and recent activity."}
-                            defaultOpen={true}
-                        >
-                            <AgentDashboard
-                                tokenId={tokenId}
-                                refreshKey={refreshKey}
-                                language={language === "zh" ? "zh" : "en"}
-                            />
-                        </CollapsibleSection>
-
                         {/* Execution Parameters — only for DCA agents */}
                         {dashboardData?.strategy?.strategyType === "dca" && (
                             <CollapsibleSection
@@ -503,12 +490,21 @@ export default function ConsolePage() {
 
                     {/* Right Column: Info Panel (Tabbed) */}
                     <div>
-                        <Tabs defaultValue="status" className="w-full">
-                            <TabsList className="grid h-10 w-full grid-cols-3 rounded-lg border border-[var(--color-border)] bg-white/72 p-0.5">
+                        <Tabs defaultValue="dashboard" className="w-full">
+                            <TabsList className="grid h-10 w-full grid-cols-4 rounded-lg border border-[var(--color-border)] bg-white/72 p-0.5">
+                                <TabsTrigger value="dashboard" className="text-sm font-semibold">{language === "zh" ? "仪表盘" : "Dashboard"}</TabsTrigger>
                                 <TabsTrigger value="status" className="text-sm font-semibold">{ui.status.title}</TabsTrigger>
                                 <TabsTrigger value="vault" className="text-sm font-semibold">{sectionLabels.vault}</TabsTrigger>
                                 <TabsTrigger value="history" className="text-sm font-semibold">{sectionLabels.history}</TabsTrigger>
                             </TabsList>
+
+                            <TabsContent value="dashboard" className="mt-3 space-y-4">
+                                <AgentDashboard
+                                    tokenId={tokenId}
+                                    refreshKey={refreshKey}
+                                    language={language === "zh" ? "zh" : "en"}
+                                />
+                            </TabsContent>
 
                             <TabsContent value="status" className="mt-3 space-y-4">
                                 <p className="text-xs text-[var(--color-muted-foreground)]">{ui.sectionDesc.status}</p>
@@ -516,7 +512,7 @@ export default function ConsolePage() {
                                     tokenId={tokenId}
                                     leaseStatus={leaseStatus}
                                     leaseExpires={agent?.expires}
-                                    agentType={dashboardData?.strategy?.strategyType}
+                                    agentType={agent?.agentType}
                                     language={language === "zh" ? "zh" : "en"}
                                 />
                             </TabsContent>

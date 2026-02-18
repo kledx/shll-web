@@ -1,7 +1,7 @@
 "use client";
 
 import { useReadContracts, useReadContract } from "wagmi";
-import { Address, formatEther, keccak256, toBytes, Hex } from "viem";
+import { Address, formatEther, keccak256, toBytes, Hex, hexToString } from "viem";
 import { CONTRACTS } from "../config/contracts";
 
 export interface AgentData {
@@ -20,6 +20,7 @@ export interface AgentData {
     isRentable: boolean;
     isListed: boolean;
     isTemplateListing: boolean;
+    agentType: string;
     v14Policy?: {
         policyId: number;
         version: number;
@@ -56,6 +57,19 @@ const KEY_MAX_PATH = keccak256(toBytes("MAX_PATH_LENGTH"));
 const KEY_MAX_SWAP = keccak256(toBytes("MAX_SWAP_AMOUNT_IN"));
 const KEY_MAX_APPROVE = keccak256(toBytes("MAX_APPROVE_AMOUNT"));
 const KEY_MAX_REPAY = keccak256(toBytes("MAX_REPAY_AMOUNT"));
+
+// Agent type hash to label mapping (on-chain stores keccak256 of the type string)
+const AGENT_TYPE_MAP: Record<string, string> = {
+    [keccak256(toBytes("dca"))]: "DCA",
+    [keccak256(toBytes("llm_trader"))]: "LLM Trader",
+    [keccak256(toBytes("llm_defi"))]: "LLM DeFi",
+    [keccak256(toBytes("hot_token"))]: "Hot Token",
+};
+const ZERO_BYTES32 = "0x0000000000000000000000000000000000000000000000000000000000000000";
+function decodeAgentTypeHash(hash: string | undefined): string {
+    if (!hash || hash === ZERO_BYTES32) return "";
+    return AGENT_TYPE_MAP[hash.toLowerCase()] || hash.slice(0, 10) + "...";
+}
 
 interface MetadataStruct {
     persona?: string;
@@ -223,6 +237,13 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
                 address: nfaAddress,
                 abi: CONTRACTS.AgentNFA.abi,
                 functionName: "isTemplate",
+                args: [tokenIdBigInt],
+            },
+            // 12: agentType
+            {
+                address: nfaAddress,
+                abi: CONTRACTS.AgentNFA.abi,
+                functionName: "agentType",
                 args: [tokenIdBigInt],
             },
         ],
@@ -412,6 +433,11 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
         }
     }
 
+    // Read agentType hash from on-chain
+    const agentTypeResult = reads[12] as ContractRead | undefined;
+    const agentTypeHash = isReadSuccess<Hex>(agentTypeResult) ? (agentTypeResult.result as string) : undefined;
+    const agentTypeLabel = decodeAgentTypeHash(agentTypeHash);
+
     const agentData: AgentData = {
         tokenId,
         nfaAddress,
@@ -428,6 +454,7 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
         isListed: listingActive,
         isTemplateListing: listingIsTemplate,
         isRentable: !isInstance && listingActive && listingIsTemplate,
+        agentType: agentTypeLabel,
         v14Policy,
         policy: {
             maxDeadlineWindow: Number(maxDeadline || 0),
