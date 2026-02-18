@@ -3,48 +3,63 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { ShieldCheck } from "lucide-react";
-import { ConsoleCopy } from "@/lib/console/console-copy";
 
 export type LeaseStatus = "NOT_RENTED" | "RENTED_ACTIVE" | "RENTED_EXPIRED";
-export type PackStatus = "PACK_NONE" | "PACK_LOADING" | "PACK_VALID" | "PACK_INVALID";
-export type RunnerMode = "manual" | "managed" | "external";
 
 interface StatusCardProps {
     tokenId: string;
     leaseStatus: LeaseStatus;
     leaseExpires?: number;
-    packStatus: PackStatus;
-    vaultURI?: string;
-    vaultHash?: string;
-    runnerMode: RunnerMode;
-    policySummary?: {
-        maxDeadlineWindow: number;
-        maxPathLength: number;
-        allowedTokens: number;
-        allowedSpenders: number;
-    };
-    ui: ConsoleCopy["status"];
+    agentType?: string;
+    language?: "en" | "zh";
 }
+
+const copy = {
+    en: {
+        title: "Status Overview",
+        leaseLabels: {
+            NOT_RENTED: "Not Rented",
+            RENTED_ACTIVE: "Lease Active",
+            RENTED_EXPIRED: "Lease Expired",
+        },
+        tokenLabel: "Token ID",
+        leaseExpiresLabel: "Lease Expires",
+        agentTypeLabel: "Agent Type",
+        safetyTags: {
+            noPrivateKeys: "No private keys",
+            noWithdrawByRunner: "No withdrawals by runner",
+            policyEnforced: "Policy enforced",
+        },
+    },
+    zh: {
+        title: "状态概览",
+        leaseLabels: {
+            NOT_RENTED: "未租用",
+            RENTED_ACTIVE: "租期生效中",
+            RENTED_EXPIRED: "租期已过期",
+        },
+        tokenLabel: "Token ID",
+        leaseExpiresLabel: "租期到期",
+        agentTypeLabel: "Agent 类型",
+        safetyTags: {
+            noPrivateKeys: "无私钥暴露",
+            noWithdrawByRunner: "Runner 不可提现",
+            policyEnforced: "策略强约束",
+        },
+    },
+};
 
 export function StatusCard({
     tokenId,
     leaseStatus,
     leaseExpires,
-    packStatus,
-    vaultURI,
-    vaultHash,
-    runnerMode,
-    policySummary,
-    ui,
+    agentType,
+    language = "en",
 }: StatusCardProps) {
+    const ui = copy[language];
     const leaseLabel = ui.leaseLabels[leaseStatus];
-    const packLabel = ui.packLabels[packStatus];
-    const modeLabel = ui.modeLabels[runnerMode];
     const leaseExpiresText = leaseExpires && leaseExpires > 0
         ? new Date(leaseExpires * 1000).toLocaleString()
-        : "-";
-    const shortHash = vaultHash
-        ? `${vaultHash.slice(0, 10)}...${vaultHash.slice(-8)}`
         : "-";
 
     return (
@@ -57,48 +72,25 @@ export function StatusCard({
                     </CardTitle>
                     <div className="flex flex-wrap items-center gap-2">
                         <Chip variant={leaseStatus === "RENTED_ACTIVE" ? "sky" : "secondary"}>{leaseLabel}</Chip>
-                        <Chip variant={packStatus === "PACK_VALID" ? "burgundy" : packStatus === "PACK_INVALID" ? "destructive" : "outline"}>
-                            {packLabel}
-                        </Chip>
-                        <Chip variant="secondary">{modeLabel}</Chip>
+                        {agentType && (
+                            <Chip variant="burgundy">{agentType}</Chip>
+                        )}
                     </div>
                 </div>
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]/35 p-3">
-                        <div className="text-xs text-[var(--color-muted-foreground)]">{ui.token}</div>
+                        <div className="text-xs text-[var(--color-muted-foreground)]">{ui.tokenLabel}</div>
                         <div className="font-semibold">#{tokenId}</div>
                     </div>
                     <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]/35 p-3">
-                        <div className="text-xs text-[var(--color-muted-foreground)]">{ui.leaseExpires}</div>
+                        <div className="text-xs text-[var(--color-muted-foreground)]">{ui.leaseExpiresLabel}</div>
                         <div className="font-semibold">{leaseExpiresText}</div>
                     </div>
-                </div>
-
-                <div className="space-y-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]/35 p-3">
-                    <div className="text-xs text-[var(--color-muted-foreground)]">{ui.vaultUri}</div>
-                    <div className="font-mono text-xs break-all">{vaultURI || "-"}</div>
-                    <div className="pt-1 text-xs text-[var(--color-muted-foreground)]">{ui.vaultHash}</div>
-                    <div className="font-mono text-xs">{shortHash}</div>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]/35 p-3">
-                        <div className="text-xs text-[var(--color-muted-foreground)]">{ui.maxDeadline}</div>
-                        <div className="font-semibold">{policySummary?.maxDeadlineWindow ?? 0}s</div>
-                    </div>
-                    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]/35 p-3">
-                        <div className="text-xs text-[var(--color-muted-foreground)]">{ui.maxPath}</div>
-                        <div className="font-semibold">{policySummary?.maxPathLength ?? 0}</div>
-                    </div>
-                    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]/35 p-3">
-                        <div className="text-xs text-[var(--color-muted-foreground)]">{ui.allowedTokens}</div>
-                        <div className="font-semibold">{policySummary?.allowedTokens ?? 0}</div>
-                    </div>
-                    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]/35 p-3">
-                        <div className="text-xs text-[var(--color-muted-foreground)]">{ui.allowedSpenders}</div>
-                        <div className="font-semibold">{policySummary?.allowedSpenders ?? 0}</div>
+                        <div className="text-xs text-[var(--color-muted-foreground)]">{ui.agentTypeLabel}</div>
+                        <div className="font-semibold">{agentType || "-"}</div>
                     </div>
                 </div>
 

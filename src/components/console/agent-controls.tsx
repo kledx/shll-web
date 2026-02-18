@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Chip } from "@/components/ui/chip";
-import { RunnerMode } from "@/components/console/status-card";
+// V3: runnerMode is always "managed"
+type RunnerMode = "managed" | "manual" | "external";
 import { EnableState } from "@/hooks/useAutopilot";
 import { RunnerAutopilotStatus } from "@/hooks/useAutopilotStatus";
 import {
@@ -282,13 +283,7 @@ export function AgentControls({
                 </div>
             )}
 
-            {/* Mode/pack warnings */}
-            {!modeSupportsEnable && (
-                <div className="text-sm text-amber-700">{ui.modeManagedOnlyHint}</div>
-            )}
-            {blockedByPack && (
-                <div className="text-sm text-red-600">{ui.blockedByPackHint}</div>
-            )}
+
 
             {/* Primary action buttons */}
             <div className="flex flex-wrap gap-3">
