@@ -77,12 +77,13 @@ export default function ConsolePage() {
     const readOnlyMessage = ui.readOnlyMessage;
 
     const packStatus: PackStatus = useMemo(() => {
-        if (!agent?.metadata?.vaultURI && !capabilityPack.hasCapabilityPack) return "PACK_NONE";
+        // V3.0: capability packs are optional — default to valid when not configured
+        if (!agent?.metadata?.vaultURI && !capabilityPack.hasCapabilityPack) return "PACK_VALID";
         if (capabilityPack.isLoading) return "PACK_LOADING";
         if (capabilityPack.error) return "PACK_INVALID";
         if (capabilityPack.isHashValid === false) return "PACK_INVALID";
         if (capabilityPack.manifest) return "PACK_VALID";
-        return "PACK_INVALID";
+        return "PACK_VALID";
     }, [
         agent?.metadata?.vaultURI,
         capabilityPack.hasCapabilityPack,
@@ -93,9 +94,10 @@ export default function ConsolePage() {
     ]);
 
     const runnerMode: RunnerMode = useMemo(() => {
-        const mode = capabilityPack.capabilities?.runnerMode || "manual";
+        // V3.0: default to "managed" — runner handles strategy via /strategy API
+        const mode = capabilityPack.capabilities?.runnerMode || "managed";
         if (mode === "managed" || mode === "external") return mode;
-        return "manual";
+        return "managed";
     }, [capabilityPack.capabilities?.runnerMode]);
 
     const [refreshKey, setRefreshKey] = useState(0);
@@ -116,7 +118,8 @@ export default function ConsolePage() {
     } = useAutopilotStatus(tokenId, nfaAddress, refreshKey);
     const { data: dashboardData } = useAgentDashboard(tokenId, refreshKey);
     const strictPackValid = packStatus === "PACK_VALID";
-    const autopilotBlockedByPack = !strictPackValid;
+    // V3.0: capability packs no longer block autopilot
+    const autopilotBlockedByPack = false;
     const [autopilotOperator, setAutopilotOperator] = useState<string>(
         getRuntimeEnv("NEXT_PUBLIC_RUNNER_OPERATOR", "")
     );
@@ -176,14 +179,7 @@ export default function ConsolePage() {
             toast.error(readOnlyMessage);
             return;
         }
-        if (runnerMode === "manual") {
-            toast.error(ui.autopilot.modeManagedOnlyHint);
-            return;
-        }
-        if (autopilotBlockedByPack) {
-            toast.error(ui.autopilot.blockedByPackHint);
-            return;
-        }
+        // V3.0: runnerMode and pack checks removed — runner handles strategy directly
         if (!/^0x[a-fA-F0-9]{40}$/.test(runnerOperatorLocked)) {
             toast.error(ui.autopilot.toast.invalidOperatorAddress);
             return;
