@@ -125,14 +125,13 @@ export function StrategyConfig({
 
         setIsSaving(true);
         try {
-            const resp = await fetch("/api/autopilot/status", {
+            const resp = await fetch("/api/strategy/upsert", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     tokenId,
                     strategyType,
                     strategyParams: params,
-
                     enabled: true,
                 }),
             });

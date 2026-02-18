@@ -453,22 +453,22 @@ export default function ConsolePage() {
                             />
                         </CollapsibleSection>
 
-                        {/* Execution Parameters — only for DCA agents */}
-                        {dashboardData?.strategy?.strategyType === "dca" && (
+                        {/* Execution Parameters — only for DCA agents (based on on-chain agentType) */}
+                        {agent?.agentType === "DCA" && (
                             <CollapsibleSection
                                 title={language === "zh" ? "执行参数" : "Execution Parameters"}
                                 desc={language === "zh" ? "配置 DCA 策略的交易参数。" : "Configure DCA strategy trading parameters."}
-                                defaultOpen={false}
+                                defaultOpen={!dashboardData?.strategy}
                             >
                                 <StrategyConfig
                                     tokenId={tokenId}
-                                    agentType={dashboardData.strategy.strategyType}
-                                    currentStrategy={{
+                                    agentType="dca"
+                                    currentStrategy={dashboardData?.strategy ? {
                                         strategyType: dashboardData.strategy.strategyType,
                                         enabled: dashboardData.strategy.enabled,
                                         strategyParams: dashboardData.strategy.strategyParams,
                                         minIntervalMs: dashboardData.strategy.minIntervalMs,
-                                    }}
+                                    } : null}
                                     isInteractive={isInteractiveConsole}
                                     language={language === "zh" ? "zh" : "en"}
                                     onSaved={() => setRefreshKey((k) => k + 1)}
