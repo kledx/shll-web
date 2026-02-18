@@ -1,7 +1,44 @@
 import { NextResponse, NextRequest } from "next/server";
+import { createPublicClient, http, getAddress, type Address } from "viem";
+import { bscTestnet } from "viem/chains";
 
-const RAW_PONDER_URL = process.env.PONDER_URL || "http://shll-indexer:42069";
-const PONDER_URL = RAW_PONDER_URL.replace(/\/+$/, "");
+/**
+ * /api/agent-policies — Read active policies directly from PolicyGuardV4 on-chain.
+ *
+ * Why not Indexer? Template-inherited policies don't emit InstancePolicyAdded events,
+ * so the Indexer returns empty. Reading on-chain via getActivePolicies() is the
+ * single source of truth.
+ */
+
+const POLICY_GUARD_V4 = (process.env.NEXT_PUBLIC_POLICY_GUARD_V4 ??
+    "0x1ad3e0a263Ec11Cd4729a968031c47E6affA3476") as Address;
+
+const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL ?? "https://data-seed-prebsc-1-s1.bnbchain.org:8545";
+
+const client = createPublicClient({
+    chain: bscTestnet,
+    transport: http(RPC_URL),
+});
+
+// Minimal ABI for the functions we need
+const policyGuardV4Abi = [
+    {
+        name: "getActivePolicies",
+        type: "function",
+        stateMutability: "view",
+        inputs: [{ name: "instanceId", type: "uint256" }],
+        outputs: [{ name: "", type: "address[]" }],
+    },
+] as const;
+
+// Known policy contract names (deployed by SetupV30Templates)
+const KNOWN_POLICIES: Record<string, string> = {
+    "0xc2f3c29ae106658b3b00adfd4193c9f3d2e11bc0": "ReceiverGuardPolicy",
+    "0xe8dd89d1f3ba8cb098e5b423632b9d8d8cf51207": "SpendingLimitPolicy",
+    "0x7a7c3e33062bd782e43aa731b1219996c34f607c": "TokenWhitelistPolicy",
+    "0x8403a16ea036239aef00eabcd11f7cfa755ea87aa": "DexWhitelistPolicy",
+    "0xc62dfc3304b15e6c7907fed0893c5288d2173770": "CooldownPolicy",
+};
 
 export async function GET(req: NextRequest) {
     const tokenId = req.nextUrl.searchParams.get("tokenId");
@@ -10,21 +47,30 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        const response = await fetch(`${PONDER_URL}/api/agents/${tokenId}/policies`, {
-            method: "GET",
-            headers: { Accept: "application/json" },
-            cache: "no-store",
+        const policies = await client.readContract({
+            address: POLICY_GUARD_V4,
+            abi: policyGuardV4Abi,
+            functionName: "getActivePolicies",
+            args: [BigInt(tokenId)],
         });
 
-        if (!response.ok) {
-            console.error(`[AgentPolicies Proxy] Error: ${response.status} ${response.statusText}`);
-            return NextResponse.json({ error: "Indexer upstream error" }, { status: response.status });
-        }
+        const items = (policies as Address[]).map((addr) => {
+            const lower = addr.toLowerCase();
+            return {
+                pluginAddress: getAddress(addr),
+                pluginName: KNOWN_POLICIES[lower] ?? `Policy ${addr.slice(0, 10)}`,
+                active: true,
+                attachedAt: "",
+            };
+        });
 
-        const data = await response.json();
-        return NextResponse.json(data);
+        return NextResponse.json({
+            tokenId,
+            items,
+            count: items.length,
+        });
     } catch (error) {
-        console.error("[AgentPolicies Proxy] Exception:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+        console.error("[AgentPolicies] RPC error:", error);
+        return NextResponse.json({ error: "Failed to read on-chain policies" }, { status: 500 });
     }
 }
