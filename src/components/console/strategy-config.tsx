@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Settings, Save, Loader2 } from "lucide-react";
+import { Settings, Save, Loader2, BrainCircuit } from "lucide-react";
 import { Chip } from "@/components/ui/chip";
 import { toast } from "sonner";
 
@@ -22,38 +22,48 @@ interface StrategyConfigProps {
 
 const copy = {
     en: {
-        title: "Execution Parameters",
+        title: "Strategy Configuration",
         tokenToBuy: "Token to Buy",
         tokenToSpend: "Token to Spend",
         amountPerExec: "Amount Per Execution",
         routerAddress: "Router Address",
         slippageBps: "Max Slippage (bps)",
 
-        save: "Save Parameters",
+        tradingGoal: "Trading Goal",
+        tradingGoalPlaceholder: "e.g. Buy WBNB when price drops 5% from recent high, sell when up 10%. Max position size 0.5 BNB.",
+        tradingGoalHint: "Describe what you want the AI agent to do. The more specific, the better.",
+
+        save: "Save & Activate",
         saving: "Saving...",
-        saved: "Parameters saved",
+        saved: "Strategy saved",
         saveFailed: "Failed to save",
         readOnly: "Read-only mode. Only the current renter can configure parameters.",
-        noConfig: "This agent type does not require parameter configuration.",
+        configured: "Configured",
+        notConfigured: "Not configured",
 
         addressPlaceholder: "0x...",
         amountPlaceholder: "e.g. 1000000000000000 (wei)",
         slippageHint: "100 = 1%, 50 = 0.5%",
     },
     zh: {
-        title: "执行参数",
+        title: "策略配置",
         tokenToBuy: "买入代币",
         tokenToSpend: "卖出代币",
         amountPerExec: "每次执行数量",
         routerAddress: "路由合约地址",
         slippageBps: "最大滑点 (bps)",
 
-        save: "保存参数",
+        tradingGoal: "交易目标",
+        tradingGoalPlaceholder: "例如：当 WBNB 价格从近期高点下跌 5% 时买入，上涨 10% 时卖出。最大仓位 0.5 BNB。",
+        tradingGoalHint: "描述你希望 AI Agent 执行的交易策略。描述越具体，效果越好。",
+
+        save: "保存并激活",
         saving: "保存中...",
-        saved: "参数已保存",
+        saved: "策略已保存",
         saveFailed: "保存失败",
         readOnly: "只读模式。只有当前租户可以配置参数。",
-        noConfig: "此 Agent 类型不需要参数配置。",
+        configured: "已配置",
+        notConfigured: "未配置",
 
         addressPlaceholder: "0x...",
         amountPlaceholder: "例如 1000000000000000 (wei)",
@@ -65,9 +75,14 @@ const copy = {
 const AGENT_TYPE_LABELS: Record<string, string> = {
     dca: "DCA (Dollar-Cost Averaging)",
     llm_trader: "LLM Trader",
+    llm_defi: "LLM DeFi",
+    hot_token: "Hot Token",
 };
 
 const DEFAULT_ROUTER = "0xD99D1c33F9fC3444f8101754aBC46c52416550D1"; // PancakeSwap V2 Testnet
+
+// Agent types that use LLM brain
+const LLM_AGENT_TYPES = new Set(["llm_trader", "llm_defi"]);
 
 export function StrategyConfig({
     tokenId,
@@ -82,7 +97,10 @@ export function StrategyConfig({
     // V3.0: strategy type is determined by template, not user selection
     const strategyType = agentType || currentStrategy?.strategyType || "";
     const isDCA = strategyType === "dca";
+    const isLLM = LLM_AGENT_TYPES.has(strategyType);
+    const isConfigured = !!currentStrategy;
 
+    // DCA fields
     const [tokenToBuy, setTokenToBuy] = useState(
         (currentStrategy?.strategyParams?.tokenToBuy as string) || ""
     );
@@ -97,6 +115,11 @@ export function StrategyConfig({
     );
     const [slippageBps, setSlippageBps] = useState(
         String(currentStrategy?.strategyParams?.slippageBps ?? "100")
+    );
+
+    // LLM fields
+    const [tradingGoal, setTradingGoal] = useState(
+        (currentStrategy?.strategyParams?.tradingGoal as string) || ""
     );
 
     const [isSaving, setIsSaving] = useState(false);
@@ -121,6 +144,13 @@ export function StrategyConfig({
             params.amountPerExecution = amountPerExecution;
             params.routerAddress = routerAddress;
             params.slippageBps = Number(slippageBps);
+        }
+        if (isLLM) {
+            if (!tradingGoal.trim()) {
+                toast.error(language === "zh" ? "请填写交易目标" : "Trading goal is required");
+                return;
+            }
+            params.tradingGoal = tradingGoal.trim();
         }
 
         setIsSaving(true);
@@ -157,11 +187,22 @@ export function StrategyConfig({
                     <Settings className="h-4 w-4 text-[var(--color-primary)]" />
                     {t.title}
                 </div>
-                {strategyType && (
-                    <Chip className="bg-sky-500/10 text-sky-700 border-sky-500/20 text-sm font-bold">
-                        {AGENT_TYPE_LABELS[strategyType] ?? strategyType}
-                    </Chip>
-                )}
+                <div className="flex items-center gap-2">
+                    {isConfigured ? (
+                        <Chip className="bg-emerald-500/10 text-emerald-700 border-emerald-500/20 text-sm font-bold">
+                            {t.configured}
+                        </Chip>
+                    ) : (
+                        <Chip className="bg-amber-500/10 text-amber-700 border-amber-500/20 text-sm font-bold">
+                            {t.notConfigured}
+                        </Chip>
+                    )}
+                    {strategyType && (
+                        <Chip className="bg-sky-500/10 text-sky-700 border-sky-500/20 text-sm font-bold">
+                            {AGENT_TYPE_LABELS[strategyType] ?? strategyType}
+                        </Chip>
+                    )}
+                </div>
             </div>
 
             {!isInteractive && (
@@ -170,7 +211,7 @@ export function StrategyConfig({
                 </div>
             )}
 
-            {/* DCA Parameters — shown automatically for DCA agents */}
+            {/* DCA Parameters */}
             {isDCA && (
                 <div className="space-y-3 rounded-xl border border-[var(--color-border)] bg-white/40 p-4">
                     <FieldInput
@@ -222,14 +263,26 @@ export function StrategyConfig({
                 </div>
             )}
 
-            {/* Unsupported agent type */}
-            {strategyType && !isDCA && (
-                <div className="rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-500">
-                    {t.noConfig}
+            {/* LLM Agent — Trading Goal */}
+            {isLLM && (
+                <div className="space-y-3 rounded-xl border border-[var(--color-border)] bg-white/40 p-4">
+                    <div className="flex items-center gap-2 text-sm font-medium text-[var(--color-foreground)]">
+                        <BrainCircuit className="h-4 w-4 text-violet-500" />
+                        {t.tradingGoal}
+                    </div>
+                    <textarea
+                        value={tradingGoal}
+                        onChange={(e) => setTradingGoal(e.target.value)}
+                        placeholder={t.tradingGoalPlaceholder}
+                        disabled={!isInteractive}
+                        rows={4}
+                        className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] disabled:opacity-60 resize-y"
+                    />
+                    <p className="text-xs text-[var(--color-muted-foreground)]">
+                        {t.tradingGoalHint}
+                    </p>
                 </div>
             )}
-
-
 
             {/* Save Button */}
             {isInteractive && strategyType && (

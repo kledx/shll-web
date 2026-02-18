@@ -32,6 +32,14 @@ import { AgentDashboard } from "@/components/console/agent-dashboard";
 import { StrategyConfig } from "@/components/console/strategy-config";
 import { useAgentDashboard } from "@/hooks/useAgentDashboard";
 
+// Map on-chain agentType label → runner strategyType key
+const AGENT_TYPE_TO_STRATEGY: Record<string, string> = {
+    DCA: "dca",
+    "LLM Trader": "llm_trader",
+    "LLM DeFi": "llm_defi",
+    "Hot Token": "hot_token",
+};
+
 export default function ConsolePage() {
     const { t, language } = useTranslation();
     const params = useParams();
@@ -453,16 +461,18 @@ export default function ConsolePage() {
                             />
                         </CollapsibleSection>
 
-                        {/* Execution Parameters — only for DCA agents (based on on-chain agentType) */}
-                        {agent?.agentType === "DCA" && (
+                        {/* Strategy Configuration — for all supported agent types */}
+                        {agent?.agentType && AGENT_TYPE_TO_STRATEGY[agent.agentType] && (
                             <CollapsibleSection
-                                title={language === "zh" ? "执行参数" : "Execution Parameters"}
-                                desc={language === "zh" ? "配置 DCA 策略的交易参数。" : "Configure DCA strategy trading parameters."}
+                                title={language === "zh" ? "策略配置" : "Strategy Configuration"}
+                                desc={language === "zh"
+                                    ? `配置 ${agent.agentType} 策略参数。`
+                                    : `Configure ${agent.agentType} strategy parameters.`}
                                 defaultOpen={!dashboardData?.strategy}
                             >
                                 <StrategyConfig
                                     tokenId={tokenId}
-                                    agentType="dca"
+                                    agentType={AGENT_TYPE_TO_STRATEGY[agent.agentType]}
                                     currentStrategy={dashboardData?.strategy ? {
                                         strategyType: dashboardData.strategy.strategyType,
                                         enabled: dashboardData.strategy.enabled,
