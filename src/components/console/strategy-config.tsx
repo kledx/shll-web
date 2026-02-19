@@ -584,7 +584,11 @@ export function StrategyConfig({
                                                 <Bot className="h-3.5 w-3.5 text-violet-600" />
                                             </div>
                                             <div className={`rounded-2xl rounded-tl-md border px-4 py-2.5 text-sm leading-relaxed ${decisionStyles.bg} ${decisionStyles.text}`}>
-                                                <p className="line-clamp-4">{a.decisionReason}</p>
+                                                <p className="line-clamp-4">{
+                                                    a.intentType === "ack"
+                                                        ? (language === "zh" ? "📨 收到指令，正在分析中..." : "📨 Instruction received, analyzing...")
+                                                        : a.decisionReason
+                                                }</p>
                                                 {a.txHash && (
                                                     <a
                                                         href={`https://testnet.bscscan.com/tx/${a.txHash}`}
