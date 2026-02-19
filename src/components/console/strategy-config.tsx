@@ -225,11 +225,14 @@ export function StrategyConfig({
         for (const h of goalHistory) {
             entries.push({ kind: "user", text: h.text, ts: new Date(h.savedAt).getTime(), isActive: false });
         }
-        // Current active goal — use strategy updatedAt for accurate timestamp
+        // Current active goal — use goalSetAt (stable) from strategyParams
         if (currentGoal) {
-            const goalTs = currentStrategy?.updatedAt
-                ? new Date(currentStrategy.updatedAt).getTime()
-                : Date.now();
+            const goalSetAt = currentStrategy?.strategyParams?.goalSetAt;
+            const goalTs = goalSetAt
+                ? new Date(goalSetAt as string).getTime()
+                : currentStrategy?.updatedAt
+                    ? new Date(currentStrategy.updatedAt).getTime()
+                    : Date.now();
             entries.push({ kind: "user", text: currentGoal, ts: goalTs, isActive: true });
         }
 
@@ -333,6 +336,7 @@ export function StrategyConfig({
                     strategyType,
                     strategyParams: {
                         tradingGoal: text,
+                        goalSetAt: new Date().toISOString(),
                         goalHistory: newHistory,
                     },
                     enabled: true,
