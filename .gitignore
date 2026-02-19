@@ -48,3 +48,6 @@ next-env.d.ts
 build_output*
 .DS_Store
 Thumbs.db
+
+# Mainnet env (contains sensitive config)
+.env.mainnet
