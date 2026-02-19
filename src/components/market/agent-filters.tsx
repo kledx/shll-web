@@ -9,7 +9,6 @@ import { cn } from "@/lib/utils";
 
 /** Human-readable labels for agent type codes */
 const AGENT_TYPE_LABELS: Record<string, { en: string; zh: string }> = {
-    dca: { en: "DCA", zh: "DCA 定投" },
     llm_trader: { en: "LLM Trader", zh: "LLM 交易" },
     llm_defi: { en: "LLM DeFi", zh: "LLM DeFi" },
     hot_token: { en: "Hot Token", zh: "热门代币" },

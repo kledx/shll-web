@@ -201,8 +201,8 @@ const enCopy: ConsoleCopy = {
         step1Desc: "Verify lease is active and policy is valid.",
         step2Title: "2. Fund Vault",
         step2Desc: "Deposit BNB to the agent vault for operations.",
-        step3Title: "3. Start Agent",
-        step3Desc: "Configure strategy, set guardrails, and start the agent.",
+        step3Title: "3. Send Instruction",
+        step3Desc: "Type your trading goal in the chat and the agent will execute autonomously.",
     },
     sectionDesc: {
         status: "Lease, security policy, and agent safety overview.",
@@ -370,8 +370,8 @@ const zhOverrides: Partial<ConsoleCopy> = {
         step1Desc: "\u786e\u8ba4\u79df\u7ea6\u751f\u6548\u3001\u7b56\u7565\u6709\u6548\u3002",
         step2Title: "2. \u5145\u503c\u91d1\u5e93",
         step2Desc: "\u5411 Agent \u91d1\u5e93\u5145\u5165 BNB \u4f5c\u4e3a\u8fd0\u884c\u8d44\u91d1\u3002",
-        step3Title: "3. \u542f\u52a8 Agent",
-        step3Desc: "\u914d\u7f6e\u7b56\u7565\uff0c\u8bbe\u7f6e Guardrails\uff0c\u542f\u52a8 Agent\u3002",
+        step3Title: "3. \u53d1\u9001\u6307\u4ee4",
+        step3Desc: "\u5728\u804a\u5929\u6846\u8f93\u5165\u4ea4\u6613\u76ee\u6807\uff0cAgent \u5c06\u81ea\u52a8\u6267\u884c\u3002",
     },
     sectionDesc: {
         status: "\u79df\u7ea6\u3001\u5b89\u5168\u7b56\u7565\u3001Agent \u72b6\u6001\u6982\u89c8\u3002",

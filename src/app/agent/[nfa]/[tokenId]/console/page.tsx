@@ -32,10 +32,10 @@ import { useInstanceConfig } from "@/hooks/useInstanceConfig";
 import { AgentDashboard } from "@/components/console/agent-dashboard";
 import { StrategyConfig } from "@/components/console/strategy-config";
 import { useAgentDashboard } from "@/hooks/useAgentDashboard";
+import { OperatorAuthDialog } from "@/components/console/operator-auth-dialog";
 
 // Map on-chain agentType label → runner strategyType key
 const AGENT_TYPE_TO_STRATEGY: Record<string, string> = {
-    DCA: "dca",
     "LLM Trader": "llm_trader",
     "LLM DeFi": "llm_defi",
     "Hot Token": "hot_token",
@@ -89,6 +89,7 @@ export default function ConsolePage() {
     const runnerMode = "managed" as const;
 
     const [refreshKey, setRefreshKey] = useState(0);
+    const [showAuthDialog, setShowAuthDialog] = useState(false);
 
     const {
         enableAutopilot,
@@ -163,7 +164,6 @@ export default function ConsolePage() {
             toast.error(readOnlyMessage);
             return;
         }
-        // V3.0: runnerMode and pack checks removed — runner handles strategy directly
         if (!/^0x[a-fA-F0-9]{40}$/.test(runnerOperatorLocked)) {
             toast.error(ui.autopilot.toast.invalidOperatorAddress);
             return;
@@ -172,24 +172,17 @@ export default function ConsolePage() {
             toast.error(ui.autopilot.toast.expiryFutureRequired);
             return;
         }
-
-        try {
-            const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
-            const result = await enableAutopilot({
-                operator: runnerOperatorLocked as Address,
-                expires: BigInt(leaseExpiryLockedSec),
-                deadline,
-            });
-            toast.success(ui.autopilot.toast.enabledSuccess, {
-                description: `${ui.autopilot.toast.txPrefix}: ${result.txHash.slice(0, 10)}...`,
-            });
-            setRefreshKey((k) => k + 1);
-        } catch (err) {
-            toast.error(ui.autopilot.toast.enableFailed, {
-                description: mapEnableAutopilotError(err),
-            });
-        }
+        // Show the authorization dialog instead of directly signing
+        setShowAuthDialog(true);
     };
+
+    // Called when the OperatorAuthDialog completes (authorize or skip)
+    const handleAuthDialogComplete = useCallback((authorized: boolean) => {
+        setShowAuthDialog(false);
+        if (authorized) {
+            setRefreshKey((k) => k + 1);
+        }
+    }, []);
 
     const handleDisableAutopilot = async () => {
         try {
@@ -220,9 +213,9 @@ export default function ConsolePage() {
         if (onchainOk && runnerDbOk) {
             return; // Fully active — no signing needed
         }
-        // Either chain or runner DB needs re-sync → trigger full enable flow
-        await handleEnableAutopilot();
-    }, [onchainOperator, operatorExpires, runnerStatus, handleEnableAutopilot]);
+        // Show authorization dialog instead of directly signing
+        setShowAuthDialog(true);
+    }, [onchainOperator, operatorExpires, runnerStatus]);
 
 
 
@@ -538,6 +531,17 @@ export default function ConsolePage() {
                     </div>
                 </div>
             </PageTransition>
+
+            {/* Authorization dialog — shown before wallet signing */}
+            <OperatorAuthDialog
+                open={showAuthDialog}
+                onOpenChange={setShowAuthDialog}
+                tokenId={tokenId}
+                nfaAddress={nfaAddress}
+                renter={address ?? ""}
+                rentalExpiresAt={agent?.expires ? BigInt(agent.expires) : undefined}
+                onComplete={handleAuthDialogComplete}
+            />
         </AppShell>
     );
 }
@@ -603,7 +607,7 @@ function ConsoleControlSection({
 
     return (
         <div className="space-y-4">
-            {/* Autopilot & DCA — hidden: all agents are instruction-driven (P-2026-018) */}
+            {/* Autopilot — hidden: all agents are instruction-driven (P-2026-018) */}
 
             {/* LLM Agent Instructions — chat-based */}
             {dashboardStrategy && ["llm_trader", "llm_defi"].includes(dashboardStrategy.strategyType) && (

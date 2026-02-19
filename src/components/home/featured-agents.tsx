@@ -24,7 +24,23 @@ export function FeaturedAgents() {
     }
 
     if (!featuredListings.length) {
-        return null;
+        return (
+            <section className="py-16 md:py-24 bg-[var(--color-surface)]">
+                <div className="container mx-auto px-4 md:px-6 text-center">
+                    <h2 className="text-3xl font-bold tracking-tight text-[var(--color-foreground)] sm:text-4xl">
+                        {t.home.featured.title}
+                    </h2>
+                    <p className="mt-4 text-lg text-[var(--color-muted-foreground)]">
+                        {t.home.featured.subtitle}
+                    </p>
+                    <Link href="/market" className="inline-block mt-6">
+                        <Button size="lg">
+                            {t.home.hero.cta} <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                    </Link>
+                </div>
+            </section>
+        );
     }
 
     return (

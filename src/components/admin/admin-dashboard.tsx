@@ -116,7 +116,6 @@ function ContractOverview() {
 // ── Template Manager Wizard ───────────────────────────────
 
 const AGENT_TYPES = [
-    { label: "DCA", value: "dca", key: "dca_v3" },
     { label: "LLM Trader", value: "llm_trader", key: "llm_trader_v3" },
     { label: "LLM DeFi", value: "llm_defi", key: "llm_defi_v3" },
     { label: "Hot Token", value: "hot_token", key: "hot_token_v3" },
@@ -128,8 +127,8 @@ function TemplateManager() {
     const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
 
     // State across steps
-    const [agentName, setAgentName] = useState("DCA Strategy Agent");
-    const [agentDesc, setAgentDesc] = useState("Automated dollar-cost averaging into selected tokens");
+    const [agentName, setAgentName] = useState("LLM Trader Agent");
+    const [agentDesc, setAgentDesc] = useState("AI-powered autonomous trading agent");
     const [agentTypeIdx, setAgentTypeIdx] = useState(0);
     const [mintedTokenId, setMintedTokenId] = useState("");
     const [templateKey, setTemplateKey] = useState("");

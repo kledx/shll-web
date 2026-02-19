@@ -299,14 +299,14 @@ export const en = {
                     url: "/me"
                 },
                 {
-                    title: "3. Configure and launch from Console",
-                    desc: "Open the agent Console from My Dashboard. Configure your safety limits (they cannot exceed the template ceiling), deposit funds into the vault, and enable autopilot.",
+                    title: "3. Fund and instruct your agent",
+                    desc: "Open the Console from My Dashboard. Deposit BNB or tokens into the vault, then type your trading goal in the chat — the AI agent will start executing autonomously.",
                     action: "Open My Dashboard",
                     url: "/me"
                 },
                 {
                     title: "4. Monitor with full transparency",
-                    desc: "Watch the AI reasoning log in real time. Every decision, every trade, every policy check is recorded on-chain and displayed in the Console history.",
+                    desc: "Watch your agent think and act in real-time via the chat timeline. Every decision, every trade, every policy check is recorded on-chain and displayed in the Console.",
                     action: "Read Security Model",
                     url: "#security"
                 }

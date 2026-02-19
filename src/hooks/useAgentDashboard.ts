@@ -20,6 +20,7 @@ interface RunRecord {
     brainType?: string;
     intentType?: string;
     decisionReason?: string;
+    decisionMessage?: string;
     strategyExplain?: string;
     createdAt: string;
 }

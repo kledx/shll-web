@@ -7,14 +7,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Lock } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useRentToMint } from "@/hooks/useRentToMint";
 import { Hex, parseEther } from "viem";
 import { getConsoleCopy } from "@/lib/console/console-copy";
 import { usePolicy, InstanceParams } from "@/hooks/usePolicy";
 import { useCapabilityPack } from "@/hooks/useCapabilityPack";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { encodeInstanceParamsWithEncoding } from "@/lib/pack/instance-params";
 import { useMyRentals } from "@/hooks/useMyRentals";
+import { useAccount } from "wagmi";
+import { OperatorAuthDialog } from "@/components/console/operator-auth-dialog";
 
 interface ActionPanelProps {
     nfaAddress: string;
@@ -31,9 +34,12 @@ interface ActionPanelProps {
 }
 
 export function ActionPanel({ nfaAddress, tokenId, isActive, isListed, isTemplateListing, isOwner, isRenter, pricePerDay, pricePerDayRaw, minDays, listingId }: ActionPanelProps) {
-    const { rentToMintAgent, isLoading: isRenting } = useRentToMint();
+    const { rentToMintAgent, isLoading: isRenting, isSuccess: isRentalSuccess, mintedTokenId, resetMint } = useRentToMint();
     const { t, language } = useTranslation();
+    const { address } = useAccount();
+    const router = useRouter();
     const ui = getConsoleCopy(language);
+    const [showAuthDialog, setShowAuthDialog] = useState(false);
     const tokenIdBigInt = useMemo(() => {
         try {
             return BigInt(tokenId);
@@ -43,6 +49,13 @@ export function ActionPanel({ nfaAddress, tokenId, isActive, isListed, isTemplat
     }, [tokenId]);
     const capabilityPack = useCapabilityPack(tokenIdBigInt, nfaAddress);
     const { rentals } = useMyRentals();
+
+    // After rental confirms and we have the minted tokenId, show auth dialog
+    useEffect(() => {
+        if (isRentalSuccess && mintedTokenId !== null) {
+            setShowAuthDialog(true);
+        }
+    }, [isRentalSuccess, mintedTokenId]);
 
     // Find user's instance minted from this template
     const myInstance = useMemo(() => {
@@ -152,141 +165,163 @@ export function ActionPanel({ nfaAddress, tokenId, isActive, isListed, isTemplat
         }
     };
 
-    return (
-        <Tabs defaultValue="rent" className="w-full">
-            <TabsList className="grid h-11 w-full grid-cols-2 rounded-xl border border-[var(--color-border)] bg-white/72 p-1">
-                <TabsTrigger value="rent">{t.agent.detail.tabs.rent}</TabsTrigger>
-                <TabsTrigger value="console" disabled={!isRenter && !isOwner && !isTemplateListing}>
-                    {t.agent.detail.tabs.console}
-                    {!isRenter && !isOwner && !isTemplateListing && <Lock className="ml-1 h-3 w-3 opacity-50" />}
-                </TabsTrigger>
-            </TabsList>
+    const handleAuthComplete = useCallback((authorized: boolean) => {
+        setShowAuthDialog(false);
+        const tid = mintedTokenId?.toString() ?? tokenId;
+        // Navigate to the new agent's console
+        router.push(`/agent/${nfaAddress}/${tid}/console`);
+        resetMint();
+    }, [mintedTokenId, tokenId, nfaAddress, router, resetMint]);
 
-            <TabsContent value="rent" className="mt-4">
-                {canRent ? (
-                    <RentForm
-                        pricePerDay={pricePerDay}
-                        minDays={minDays}
-                        paymentToken="BNB"
-                        onRent={handleRent}
-                        isRenting={isRenting}
-                        schema={schema}
-                        enableInstanceParams={enableInstanceParams}
-                        initialParams={initialInstanceParams}
-                    />
-                ) : isRenter ? (
-                    <Card className="border-emerald-200 bg-emerald-50/60">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="flex items-center gap-2 text-base text-emerald-700">
-                                <span className="text-lg">✅</span>
-                                {language === "zh" ? "你已租赁此 Agent" : "You are renting this Agent"}
-                            </CardTitle>
-                            <CardDescription className="text-emerald-600/80">
-                                {language === "zh"
-                                    ? "前往控制台发送指令、查看执行记录和管理 Vault。"
-                                    : "Go to the console to send instructions, view history, and manage your vault."}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Link href={`/agent/${nfaAddress}/${tokenId}/console`}>
-                                <Button className="w-full gap-2">
-                                    {language === "zh" ? "进入控制台" : "Open Console"}
-                                    <ExternalLink className="h-4 w-4" />
-                                </Button>
-                            </Link>
-                        </CardContent>
-                    </Card>
-                ) : isTemplateListing && myInstance ? (
-                    <Card className="border-sky-200 bg-sky-50/60">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="flex items-center gap-2 text-base text-sky-700">
-                                <span className="text-lg">🤖</span>
-                                {language === "zh"
-                                    ? `你已拥有此 Agent 的副本 #${myInstance.tokenId.toString()}`
-                                    : `You own Agent #${myInstance.tokenId.toString()} from this template`}
-                            </CardTitle>
-                            <CardDescription className="text-sky-600/80">
-                                {language === "zh"
-                                    ? "前往控制台管理你的 Agent。"
-                                    : "Go to the console to manage your Agent."}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Link href={`/agent/${nfaAddress}/${myInstance.tokenId.toString()}/console`}>
-                                <Button className="w-full gap-2">
-                                    {language === "zh" ? "进入我的 Agent 控制台" : "Open My Agent Console"}
-                                    {" "}(#{myInstance.tokenId.toString()})
-                                    <ExternalLink className="h-4 w-4" />
-                                </Button>
-                            </Link>
-                        </CardContent>
-                    </Card>
-                ) : (
+    return (
+        <>
+            <Tabs defaultValue="rent" className="w-full">
+                <TabsList className="grid h-11 w-full grid-cols-2 rounded-xl border border-[var(--color-border)] bg-white/72 p-1">
+                    <TabsTrigger value="rent">{t.agent.detail.tabs.rent}</TabsTrigger>
+                    <TabsTrigger value="console" disabled={!isRenter && !isOwner && !isTemplateListing}>
+                        {t.agent.detail.tabs.console}
+                        {!isRenter && !isOwner && !isTemplateListing && <Lock className="ml-1 h-3 w-3 opacity-50" />}
+                    </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="rent" className="mt-4">
+                    {canRent ? (
+                        <RentForm
+                            pricePerDay={pricePerDay}
+                            minDays={minDays}
+                            paymentToken="BNB"
+                            onRent={handleRent}
+                            isRenting={isRenting}
+                            schema={schema}
+                            enableInstanceParams={enableInstanceParams}
+                            initialParams={initialInstanceParams}
+                        />
+                    ) : isRenter ? (
+                        <Card className="border-emerald-200 bg-emerald-50/60">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="flex items-center gap-2 text-base text-emerald-700">
+                                    <span className="text-lg">✅</span>
+                                    {language === "zh" ? "你已租赁此 Agent" : "You are renting this Agent"}
+                                </CardTitle>
+                                <CardDescription className="text-emerald-600/80">
+                                    {language === "zh"
+                                        ? "前往控制台发送指令、查看执行记录和管理 Vault。"
+                                        : "Go to the console to send instructions, view history, and manage your vault."}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Link href={`/agent/${nfaAddress}/${tokenId}/console`}>
+                                    <Button className="w-full gap-2">
+                                        {language === "zh" ? "进入控制台" : "Open Console"}
+                                        <ExternalLink className="h-4 w-4" />
+                                    </Button>
+                                </Link>
+                            </CardContent>
+                        </Card>
+                    ) : isTemplateListing && myInstance ? (
+                        <Card className="border-sky-200 bg-sky-50/60">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="flex items-center gap-2 text-base text-sky-700">
+                                    <span className="text-lg">🤖</span>
+                                    {language === "zh"
+                                        ? `你已拥有此 Agent 的副本 #${myInstance.tokenId.toString()}`
+                                        : `You own Agent #${myInstance.tokenId.toString()} from this template`}
+                                </CardTitle>
+                                <CardDescription className="text-sky-600/80">
+                                    {language === "zh"
+                                        ? "前往控制台管理你的 Agent。"
+                                        : "Go to the console to manage your Agent."}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Link href={`/agent/${nfaAddress}/${myInstance.tokenId.toString()}/console`}>
+                                    <Button className="w-full gap-2">
+                                        {language === "zh" ? "进入我的 Agent 控制台" : "Open My Agent Console"}
+                                        {" "}(#{myInstance.tokenId.toString()})
+                                        <ExternalLink className="h-4 w-4" />
+                                    </Button>
+                                </Link>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <Card className="border-dashed border-[var(--color-border)] bg-white/70">
+                            <CardHeader>
+                                <CardTitle className="text-base text-[var(--color-foreground)]">{t.agent.detail.tabs.rent}</CardTitle>
+                                <CardDescription className="text-[var(--color-muted-foreground)]">
+                                    {rentUnavailableReason}
+                                </CardDescription>
+                            </CardHeader>
+                        </Card>
+                    )}
+                </TabsContent>
+
+                <TabsContent value="console" className="mt-4">
                     <Card className="border-dashed border-[var(--color-border)] bg-white/70">
                         <CardHeader>
-                            <CardTitle className="text-base text-[var(--color-foreground)]">{t.agent.detail.tabs.rent}</CardTitle>
+                            <CardTitle className="text-base text-[var(--color-foreground)]">{t.agent.console.title}</CardTitle>
                             <CardDescription className="text-[var(--color-muted-foreground)]">
-                                {rentUnavailableReason}
+                                {(isRenter || isOwner)
+                                    ? t.agent.console.desc
+                                    : isTemplateListing
+                                        ? myInstance
+                                            ? (language === "zh"
+                                                ? `您已拥有此 Agent 的副本 #${myInstance.tokenId.toString()}，点击下方按钮直接进入控制台。`
+                                                : `You have Agent #${myInstance.tokenId.toString()} from this listing. Click below to open its console.`)
+                                            : (language === "zh"
+                                                ? "租赁后会为您创建专属 Agent，请前往「我的」页面查看。"
+                                                : "Renting creates your own Agent. Check your Dashboard after renting.")
+                                        : (language === "zh"
+                                            ? "只有当前租户或所有者才能访问控制台。"
+                                            : "Only the active renter or owner can access the console.")}
                             </CardDescription>
                         </CardHeader>
+                        <CardContent>
+                            <div className="flex flex-col gap-4">
+                                {(isRenter || isOwner) ? (
+                                    <>
+                                        <p className="text-sm text-[var(--color-muted-foreground)]">
+                                            {t.agent.console.view.replace("{role}", roleLabel)}
+                                        </p>
+                                        <Link href={`/agent/${nfaAddress}/${tokenId}/console`}>
+                                            <Button className="w-full gap-2">
+                                                {t.agent.console.open} <ExternalLink className="w-4 h-4" />
+                                            </Button>
+                                        </Link>
+                                    </>
+                                ) : isTemplateListing ? (
+                                    myInstance ? (
+                                        <Link href={`/agent/${nfaAddress}/${myInstance.tokenId.toString()}/console`}>
+                                            <Button className="w-full gap-2">
+                                                {language === "zh" ? "进入我的 Agent 控制台" : "Open My Agent Console"}
+                                                {" "}(#{myInstance.tokenId.toString()})
+                                                <ExternalLink className="w-4 h-4" />
+                                            </Button>
+                                        </Link>
+                                    ) : (
+                                        <Link href="/me">
+                                            <Button variant="outline" className="w-full gap-2">
+                                                {language === "zh" ? "前往我的 Agent" : "Go to My Agents"} <ExternalLink className="w-4 h-4" />
+                                            </Button>
+                                        </Link>
+                                    )
+                                ) : null}
+                            </div>
+                        </CardContent>
                     </Card>
-                )}
-            </TabsContent>
+                </TabsContent>
+            </Tabs>
 
-            <TabsContent value="console" className="mt-4">
-                <Card className="border-dashed border-[var(--color-border)] bg-white/70">
-                    <CardHeader>
-                        <CardTitle className="text-base text-[var(--color-foreground)]">{t.agent.console.title}</CardTitle>
-                        <CardDescription className="text-[var(--color-muted-foreground)]">
-                            {(isRenter || isOwner)
-                                ? t.agent.console.desc
-                                : isTemplateListing
-                                    ? myInstance
-                                        ? (language === "zh"
-                                            ? `您已拥有此 Agent 的副本 #${myInstance.tokenId.toString()}，点击下方按钮直接进入控制台。`
-                                            : `You have Agent #${myInstance.tokenId.toString()} from this listing. Click below to open its console.`)
-                                        : (language === "zh"
-                                            ? "租赁后会为您创建专属 Agent，请前往「我的」页面查看。"
-                                            : "Renting creates your own Agent. Check your Dashboard after renting.")
-                                    : (language === "zh"
-                                        ? "只有当前租户或所有者才能访问控制台。"
-                                        : "Only the active renter or owner can access the console.")}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex flex-col gap-4">
-                            {(isRenter || isOwner) ? (
-                                <>
-                                    <p className="text-sm text-[var(--color-muted-foreground)]">
-                                        {t.agent.console.view.replace("{role}", roleLabel)}
-                                    </p>
-                                    <Link href={`/agent/${nfaAddress}/${tokenId}/console`}>
-                                        <Button className="w-full gap-2">
-                                            {t.agent.console.open} <ExternalLink className="w-4 h-4" />
-                                        </Button>
-                                    </Link>
-                                </>
-                            ) : isTemplateListing ? (
-                                myInstance ? (
-                                    <Link href={`/agent/${nfaAddress}/${myInstance.tokenId.toString()}/console`}>
-                                        <Button className="w-full gap-2">
-                                            {language === "zh" ? "进入我的 Agent 控制台" : "Open My Agent Console"}
-                                            {" "}(#{myInstance.tokenId.toString()})
-                                            <ExternalLink className="w-4 h-4" />
-                                        </Button>
-                                    </Link>
-                                ) : (
-                                    <Link href="/me">
-                                        <Button variant="outline" className="w-full gap-2">
-                                            {language === "zh" ? "前往我的 Agent" : "Go to My Agents"} <ExternalLink className="w-4 h-4" />
-                                        </Button>
-                                    </Link>
-                                )
-                            ) : null}
-                        </div>
-                    </CardContent>
-                </Card>
-            </TabsContent>
-        </Tabs>
+            {/* Post-rental authorization dialog */}
+            {mintedTokenId !== null && (
+                <OperatorAuthDialog
+                    open={showAuthDialog}
+                    onOpenChange={setShowAuthDialog}
+                    tokenId={mintedTokenId.toString()}
+                    nfaAddress={nfaAddress}
+                    renter={address ?? ""}
+                    onComplete={handleAuthComplete}
+                />
+            )}
+        </>
     );
 }

@@ -5,7 +5,7 @@ export type SortOption = "newest" | "oldest" | "price_asc" | "price_desc";
 
 export interface FilterState {
     status: "all" | "available" | "rented";
-    agentType: string;   // "all" | "llm_trader" | "llm_defi" | "hot_token" (dca hidden)
+    agentType: string;   // "all" | "llm_trader" | "llm_defi" | "hot_token"
     search: string;
     sort: SortOption;
     minDays?: number;
@@ -23,8 +23,6 @@ export function useAgentFilter(listings: AgentListing[]) {
         if (!listings) return [];
 
         const result = listings.filter((listing) => {
-            // Hide DCA agents — all agents are instruction-driven (P-2026-018)
-            if (listing.agentType === "dca") return false;
             // Status filter
             if (filters.status === "available" && listing.rented) return false;
             if (filters.status === "rented" && !listing.rented) return false;
@@ -105,7 +103,7 @@ export function useAgentFilter(listings: AgentListing[]) {
         for (const l of listings) {
             if (l.agentType) types.add(l.agentType);
         }
-        return Array.from(types).filter(t => t !== "dca").sort();
+        return Array.from(types).sort();
     }, [listings]);
 
     return {

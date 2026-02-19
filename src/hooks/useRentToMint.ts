@@ -1,7 +1,7 @@
 import { useWriteContract, useWaitForTransactionReceipt, usePublicClient, useAccount } from "wagmi";
 import { CONTRACTS } from "@/config/contracts";
-import { formatEther, Hex } from "viem";
-import { useEffect } from "react";
+import { formatEther, Hex, decodeEventLog } from "viem";
+import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "./useTranslation";
@@ -25,6 +25,7 @@ export function useRentToMint() {
     const publicClient = usePublicClient();
     const queryClient = useQueryClient();
     const copy = t.agent.rent.toasts;
+    const [mintedTokenId, setMintedTokenId] = useState<bigint | null>(null);
     const {
         data: hash,
         writeContract,
@@ -45,6 +46,39 @@ export function useRentToMint() {
             });
         }
     }, [copy.rentToMintSubmitted, hash]);
+
+    // Extract minted tokenId from receipt logs on confirmation
+    useEffect(() => {
+        if (!isConfirmed || !hash || !publicClient) return;
+        (async () => {
+            try {
+                const receipt = await publicClient.getTransactionReceipt({ hash });
+                // Look for Transfer(address,address,uint256) from AgentNFA
+                const nfaAddr = CONTRACTS.AgentNFA.address.toLowerCase();
+                for (const log of receipt.logs) {
+                    if (log.address.toLowerCase() !== nfaAddr) continue;
+                    try {
+                        const decoded = decodeEventLog({
+                            abi: CONTRACTS.AgentNFA.abi,
+                            data: log.data,
+                            topics: log.topics,
+                        });
+                        if (decoded.eventName === "Transfer" && decoded.args) {
+                            const args = decoded.args as { tokenId?: bigint };
+                            if (args.tokenId !== undefined) {
+                                setMintedTokenId(args.tokenId);
+                                break;
+                            }
+                        }
+                    } catch {
+                        // Not a matching event, skip
+                    }
+                }
+            } catch {
+                // Receipt fetch failed — mintedTokenId stays null
+            }
+        })();
+    }, [isConfirmed, hash, publicClient]);
 
     // Toast on confirmation
     useEffect(() => {
@@ -153,11 +187,18 @@ export function useRentToMint() {
         }
     };
 
+    // Reset state for a fresh rental flow
+    const resetMint = useCallback(() => {
+        setMintedTokenId(null);
+    }, []);
+
     return {
         rentToMintAgent,
         isLoading: isWritePending || isConfirming,
         isSuccess: isConfirmed,
         hash,
         error: writeError,
+        mintedTokenId,
+        resetMint,
     };
 }

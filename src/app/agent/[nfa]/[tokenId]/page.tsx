@@ -7,7 +7,7 @@ import { AgentSettings } from "@/components/business/agent-settings";
 import { useAccount } from "wagmi";
 import { useParams } from "next/navigation";
 import { Chip } from "@/components/ui/chip";
-import { ChevronRight, Clock, ShieldCheck, User } from "lucide-react";
+import { ChevronRight, Clock, ShieldCheck, User, BrainCircuit } from "lucide-react";
 import { useAgent } from "@/hooks/useAgent";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TransactionHistory } from "@/components/console/transaction-history";
@@ -45,7 +45,7 @@ export default function AgentDetailPage() {
     const nfaAddress = params.nfa as string;
     const tokenId = params.tokenId as string;
     const { address } = useAccount();
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
 
     const { data: agent, isLoading, error } = useAgent(tokenId, nfaAddress);
     const { account: agentAccount } = useAgentAccount(tokenId, nfaAddress);
@@ -146,6 +146,29 @@ export default function AgentDetailPage() {
                             </div>
                         </div>
                     </PageSection>
+
+                    {/* Renter CTA — prominent link to Console */}
+                    {isRenter && (
+                        <Link
+                            href={`/agent/${nfaAddress}/${tokenId}/console`}
+                            className="flex items-center justify-between rounded-xl border border-violet-200 bg-gradient-to-r from-violet-50 to-indigo-50 px-5 py-4 shadow-sm transition-all hover:shadow-md hover:border-violet-300 group"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="rounded-lg bg-violet-100 p-2 text-violet-600 group-hover:bg-violet-200 transition-colors">
+                                    <BrainCircuit className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <div className="text-sm font-semibold text-violet-900">
+                                        {language === "zh" ? "打开控制台" : "Open Console"}
+                                    </div>
+                                    <div className="text-xs text-violet-600">
+                                        {language === "zh" ? "管理您的 Agent、发送指令、查看余额" : "Manage your agent, send instructions, view vault"}
+                                    </div>
+                                </div>
+                            </div>
+                            <ChevronRight className="h-5 w-5 text-violet-400 group-hover:translate-x-0.5 transition-transform" />
+                        </Link>
+                    )}
 
                     {/* RISK PANEL */}
                     <RiskPanel />

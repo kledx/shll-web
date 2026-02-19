@@ -107,19 +107,19 @@ export function AgentCard({ listing }: { listing: AgentListing }) {
                 <div className="grid grid-cols-3 gap-2">
                     <div className="flex flex-col items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-2.5 text-center">
                         <ShieldCheck className="h-4 w-4 text-emerald-500" />
-                        <span className="text-[11px] font-medium leading-tight text-[var(--color-muted-foreground)]">
+                        <span className="text-xs font-medium leading-tight text-[var(--color-muted-foreground)]">
                             5-Layer Policy
                         </span>
                     </div>
                     <div className="flex flex-col items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-2.5 text-center">
                         <Wallet className="h-4 w-4 text-blue-500" />
-                        <span className="text-[11px] font-medium leading-tight text-[var(--color-muted-foreground)]">
+                        <span className="text-xs font-medium leading-tight text-[var(--color-muted-foreground)]">
                             Isolated Vault
                         </span>
                     </div>
                     <div className="flex flex-col items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-2.5 text-center">
                         <Clock className="h-4 w-4 text-violet-500" />
-                        <span className="text-[11px] font-medium leading-tight text-[var(--color-muted-foreground)]">
+                        <span className="text-xs font-medium leading-tight text-[var(--color-muted-foreground)]">
                             Auto-Expire
                         </span>
                     </div>

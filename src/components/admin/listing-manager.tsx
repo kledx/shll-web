@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
-import { ListPlus, ListMinus, RefreshCw, PauseCircle, Settings } from "lucide-react";
+import { ListPlus, ListMinus, RefreshCw, PauseCircle, PlayCircle, Settings } from "lucide-react";
 import { Address, parseEther } from "viem";
 
 function useTxToast(hash: `0x${string}` | undefined, label: string) {
@@ -23,74 +23,73 @@ function useTxToast(hash: `0x${string}` | undefined, label: string) {
 // ── List Agent ───────────────────────────
 function ListAgentForm() {
     const [tokenId, setTokenId] = useState("");
-    const [pricePerDay, setPricePerDay] = useState("0.01");
+    const [pricePerDay, setPricePerDay] = useState("0.005");
     const [minDays, setMinDays] = useState("1");
     const [isTemplate, setIsTemplate] = useState(true);
     const { data: hash, writeContract, isPending, error } = useWriteContract();
-    useTxToast(hash, "List Agent");
+    useTxToast(hash, isTemplate ? "Create Template Listing" : "Create Listing");
     useEffect(() => { if (error) toast.error(error.message?.slice(0, 120)); }, [error]);
 
     return (
         <Card>
             <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-sm"><ListPlus className="h-4 w-4" /> List Agent</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-sm"><ListPlus className="h-4 w-4" /> Create Listing</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3">
                 <div className="grid grid-cols-3 gap-3">
-                    <div><Label className="text-xs">Token ID</Label><Input value={tokenId} onChange={e => setTokenId(e.target.value)} /></div>
-                    <div><Label className="text-xs">Price / Day (BNB)</Label><Input value={pricePerDay} onChange={e => setPricePerDay(e.target.value)} /></div>
-                    <div><Label className="text-xs">Min Days</Label><Input value={minDays} onChange={e => setMinDays(e.target.value)} /></div>
+                    <div><Label className="text-sm">Token ID</Label><Input value={tokenId} onChange={e => setTokenId(e.target.value)} /></div>
+                    <div><Label className="text-sm">Price / Day (BNB)</Label><Input value={pricePerDay} onChange={e => setPricePerDay(e.target.value)} /></div>
+                    <div><Label className="text-sm">Min Days</Label><Input value={minDays} onChange={e => setMinDays(e.target.value)} /></div>
                 </div>
                 <label className="flex items-center gap-2 text-sm">
                     <input type="checkbox" checked={isTemplate} onChange={e => setIsTemplate(e.target.checked)} />
-                    Template Listing (mint instances)
+                    Template Listing (rent-to-mint instances)
                 </label>
                 <Button disabled={isPending} onClick={() => writeContract({
                     address: CONTRACTS.ListingManager.address,
                     abi: ADMIN_ABI.ListingManager,
-                    functionName: "listAgent",
+                    functionName: isTemplate ? "createTemplateListing" : "createListing",
                     args: [
                         CONTRACTS.AgentNFA.address,
                         BigInt(tokenId || "0"),
                         parseEther(pricePerDay || "0"),
-                        BigInt(minDays || "1"),
-                        isTemplate,
+                        Number(minDays || "1"),
                     ],
                 })}>
-                    {isPending ? "Sending..." : "List Agent"}
+                    {isPending ? "Sending..." : isTemplate ? "Create Template Listing" : "Create Listing"}
                 </Button>
             </CardContent>
         </Card>
     );
 }
 
-// ── Update Listing ───────────────────────
-function UpdateListingForm() {
+// ── Set Listing Config ───────────────────
+function SetListingConfigForm() {
     const [listingId, setListingId] = useState("");
-    const [pricePerDay, setPricePerDay] = useState("0.01");
-    const [minDays, setMinDays] = useState("1");
+    const [maxDays, setMaxDays] = useState("0");
+    const [gracePeriod, setGracePeriod] = useState("0");
     const { data: hash, writeContract, isPending, error } = useWriteContract();
-    useTxToast(hash, "Update Listing");
+    useTxToast(hash, "Set Listing Config");
     useEffect(() => { if (error) toast.error(error.message?.slice(0, 120)); }, [error]);
 
     return (
         <Card>
             <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-sm"><RefreshCw className="h-4 w-4" /> Update Listing</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-sm"><RefreshCw className="h-4 w-4" /> Set Listing Config</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3">
-                <div><Label className="text-xs">Listing ID (bytes32)</Label><Input value={listingId} onChange={e => setListingId(e.target.value)} className="font-mono text-xs" placeholder="0x..." /></div>
+                <div><Label className="text-sm">Listing ID (bytes32)</Label><Input value={listingId} onChange={e => setListingId(e.target.value)} className="font-mono text-sm" placeholder="0x..." /></div>
                 <div className="grid grid-cols-2 gap-3">
-                    <div><Label className="text-xs">Price / Day (BNB)</Label><Input value={pricePerDay} onChange={e => setPricePerDay(e.target.value)} /></div>
-                    <div><Label className="text-xs">Min Days</Label><Input value={minDays} onChange={e => setMinDays(e.target.value)} /></div>
+                    <div><Label className="text-sm">Max Days (0 = unlimited)</Label><Input value={maxDays} onChange={e => setMaxDays(e.target.value)} /></div>
+                    <div><Label className="text-sm">Grace Period (seconds)</Label><Input value={gracePeriod} onChange={e => setGracePeriod(e.target.value)} /></div>
                 </div>
                 <Button disabled={isPending} onClick={() => writeContract({
                     address: CONTRACTS.ListingManager.address,
                     abi: ADMIN_ABI.ListingManager,
-                    functionName: "updateListing",
-                    args: [listingId as `0x${string}`, parseEther(pricePerDay || "0"), BigInt(minDays || "1")],
+                    functionName: "setListingConfig",
+                    args: [listingId as `0x${string}`, Number(maxDays || "0"), Number(gracePeriod || "0")],
                 })}>
-                    {isPending ? "Sending..." : "Update"}
+                    {isPending ? "Sending..." : "Update Config"}
                 </Button>
             </CardContent>
         </Card>
@@ -101,23 +100,23 @@ function UpdateListingForm() {
 function DelistForm() {
     const [listingId, setListingId] = useState("");
     const { data: hash, writeContract, isPending, error } = useWriteContract();
-    useTxToast(hash, "Delist");
+    useTxToast(hash, "Cancel Listing");
     useEffect(() => { if (error) toast.error(error.message?.slice(0, 120)); }, [error]);
 
     return (
         <Card>
             <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-sm"><ListMinus className="h-4 w-4" /> Delist Agent</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-sm"><ListMinus className="h-4 w-4" /> Cancel Listing</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3">
-                <div><Label className="text-xs">Listing ID (bytes32)</Label><Input value={listingId} onChange={e => setListingId(e.target.value)} className="font-mono text-xs" placeholder="0x..." /></div>
+                <div><Label className="text-sm">Listing ID (bytes32)</Label><Input value={listingId} onChange={e => setListingId(e.target.value)} className="font-mono text-sm" placeholder="0x..." /></div>
                 <Button variant="destructive" disabled={isPending} onClick={() => writeContract({
                     address: CONTRACTS.ListingManager.address,
                     abi: ADMIN_ABI.ListingManager,
-                    functionName: "delistAgent",
+                    functionName: "cancelListing",
                     args: [listingId as `0x${string}`],
                 })}>
-                    {isPending ? "Sending..." : "Delist"}
+                    {isPending ? "Sending..." : "Cancel Listing"}
                 </Button>
             </CardContent>
         </Card>
@@ -137,7 +136,7 @@ function PauseRentingForm() {
                 <CardTitle className="flex items-center gap-2 text-sm"><PauseCircle className="h-4 w-4" /> Pause Renting</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3">
-                <div><Label className="text-xs">Listing ID (bytes32)</Label><Input value={listingId} onChange={e => setListingId(e.target.value)} className="font-mono text-xs" placeholder="0x..." /></div>
+                <div><Label className="text-sm">Listing ID (bytes32)</Label><Input value={listingId} onChange={e => setListingId(e.target.value)} className="font-mono text-sm" placeholder="0x..." /></div>
                 <Button variant="destructive" disabled={isPending} onClick={() => writeContract({
                     address: CONTRACTS.ListingManager.address,
                     abi: ADMIN_ABI.ListingManager,
@@ -145,6 +144,33 @@ function PauseRentingForm() {
                     args: [listingId as `0x${string}`],
                 })}>
                     {isPending ? "Sending..." : "Pause Renting"}
+                </Button>
+            </CardContent>
+        </Card>
+    );
+}
+
+// ── Resume Renting ───────────────────────
+function ResumeRentingForm() {
+    const [listingId, setListingId] = useState("");
+    const { data: hash, writeContract, isPending, error } = useWriteContract();
+    useTxToast(hash, "Resume Renting");
+    useEffect(() => { if (error) toast.error(error.message?.slice(0, 120)); }, [error]);
+
+    return (
+        <Card>
+            <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-sm"><PlayCircle className="h-4 w-4" /> Resume Renting</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-3">
+                <div><Label className="text-sm">Listing ID (bytes32)</Label><Input value={listingId} onChange={e => setListingId(e.target.value)} className="font-mono text-sm" placeholder="0x..." /></div>
+                <Button disabled={isPending} onClick={() => writeContract({
+                    address: CONTRACTS.ListingManager.address,
+                    abi: ADMIN_ABI.ListingManager,
+                    functionName: "resumeRenting",
+                    args: [listingId as `0x${string}`],
+                })}>
+                    {isPending ? "Sending..." : "Resume Renting"}
                 </Button>
             </CardContent>
         </Card>
@@ -164,7 +190,7 @@ function SetInstanceConfigForm() {
                 <CardTitle className="flex items-center gap-2 text-sm"><Settings className="h-4 w-4" /> Set InstanceConfig</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3">
-                <div><Label className="text-xs">InstanceConfig Address (PolicyGuardV3)</Label><Input value={addr} onChange={e => setAddr(e.target.value)} placeholder="0x..." /></div>
+                <div><Label className="text-sm">InstanceConfig Address (PolicyGuardV3)</Label><Input value={addr} onChange={e => setAddr(e.target.value)} placeholder="0x..." /></div>
                 <Button disabled={isPending} onClick={() => writeContract({
                     address: CONTRACTS.ListingManager.address,
                     abi: ADMIN_ABI.ListingManager,
@@ -193,8 +219,8 @@ function LmStats() {
             </CardHeader>
             <CardContent>
                 <div className="rounded-lg bg-[var(--color-muted)]/30 p-3 text-sm space-y-1 font-mono">
-                    <div>Owner: <span className="text-xs break-all">{owner as string ?? "—"}</span></div>
-                    <div>Address: <span className="text-xs break-all">{CONTRACTS.ListingManager.address}</span></div>
+                    <div>Owner: <span className="text-sm break-all">{owner as string ?? "—"}</span></div>
+                    <div>Address: <span className="text-sm break-all">{CONTRACTS.ListingManager.address}</span></div>
                 </div>
             </CardContent>
         </Card>
@@ -206,9 +232,10 @@ export function ListingManagerPanel() {
         <div className="grid gap-4 lg:grid-cols-2">
             <ListAgentForm />
             <LmStats />
-            <UpdateListingForm />
+            <SetListingConfigForm />
             <DelistForm />
             <PauseRentingForm />
+            <ResumeRentingForm />
             <SetInstanceConfigForm />
         </div>
     );

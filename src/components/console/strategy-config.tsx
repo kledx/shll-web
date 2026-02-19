@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
     Settings, Save, Loader2, BrainCircuit, Send, Clock, CheckCircle2,
-    PauseCircle, ShieldAlert, XCircle, Target, Bot, X,
+    PauseCircle, ShieldAlert, XCircle, Target, Bot, X, Copy, ChevronDown, ChevronUp, AlertTriangle,
 } from "lucide-react";
 import { Chip } from "@/components/ui/chip";
 import { toast } from "sonner";
@@ -35,15 +35,17 @@ interface ActivityRecord {
     id: string;
     intentType?: string;
     decisionReason?: string;
+    decisionMessage?: string;
     txHash?: string;
     error?: string;
     simulateOk: boolean;
     createdAt: string;
 }
 
-type DecisionKind = "wait" | "action" | "blocked" | "error";
+type DecisionKind = "wait" | "action" | "blocked" | "error" | "paused";
 
 function classifyDecision(item: ActivityRecord): DecisionKind {
+    if (item.intentType === "paused") return "paused";
     if (item.error) return item.intentType === "error" ? "error" : "blocked";
     if (item.intentType === "wait") return "wait";
     if (item.txHash) return "action";
@@ -133,13 +135,10 @@ const copy = {
 
 // Agent type labels
 const AGENT_TYPE_LABELS: Record<string, string> = {
-    dca: "DCA (Dollar-Cost Averaging)",
     llm_trader: "LLM Trader",
     llm_defi: "LLM DeFi",
     hot_token: "Hot Token",
 };
-
-const DEFAULT_ROUTER = "0xD99D1c33F9fC3444f8101754aBC46c52416550D1"; // PancakeSwap V2 Testnet
 
 // Agent types that use LLM brain
 const LLM_AGENT_TYPES = new Set(["llm_trader", "llm_defi"]);
@@ -152,6 +151,20 @@ function formatRelative(iso: string, lang: "en" | "zh"): string {
     if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ${lang === "zh" ? "前" : "ago"}`;
     if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ${lang === "zh" ? "前" : "ago"}`;
     return `${Math.floor(diff / 86_400_000)}d ${lang === "zh" ? "前" : "ago"}`;
+}
+
+// Strip common markdown formatting from LLM messages for clean display
+function stripMarkdown(text: string): string {
+    return text
+        .replace(/```[\s\S]*?```/g, "")  // code blocks
+        .replace(/`([^`]+)`/g, "$1")     // inline code
+        .replace(/\*\*([^*]+)\*\*/g, "$1") // bold
+        .replace(/\*([^*]+)\*/g, "$1")   // italic
+        .replace(/^#{1,6}\s+/gm, "")     // headers
+        .replace(/^[-*]\s+/gm, "• ")    // bullets
+        .replace(/^\d+\.\s+/gm, (m) => m) // keep numbered lists
+        .replace(/\n{3,}/g, "\n\n")      // collapse blank lines
+        .trim();
 }
 
 export function StrategyConfig({
@@ -167,26 +180,8 @@ export function StrategyConfig({
 
     // V3.0: strategy type is determined by template, not user selection
     const strategyType = agentType || currentStrategy?.strategyType || "";
-    const isDCA = strategyType === "dca";
     const isLLM = LLM_AGENT_TYPES.has(strategyType);
     const isConfigured = !!currentStrategy;
-
-    // DCA fields
-    const [tokenToBuy, setTokenToBuy] = useState(
-        (currentStrategy?.strategyParams?.tokenToBuy as string) || ""
-    );
-    const [tokenToSpend, setTokenToSpend] = useState(
-        (currentStrategy?.strategyParams?.tokenToSpend as string) || ""
-    );
-    const [amountPerExecution, setAmountPerExecution] = useState(
-        (currentStrategy?.strategyParams?.amountPerExecution as string) || ""
-    );
-    const [routerAddress, setRouterAddress] = useState(
-        (currentStrategy?.strategyParams?.routerAddress as string) || DEFAULT_ROUTER
-    );
-    const [slippageBps, setSlippageBps] = useState(
-        String(currentStrategy?.strategyParams?.slippageBps ?? "100")
-    );
 
     // LLM chat state
     const currentGoal = (currentStrategy?.strategyParams?.tradingGoal as string) || "";
@@ -197,6 +192,17 @@ export function StrategyConfig({
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const [activities, setActivities] = useState<ActivityRecord[]>([]);
     const [isCancelling, setIsCancelling] = useState(false);
+    const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+    // Toggle expand/collapse for a specific message
+    const toggleExpand = useCallback((id: string) => {
+        setExpandedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    }, []);
 
     // Fetch agent activity for LLM chat view
     useEffect(() => {
@@ -212,9 +218,11 @@ export function StrategyConfig({
             } catch { /* silent */ }
         };
         void load();
-        const timer = setInterval(() => void load(), 15_000);
+        // Adaptive polling: 3s when agent is processing, 15s when idle
+        const pollMs = currentGoal ? 3_000 : 15_000;
+        const timer = setInterval(() => void load(), pollMs);
         return () => { cancelled = true; clearInterval(timer); };
-    }, [isLLM, tokenId]);
+    }, [isLLM, tokenId, currentGoal]);
 
     // Build unified timeline: merge user instructions + agent responses, sorted by time
     const timeline = useMemo<TimelineEntry[]>(() => {
@@ -236,9 +244,9 @@ export function StrategyConfig({
             entries.push({ kind: "user", text: currentGoal, ts: goalTs, isActive: true });
         }
 
-        // Agent activity responses (only those with reasoning)
+        // Agent activity responses (only those with reasoning, exclude legacy ack entries)
         for (const a of activities) {
-            if (a.decisionReason) {
+            if (a.decisionReason && a.intentType !== "ack") {
                 entries.push({ kind: "agent", record: a, ts: new Date(a.createdAt).getTime(), decision: classifyDecision(a) });
             }
         }
@@ -262,53 +270,6 @@ export function StrategyConfig({
         e.target.style.height = "auto";
         e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
     }, []);
-
-    const isValidAddress = (v: string) => /^0x[a-fA-F0-9]{40}$/.test(v);
-
-    // DCA save handler
-    const handleSaveDCA = async () => {
-        if (!isInteractive || !strategyType) return;
-        const params: Record<string, unknown> = {};
-        if (!isValidAddress(tokenToBuy) || !isValidAddress(tokenToSpend)) {
-            toast.error("Invalid token address");
-            return;
-        }
-        if (!amountPerExecution || BigInt(amountPerExecution) <= BigInt(0)) {
-            toast.error("Amount must be positive");
-            return;
-        }
-        params.tokenToBuy = tokenToBuy;
-        params.tokenToSpend = tokenToSpend;
-        params.amountPerExecution = amountPerExecution;
-        params.routerAddress = routerAddress;
-        params.slippageBps = Number(slippageBps);
-
-        setIsSaving(true);
-        try {
-            const resp = await fetch("/api/strategy/upsert", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    tokenId,
-                    strategyType,
-                    strategyParams: params,
-                    enabled: true,
-                }),
-            });
-            if (!resp.ok) {
-                const err = await resp.json().catch(() => ({}));
-                throw new Error((err as Record<string, string>).error || `HTTP ${resp.status}`);
-            }
-            toast.success(t.saved);
-            onSaved?.();
-        } catch (err) {
-            toast.error(t.saveFailed, {
-                description: err instanceof Error ? err.message : "Unknown error",
-            });
-        } finally {
-            setIsSaving(false);
-        }
-    };
 
     // LLM chat send handler
     const handleSendInstruction = async () => {
@@ -373,9 +334,9 @@ export function StrategyConfig({
         }
     };
 
-    // Handle Ctrl+Enter / Cmd+Enter to send
+    // Handle keyboard: Enter sends, Shift+Enter adds newline, Ctrl/Cmd+Enter also sends
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+        if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             void handleSendInstruction();
         }
@@ -437,67 +398,45 @@ export function StrategyConfig({
                 </div>
             )}
 
-            {/* DCA Parameters — form-based */}
-            {isDCA && (
-                <div className="space-y-3 rounded-xl border border-[var(--color-border)] bg-white/40 p-4">
-                    <FieldInput
-                        label={t.tokenToBuy}
-                        value={tokenToBuy}
-                        onChange={setTokenToBuy}
-                        placeholder={t.addressPlaceholder}
-                        disabled={!isInteractive}
-                        isValid={!tokenToBuy || isValidAddress(tokenToBuy)}
-                    />
-                    <FieldInput
-                        label={t.tokenToSpend}
-                        value={tokenToSpend}
-                        onChange={setTokenToSpend}
-                        placeholder={t.addressPlaceholder}
-                        disabled={!isInteractive}
-                        isValid={!tokenToSpend || isValidAddress(tokenToSpend)}
-                    />
-                    <FieldInput
-                        label={t.amountPerExec}
-                        value={amountPerExecution}
-                        onChange={setAmountPerExecution}
-                        placeholder={t.amountPlaceholder}
-                        disabled={!isInteractive}
-                    />
-                    <FieldInput
-                        label={t.routerAddress}
-                        value={routerAddress}
-                        onChange={setRouterAddress}
-                        placeholder={t.addressPlaceholder}
-                        disabled={!isInteractive}
-                        isValid={!routerAddress || isValidAddress(routerAddress)}
-                    />
-                    <div className="space-y-1.5">
-                        <label className="text-sm font-medium text-[var(--color-foreground)]">
-                            {t.slippageBps}
-                        </label>
-                        <input
-                            type="number"
-                            min="0"
-                            max="10000"
-                            value={slippageBps}
-                            onChange={(e) => setSlippageBps(e.target.value)}
-                            disabled={!isInteractive}
-                            className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] disabled:opacity-60"
-                        />
-                        <p className="text-xs text-[var(--color-muted-foreground)]">{t.slippageHint}</p>
-                    </div>
-                </div>
-            )}
-
             {/* LLM Agent — Chat-style Goal Configuration */}
             {isLLM && (
                 <div className="rounded-xl border border-[var(--color-border)] bg-gradient-to-b from-slate-50/80 to-white/60 overflow-hidden">
-                    {/* Header */}
-                    <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--color-border)] bg-white/60">
-                        <BrainCircuit className="h-4 w-4 text-violet-500" />
-                        <span className="text-sm font-medium text-[var(--color-foreground)]">
-                            {t.agentInstructions}
-                        </span>
+                    {/* Header with status indicator */}
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)] bg-white/60">
+                        <div className="flex items-center gap-2">
+                            <BrainCircuit className="h-4 w-4 text-violet-500" />
+                            <span className="text-sm font-medium text-[var(--color-foreground)]">
+                                {t.agentInstructions}
+                            </span>
+                        </div>
+                        {/* Live status dot */}
+                        {(() => {
+                            const last = timeline.length > 0 ? timeline[timeline.length - 1] : null;
+                            const lastAgent = last?.kind === "agent" ? last : null;
+                            let dotColor = "bg-slate-300"; // standby
+                            let statusLabel = language === "zh" ? "待命" : "Standby";
+                            if (lastAgent?.decision === "paused") {
+                                dotColor = "bg-purple-500";
+                                statusLabel = language === "zh" ? "已暂停" : "Paused";
+                            } else if (lastAgent?.decision === "blocked") {
+                                dotColor = "bg-amber-500";
+                                statusLabel = language === "zh" ? "已阻塞" : "Blocked";
+                            } else if (lastAgent?.decision === "error") {
+                                dotColor = "bg-red-500";
+                                statusLabel = language === "zh" ? "错误" : "Error";
+                            } else if (currentGoal) {
+                                dotColor = "bg-emerald-500 animate-pulse";
+                                statusLabel = language === "zh" ? "运行中" : "Running";
+                            }
+                            return (
+                                <div className="flex items-center gap-1.5">
+                                    <span className={`h-2 w-2 rounded-full ${dotColor}`} />
+                                    <span className="text-xs font-medium text-[var(--color-muted-foreground)]">
+                                        {statusLabel}
+                                    </span>
+                                </div>
+                            );
+                        })()}
                     </div>
 
                     {/* Message area — unified timeline */}
@@ -572,7 +511,8 @@ export function StrategyConfig({
                                 wait: isCompleted
                                     ? { bg: "bg-emerald-50 border-emerald-200", text: "text-emerald-800", icon: <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />, label: language === "zh" ? "已完成" : "Completed" }
                                     : { bg: "bg-slate-50 border-slate-200", text: "text-slate-700", icon: <PauseCircle className="h-3.5 w-3.5 text-slate-400 shrink-0" />, label: language === "zh" ? "等待" : "Wait" },
-                                blocked: { bg: "bg-amber-50 border-amber-200", text: "text-amber-800", icon: <ShieldAlert className="h-3.5 w-3.5 text-amber-500 shrink-0" />, label: language === "zh" ? "已阻止" : "Blocked" },
+                                blocked: { bg: "bg-amber-50 border-amber-300", text: "text-amber-900", icon: <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />, label: language === "zh" ? "⚠️ 需要操作" : "⚠️ Action Required" },
+                                paused: { bg: "bg-purple-50 border-purple-300", text: "text-purple-900", icon: <PauseCircle className="h-3.5 w-3.5 text-purple-500 shrink-0" />, label: language === "zh" ? "⏸ 已暂停" : "⏸ Auto-Paused" },
                                 error: { bg: "bg-red-50 border-red-200", text: "text-red-800", icon: <XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />, label: language === "zh" ? "错误" : "Error" },
                             }[d];
 
@@ -584,11 +524,42 @@ export function StrategyConfig({
                                                 <Bot className="h-3.5 w-3.5 text-violet-600" />
                                             </div>
                                             <div className={`rounded-2xl rounded-tl-md border px-4 py-2.5 text-sm leading-relaxed ${decisionStyles.bg} ${decisionStyles.text}`}>
-                                                <p className="line-clamp-4">{
-                                                    a.intentType === "ack"
-                                                        ? (language === "zh" ? "📨 收到指令，正在分析中..." : "📨 Instruction received, analyzing...")
-                                                        : a.decisionReason
-                                                }</p>
+                                                {(() => {
+                                                    const msgId = `a-${a.id || idx}`;
+                                                    const text = stripMarkdown(a.decisionMessage || a.decisionReason || "");
+                                                    const isLong = text.length > 150;
+                                                    const isExpanded = expandedIds.has(msgId);
+                                                    return (
+                                                        <>
+                                                            <p className={isLong && !isExpanded ? "line-clamp-3" : ""}>{text}</p>
+                                                            <div className="flex items-center gap-1 mt-1.5">
+                                                                {isLong && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => toggleExpand(msgId)}
+                                                                        className="inline-flex items-center gap-0.5 text-xs font-medium text-violet-500 hover:text-violet-700 transition-colors"
+                                                                    >
+                                                                        {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                                                                        {isExpanded
+                                                                            ? (language === "zh" ? "收起" : "Less")
+                                                                            : (language === "zh" ? "展开" : "More")}
+                                                                    </button>
+                                                                )}
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        void navigator.clipboard.writeText(text);
+                                                                        toast.success(language === "zh" ? "已复制" : "Copied");
+                                                                    }}
+                                                                    className="inline-flex items-center gap-0.5 text-xs text-slate-400 hover:text-slate-600 transition-colors ml-auto"
+                                                                    title={language === "zh" ? "复制" : "Copy"}
+                                                                >
+                                                                    <Copy className="h-3 w-3" />
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    );
+                                                })()}
                                                 {a.txHash && (
                                                     <a
                                                         href={`https://testnet.bscscan.com/tx/${a.txHash}`}
@@ -620,6 +591,34 @@ export function StrategyConfig({
                                 </div>
                             );
                         })}
+                        {/* Thinking indicator — show while agent is processing */}
+                        {currentGoal && (() => {
+                            // Show thinking if last entry is user msg or ack (agent hasn't replied yet)
+                            const last = timeline[timeline.length - 1];
+                            const isWaiting = !last || last.kind === "user";
+                            if (!isWaiting) return null;
+                            return (
+                                <div className="flex justify-start">
+                                    <div className="flex items-start gap-2">
+                                        <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-100">
+                                            <Bot className="h-3.5 w-3.5 text-violet-600 animate-pulse" />
+                                        </div>
+                                        <div className="rounded-2xl rounded-tl-md border border-violet-200 bg-violet-50/50 px-4 py-3">
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="flex gap-1">
+                                                    <span className="h-2 w-2 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+                                                    <span className="h-2 w-2 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+                                                    <span className="h-2 w-2 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                                                </span>
+                                                <span className="text-sm text-violet-600 ml-2">
+                                                    {language === "zh" ? "Agent 思考中..." : "Agent thinking..."}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })()}
                     </div>
 
                     {/* Input bar */}
@@ -651,29 +650,14 @@ export function StrategyConfig({
                                 </button>
                             </div>
                             <p className="mt-1.5 text-xs text-[var(--color-muted-foreground)]">
-                                {t.inputHint} <span className="text-slate-400">· Ctrl+Enter</span>
+                                {t.inputHint} <span className="text-slate-400">· Enter ↵ · Shift+Enter {language === "zh" ? "换行" : "newline"}</span>
                             </p>
                         </div>
                     )}
                 </div>
             )}
 
-            {/* Save Button — DCA only (LLM uses inline send) */}
-            {isInteractive && isDCA && strategyType && (
-                <button
-                    type="button"
-                    onClick={handleSaveDCA}
-                    disabled={isSaving}
-                    className="inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--color-primary)]/90 disabled:opacity-60"
-                >
-                    {isSaving ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                        <Save className="h-4 w-4" />
-                    )}
-                    {isSaving ? t.saving : t.save}
-                </button>
-            )}
+
         </div>
     );
 }

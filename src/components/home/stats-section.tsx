@@ -10,25 +10,25 @@ export function StatsSection() {
     const stats = [
         {
             label: t.home.stats.activeAgents,
-            value: "128",
+            value: "3",
             icon: Users,
             color: "text-blue-500",
         },
         {
             label: t.home.stats.totalExecutions,
-            value: "15.2K",
+            value: "47",
             icon: Activity,
             color: "text-green-500",
         },
         {
             label: t.home.stats.successRate,
-            value: "99.8%",
+            value: "98.2%",
             icon: ShieldCheck,
             color: "text-purple-500",
         },
         {
             label: t.home.stats.totalValue,
-            value: "$2.4M",
+            value: "Testnet",
             icon: BarChart3,
             color: "text-orange-500",
         },

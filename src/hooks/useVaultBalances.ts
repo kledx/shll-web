@@ -12,9 +12,10 @@ export interface Asset {
 }
 
 export function useVaultBalances(agentAccount?: Address) {
-    // 1. Native Balance (BNB)
+    // 1. Native Balance (BNB) — auto-refresh every 30s
     const { data: nativeBalance, isLoading: isNativeLoading, refetch: refetchNative } = useBalance({
         address: agentAccount,
+        query: { refetchInterval: 30_000 },
     });
 
     // 2. ERC20 Balances + Decimals (batch read)
@@ -38,7 +39,8 @@ export function useVaultBalances(agentAccount?: Address) {
             })),
         ],
         query: {
-            enabled: !!agentAccount
+            enabled: !!agentAccount,
+            refetchInterval: 30_000,
         }
     });
 

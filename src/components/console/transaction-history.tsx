@@ -76,16 +76,20 @@ function humanizeError(raw: string | null): string | null {
 }
 
 // Humanize action type display
-function humanizeAction(actionType: string, target: string | null): string {
-    const actionMap: Record<string, string> = {
-        auto: "Autopilot",
-        manual: "Manual",
-        execute: "Execute",
-        swap: "Swap",
-        approve: "Approve",
-        wrap: "Wrap",
+function humanizeAction(actionType: string, target: string | null, lang = "en"): string {
+    const actionMap: Record<string, Record<string, string>> = {
+        auto: { en: "Autopilot", zh: "自动执行" },
+        manual: { en: "Manual", zh: "手动" },
+        execute: { en: "Execute", zh: "执行" },
+        swap: { en: "Swap", zh: "兑换" },
+        approve: { en: "Approve", zh: "授权" },
+        wrap: { en: "Wrap", zh: "包装" },
+        transfer: { en: "Transfer", zh: "转账" },
+        deposit: { en: "Deposit", zh: "存入" },
+        withdraw: { en: "Withdraw", zh: "提取" },
     };
-    const label = actionMap[actionType] || actionType;
+    const entry = actionMap[actionType];
+    const label = entry ? (entry[lang] || entry.en) : actionType;
     if (target) {
         const shortAddr = `${target.slice(0, 6)}...${target.slice(-4)}`;
         return `${label} → ${shortAddr}`;
@@ -240,7 +244,7 @@ export function TransactionHistory({
                                 )}
                                 <div className="min-w-0">
                                     <div className="text-sm font-semibold">
-                                        {humanizeAction(log.actionType, log.target)}
+                                        {humanizeAction(log.actionType, log.target, language)}
                                     </div>
                                     <div className="text-sm text-muted-foreground">
                                         {formatTime(log.timestamp)}

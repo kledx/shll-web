@@ -28,6 +28,7 @@ interface ActivityRecord {
     brainType?: string;
     intentType?: string;
     decisionReason?: string;
+    decisionMessage?: string;
     createdAt: string;
 }
 
@@ -292,9 +293,9 @@ export function AgentActivityFeed({
                                     </div>
 
                                     {/* Reasoning */}
-                                    {item.decisionReason && (
-                                        <p className="mt-1 text-sm text-[var(--color-muted-foreground)] leading-relaxed line-clamp-3">
-                                            {item.decisionReason}
+                                    {(item.decisionMessage || item.decisionReason) && (
+                                        <p className="mt-1 text-sm text-[var(--color-muted-foreground)]">
+                                            {item.decisionMessage || item.decisionReason}
                                         </p>
                                     )}
 

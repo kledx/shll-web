@@ -3413,37 +3413,49 @@ export const ADMIN_ABI = {
   ] as const,
 
   ListingManager: [
-    // listAgent
+    // createListing (classic — exclusive access)
     {
       "type": "function",
-      "name": "listAgent",
+      "name": "createListing",
       "inputs": [
         { "name": "nfa", "type": "address" },
         { "name": "tokenId", "type": "uint256" },
-        { "name": "pricePerDay", "type": "uint256" },
-        { "name": "minDays", "type": "uint256" },
-        { "name": "isTemplate", "type": "bool" }
+        { "name": "pricePerDay", "type": "uint96" },
+        { "name": "minDays", "type": "uint32" }
       ],
       "outputs": [{ "name": "listingId", "type": "bytes32" }],
       "stateMutability": "nonpayable"
     },
-    // updateListing
+    // createTemplateListing (rent-to-mint)
     {
       "type": "function",
-      "name": "updateListing",
+      "name": "createTemplateListing",
       "inputs": [
-        { "name": "listingId", "type": "bytes32" },
-        { "name": "pricePerDay", "type": "uint256" },
-        { "name": "minDays", "type": "uint256" }
+        { "name": "nfa", "type": "address" },
+        { "name": "tokenId", "type": "uint256" },
+        { "name": "pricePerDay", "type": "uint96" },
+        { "name": "minDays", "type": "uint32" }
       ],
+      "outputs": [{ "name": "listingId", "type": "bytes32" }],
+      "stateMutability": "nonpayable"
+    },
+    // cancelListing
+    {
+      "type": "function",
+      "name": "cancelListing",
+      "inputs": [{ "name": "listingId", "type": "bytes32" }],
       "outputs": [],
       "stateMutability": "nonpayable"
     },
-    // delistAgent
+    // setListingConfig
     {
       "type": "function",
-      "name": "delistAgent",
-      "inputs": [{ "name": "listingId", "type": "bytes32" }],
+      "name": "setListingConfig",
+      "inputs": [
+        { "name": "listingId", "type": "bytes32" },
+        { "name": "maxDays", "type": "uint32" },
+        { "name": "gracePeriod", "type": "uint32" }
+      ],
       "outputs": [],
       "stateMutability": "nonpayable"
     },
@@ -3451,6 +3463,14 @@ export const ADMIN_ABI = {
     {
       "type": "function",
       "name": "pauseRenting",
+      "inputs": [{ "name": "listingId", "type": "bytes32" }],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    // resumeRenting
+    {
+      "type": "function",
+      "name": "resumeRenting",
       "inputs": [{ "name": "listingId", "type": "bytes32" }],
       "outputs": [],
       "stateMutability": "nonpayable"

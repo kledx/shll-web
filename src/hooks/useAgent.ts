@@ -63,7 +63,6 @@ const KEY_MAX_REPAY = keccak256(toBytes("MAX_REPAY_AMOUNT"));
 
 // Agent type hash to label mapping (on-chain stores keccak256 of the type string)
 const AGENT_TYPE_MAP: Record<string, string> = {
-    [keccak256(toBytes("dca"))]: "DCA",
     [keccak256(toBytes("llm_trader"))]: "LLM Trader",
     [keccak256(toBytes("llm_defi"))]: "LLM DeFi",
     [keccak256(toBytes("hot_token"))]: "Hot Token",
