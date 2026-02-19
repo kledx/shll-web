@@ -58,7 +58,7 @@ export function AppShell({ children, fullWidth = false, contentClassName }: AppS
             />
 
             <div className={cn(
-                "flex min-h-screen flex-col transition-all duration-300",
+                "flex flex-col flex-1 transition-all duration-300",
                 !isMobile && (isSidebarOpen ? "pl-60" : "pl-[72px]")
             )}>
                 <Header
