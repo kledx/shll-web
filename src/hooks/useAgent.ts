@@ -2,7 +2,10 @@
 
 import { useReadContracts, useReadContract } from "wagmi";
 import { Address, formatEther, keccak256, toBytes, Hex, hexToString } from "viem";
+import { bscTestnet } from "wagmi/chains";
 import { CONTRACTS } from "../config/contracts";
+
+const TARGET_CHAIN_ID = bscTestnet.id;
 
 export interface AgentData {
     tokenId: string;
@@ -161,6 +164,7 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
                 abi: CONTRACTS.AgentNFA.abi,
                 functionName: "ownerOf",
                 args: [tokenIdBigInt],
+                chainId: TARGET_CHAIN_ID,
             },
             // 1: User (Renter)
             {
@@ -168,6 +172,7 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
                 abi: CONTRACTS.AgentNFA.abi,
                 functionName: "userOf",
                 args: [tokenIdBigInt],
+                chainId: TARGET_CHAIN_ID,
             },
             // 2: User Expires
             {
@@ -175,6 +180,7 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
                 abi: CONTRACTS.AgentNFA.abi,
                 functionName: "userExpires",
                 args: [tokenIdBigInt],
+                chainId: TARGET_CHAIN_ID,
             },
             // 3: Metadata (BAP-578)
             {
@@ -182,6 +188,7 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
                 abi: CONTRACTS.AgentNFA.abi,
                 functionName: "getAgentMetadata",
                 args: [tokenIdBigInt],
+                chainId: TARGET_CHAIN_ID,
             },
             // 4: State (BAP-578)
             {
@@ -189,6 +196,7 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
                 abi: CONTRACTS.AgentNFA.abi,
                 functionName: "getState",
                 args: [tokenIdBigInt],
+                chainId: TARGET_CHAIN_ID,
             },
             // 5: Policy: Max Deadline
             {
@@ -196,6 +204,7 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
                 abi: CONTRACTS.PolicyGuard.abi,
                 functionName: "limits",
                 args: [KEY_MAX_DEADLINE],
+                chainId: TARGET_CHAIN_ID,
             },
             // 6: Policy: Max Path
             {
@@ -203,6 +212,7 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
                 abi: CONTRACTS.PolicyGuard.abi,
                 functionName: "limits",
                 args: [KEY_MAX_PATH],
+                chainId: TARGET_CHAIN_ID,
             },
             // 7: Policy: Max Swap
             {
@@ -210,6 +220,7 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
                 abi: CONTRACTS.PolicyGuard.abi,
                 functionName: "limits",
                 args: [KEY_MAX_SWAP],
+                chainId: TARGET_CHAIN_ID,
             },
             // 8: Policy: Max Approve
             {
@@ -217,6 +228,7 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
                 abi: CONTRACTS.PolicyGuard.abi,
                 functionName: "limits",
                 args: [KEY_MAX_APPROVE],
+                chainId: TARGET_CHAIN_ID,
             },
             // 9: Policy: Max Repay
             {
@@ -224,6 +236,7 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
                 abi: CONTRACTS.PolicyGuard.abi,
                 functionName: "limits",
                 args: [KEY_MAX_REPAY],
+                chainId: TARGET_CHAIN_ID,
             },
             // 10: templateOf
             {
@@ -231,6 +244,7 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
                 abi: CONTRACTS.AgentNFA.abi,
                 functionName: "templateOf",
                 args: [tokenIdBigInt],
+                chainId: TARGET_CHAIN_ID,
             },
             // 11: isTemplate
             {
@@ -238,6 +252,7 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
                 abi: CONTRACTS.AgentNFA.abi,
                 functionName: "isTemplate",
                 args: [tokenIdBigInt],
+                chainId: TARGET_CHAIN_ID,
             },
             // 12: agentType
             {
@@ -245,6 +260,7 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
                 abi: CONTRACTS.AgentNFA.abi,
                 functionName: "agentType",
                 args: [tokenIdBigInt],
+                chainId: TARGET_CHAIN_ID,
             },
         ],
         query: {
@@ -270,6 +286,7 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
             abi: CONTRACTS.AgentNFA.abi,
             functionName: "getAgentMetadata",
             args: [templateId ?? BigInt(0)],
+            chainId: TARGET_CHAIN_ID,
         }],
         query: {
             enabled: templateId !== undefined,
@@ -282,6 +299,7 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
         abi: CONTRACTS.ListingManager.abi,
         functionName: "getListingId",
         args: [nfaAddress, tokenIdBigInt],
+        chainId: TARGET_CHAIN_ID,
         query: { enabled: canQuery }
     });
 
@@ -292,6 +310,7 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
         abi: CONTRACTS.PolicyGuardV3.abi,
         functionName: "getInstanceParams",
         args: isInstance ? [tokenIdBigInt] : undefined,
+        chainId: TARGET_CHAIN_ID,
         query: { enabled: isInstance && !!CONTRACTS.PolicyGuardV3.address }
     });
 
@@ -308,6 +327,7 @@ export function useAgent(tokenId: string, nfaAddressInput?: string) {
             abi: CONTRACTS.ListingManager.abi,
             functionName: "listings",
             args: [listingId || ZERO_LISTING_ID],
+            chainId: TARGET_CHAIN_ID,
         }],
         query: {
             enabled: shouldReadListing,

@@ -27,7 +27,7 @@ export const config = getDefaultConfig({
             retryDelay: 1000,
             timeout: 20_000,
         }),
+        [bsc.id]: http(),
     },
     ssr: true,
 });
-
