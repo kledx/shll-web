@@ -60,7 +60,7 @@ export function MarketplaceSearch({
                         <Chip
                             variant={status === opt.key ? "burgundy" : "default"}
                             className={cn(
-                                "cursor-pointer px-3 py-2 text-xs tracking-wide",
+                                "cursor-pointer px-3 py-2 text-sm tracking-wide",
                                 status === opt.key ? "border-[var(--color-primary)]/30" : "hover:border-[var(--color-primary)]/25 hover:text-[var(--color-primary)]"
                             )}
                         >

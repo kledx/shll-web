@@ -105,7 +105,7 @@ export default function DocsPage() {
                                     <div key={idx} className="rounded-md border border-[var(--color-primary)]/20 p-4">
                                         <h3 className="font-semibold text-[var(--color-primary)] mb-2">{actor.name}</h3>
                                         <p className="text-sm mb-2">{actor.responsibility}</p>
-                                        <p className="text-xs text-muted-foreground">{actor.boundary}</p>
+                                        <p className="text-sm text-muted-foreground">{actor.boundary}</p>
                                     </div>
                                 ))}
                             </CardContent>
@@ -120,7 +120,7 @@ export default function DocsPage() {
                                     <div key={idx} className="rounded-md border border-[var(--color-primary)]/20 p-4">
                                         <h3 className="font-semibold text-[var(--color-primary)] mb-2">{item.name}</h3>
                                         <p className="text-sm mb-2">{item.desc}</p>
-                                        <p className="text-xs text-muted-foreground">{item.detail}</p>
+                                        <p className="text-sm text-muted-foreground">{item.detail}</p>
                                     </div>
                                 ))}
                             </CardContent>
@@ -222,7 +222,7 @@ export default function DocsPage() {
                                             href="/docs/security-execution-flow.svg"
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-xs underline text-[var(--color-primary)] hover:opacity-80"
+                                            className="text-sm underline text-[var(--color-primary)] hover:opacity-80"
                                         >
                                             Open Original
                                         </a>
@@ -242,7 +242,7 @@ export default function DocsPage() {
                                             href="/docs/security-architecture-layers.svg"
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-xs underline text-[var(--color-primary)] hover:opacity-80"
+                                            className="text-sm underline text-[var(--color-primary)] hover:opacity-80"
                                         >
                                             Open Original
                                         </a>

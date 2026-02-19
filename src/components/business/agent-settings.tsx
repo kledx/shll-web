@@ -121,7 +121,7 @@ export function AgentSettings({ tokenId, isRenter, isOwner, v14Params }: AgentSe
                     <CardTitle className="text-lg">
                         {language === "zh" ? "Agent 设置" : "Agent Settings"}
                     </CardTitle>
-                    <span className="ml-auto text-xs font-semibold text-[var(--color-muted-foreground)] bg-[var(--color-muted)]/50 px-2 py-0.5 rounded-full">
+                    <span className="ml-auto text-sm font-semibold text-[var(--color-muted-foreground)] bg-[var(--color-muted)]/50 px-2 py-0.5 rounded-full">
                         V1.5
                     </span>
                 </div>
@@ -130,7 +130,7 @@ export function AgentSettings({ tokenId, isRenter, isOwner, v14Params }: AgentSe
 
                 {/* ── Execution Mode ─────────────────────── */}
                 <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-tight text-[var(--color-muted-foreground)]">
+                    <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-tight text-[var(--color-muted-foreground)]">
                         <Shield className="h-3.5 w-3.5" />
                         {language === "zh" ? "执行模式" : "Execution Mode"}
                     </div>
@@ -156,7 +156,7 @@ export function AgentSettings({ tokenId, isRenter, isOwner, v14Params }: AgentSe
                     )}
 
                     {modeName && (
-                        <p className="text-xs text-[var(--color-muted-foreground)] italic pl-1">
+                        <p className="text-sm text-[var(--color-muted-foreground)] italic pl-1">
                             {modeDescriptions[modeName]}
                         </p>
                     )}
@@ -165,14 +165,14 @@ export function AgentSettings({ tokenId, isRenter, isOwner, v14Params }: AgentSe
                 {/* ── Mutable Parameters ─────────────────── */}
                 {canUpdateParams && currentParams && (
                     <div className="space-y-3 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
-                        <div className="flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-tight">
+                        <div className="flex items-center gap-2 text-sm font-bold text-blue-700 uppercase tracking-tight">
                             <Zap className="h-3.5 w-3.5" />
                             {language === "zh" ? "运行时参数调整" : "Runtime Parameter Tuning"}
                         </div>
 
                         <div className="grid grid-cols-3 gap-3">
                             <div className="space-y-1">
-                                <label className="text-xs text-blue-600/70 font-medium">
+                                <label className="text-sm text-blue-600/70 font-medium">
                                     {language === "zh" ? "最大滑点 (%)" : "Max Slippage (%)"}
                                 </label>
                                 <input
@@ -185,7 +185,7 @@ export function AgentSettings({ tokenId, isRenter, isOwner, v14Params }: AgentSe
                                 />
                             </div>
                             <div className="space-y-1">
-                                <label className="text-xs text-blue-600/70 font-medium">
+                                <label className="text-sm text-blue-600/70 font-medium">
                                     {language === "zh" ? "单笔上限 (BNB)" : "Per-Trade Limit (BNB)"}
                                 </label>
                                 <input
@@ -197,7 +197,7 @@ export function AgentSettings({ tokenId, isRenter, isOwner, v14Params }: AgentSe
                                 />
                             </div>
                             <div className="space-y-1">
-                                <label className="text-xs text-blue-600/70 font-medium">
+                                <label className="text-sm text-blue-600/70 font-medium">
                                     {language === "zh" ? "每日预算 (BNB)" : "Daily Budget (BNB)"}
                                 </label>
                                 <input
@@ -226,7 +226,7 @@ export function AgentSettings({ tokenId, isRenter, isOwner, v14Params }: AgentSe
                 {/* ── Token Permissions ───────────────────── */}
                 {isOwner && (
                     <div className="space-y-3">
-                        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-tight text-[var(--color-muted-foreground)]">
+                        <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-tight text-[var(--color-muted-foreground)]">
                             <Lock className="h-3.5 w-3.5" />
                             {language === "zh" ? "Token 权限位图" : "Token Permission Bitmap"}
                         </div>
@@ -235,7 +235,7 @@ export function AgentSettings({ tokenId, isRenter, isOwner, v14Params }: AgentSe
                             <div className="h-8 animate-pulse rounded-lg bg-[var(--color-muted)]/30" />
                         ) : (
                             <div className="space-y-2">
-                                <div className="font-mono text-xs text-[var(--color-muted-foreground)] bg-[var(--color-muted)]/20 rounded-md px-3 py-2">
+                                <div className="font-mono text-sm text-[var(--color-muted-foreground)] bg-[var(--color-muted)]/20 rounded-md px-3 py-2">
                                     {language === "zh" ? "当前位图: " : "Current bitmap: "}
                                     {permBitmap !== undefined ? `0x${permBitmap.toString(16)}` : "N/A"}
                                 </div>

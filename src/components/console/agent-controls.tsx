@@ -458,7 +458,7 @@ export function AgentControls({
                                 <button
                                     type="button"
                                     onClick={() => onSetAutopilotOperator(runnerOperatorDefault)}
-                                    className="text-xs text-[var(--color-primary)] hover:underline"
+                                    className="text-sm text-[var(--color-primary)] hover:underline"
                                 >
                                     {ui.useDefaultRunner}
                                 </button>
@@ -478,7 +478,7 @@ export function AgentControls({
                     </div>
 
                     {/* Hint */}
-                    <div className="text-xs text-[var(--color-muted-foreground)]">
+                    <div className="text-sm text-[var(--color-muted-foreground)]">
                         {ui.hint}
                     </div>
                 </div>

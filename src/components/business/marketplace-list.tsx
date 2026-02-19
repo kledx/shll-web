@@ -52,7 +52,7 @@ export function MarketplaceList() {
                 <p className="max-w-md text-sm text-amber-900">
                     {t.marketplace.wrongChain}
                 </p>
-                <p className="text-xs text-amber-700/80">
+                <p className="text-sm text-amber-700/80">
                     Current: <strong>{chain.name}</strong> → Required: <strong>BSC Testnet</strong>
                 </p>
             </div>

@@ -23,7 +23,7 @@ export function RiskPanel() {
                     </div>
                     <div>
                         <div className="font-medium text-[var(--color-foreground)]">{t.agent.detail.risk.allowlist}</div>
-                        <p className="text-xs text-[var(--color-muted-foreground)]">
+                        <p className="text-sm text-[var(--color-muted-foreground)]">
                             {t.agent.detail.risk.allowlistDesc}
                         </p>
                     </div>
@@ -35,7 +35,7 @@ export function RiskPanel() {
                     </div>
                     <div>
                         <div className="font-medium text-[var(--color-foreground)]">{t.agent.detail.risk.spendLimit}</div>
-                        <p className="text-xs text-[var(--color-muted-foreground)]">
+                        <p className="text-sm text-[var(--color-muted-foreground)]">
                             {t.agent.detail.risk.spendLimitDesc}
                         </p>
                     </div>
@@ -47,7 +47,7 @@ export function RiskPanel() {
                     </div>
                     <div>
                         <div className="font-medium text-[var(--color-foreground)]">{t.agent.detail.risk.nonCustodial}</div>
-                        <p className="text-xs text-[var(--color-muted-foreground)]">
+                        <p className="text-sm text-[var(--color-muted-foreground)]">
                             {t.agent.detail.risk.nonCustodialDesc}
                         </p>
                     </div>

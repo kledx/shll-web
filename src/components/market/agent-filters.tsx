@@ -49,7 +49,7 @@ export function AgentFilters({
                         variant="ghost"
                         size="sm"
                         onClick={clearFilters}
-                        className="text-xs h-8 text-[var(--color-destructive)] hover:text-[var(--color-destructive)] hover:bg-[var(--color-destructive)]/10"
+                        className="text-sm h-8 text-[var(--color-destructive)] hover:text-[var(--color-destructive)] hover:bg-[var(--color-destructive)]/10"
                     >
                         {t.marketplace.filters.clear}
                     </Button>
@@ -73,7 +73,7 @@ export function AgentFilters({
                             <RadioGroupItem value="all" id="status-all" />
                             <span>{t.marketplace.filterAll}</span>
                         </Label>
-                        <span className="text-xs text-[var(--color-muted-foreground)]">{stats?.total}</span>
+                        <span className="text-sm text-[var(--color-muted-foreground)]">{stats?.total}</span>
                     </div>
 
                     <div className="flex items-center justify-between space-x-2">
@@ -84,7 +84,7 @@ export function AgentFilters({
                             <RadioGroupItem value="available" id="status-available" />
                             <span>{t.marketplace.filterAvailable}</span>
                         </Label>
-                        <span className="text-xs text-[var(--color-muted-foreground)]">{stats?.available}</span>
+                        <span className="text-sm text-[var(--color-muted-foreground)]">{stats?.available}</span>
                     </div>
 
                     <div className="flex items-center justify-between space-x-2">
@@ -95,7 +95,7 @@ export function AgentFilters({
                             <RadioGroupItem value="rented" id="status-rented" />
                             <span>{t.marketplace.filterRented}</span>
                         </Label>
-                        <span className="text-xs text-[var(--color-muted-foreground)]">{stats?.rented}</span>
+                        <span className="text-sm text-[var(--color-muted-foreground)]">{stats?.rented}</span>
                     </div>
                 </RadioGroup>
             </div>

@@ -4,6 +4,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { HeroSection } from "@/components/home/hero-section";
 import { StatsSection } from "@/components/home/stats-section";
 import { WhySection } from "@/components/home/why-section";
+import { WorkflowSection } from "@/components/home/workflow-section";
 import { FeaturedAgents } from "@/components/home/featured-agents";
 
 export default function Home() {
@@ -13,6 +14,7 @@ export default function Home() {
         <HeroSection />
         <StatsSection />
         <WhySection />
+        <WorkflowSection />
         <FeaturedAgents />
       </div>
     </AppShell>

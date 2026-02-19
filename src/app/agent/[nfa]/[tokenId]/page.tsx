@@ -65,7 +65,7 @@ export default function AgentDetailPage() {
             <AppShell>
                 <div className="rounded-2xl border border-[var(--color-border)] bg-white/70 p-10 md:p-12 text-center shadow-[var(--shadow-soft)]">
                     <p className="text-xl text-[var(--color-muted-foreground)]">{t.agent.detail.notFound}</p>
-                    <p className="mt-2 text-xs text-[var(--color-muted-foreground)]">{String(error.message || error)}</p>
+                    <p className="mt-2 text-sm text-[var(--color-muted-foreground)]">{String(error.message || error)}</p>
                 </div>
             </AppShell>
         );
@@ -95,7 +95,7 @@ export default function AgentDetailPage() {
         <AppShell fullWidth>
             <PageTransition className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
                 <div className="space-y-6">
-                    <nav className="flex items-center gap-1 text-xs text-[var(--color-muted-foreground)]">
+                    <nav className="flex items-center gap-1 text-sm text-[var(--color-muted-foreground)]">
                         <Link href="/market" className="hover:text-[var(--color-primary)]">
                             {t.common.nav.market}
                         </Link>
@@ -123,23 +123,23 @@ export default function AgentDetailPage() {
 
                         <div className="grid gap-3 pt-1 text-sm md:grid-cols-3">
                             <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)]/40 p-3 text-[var(--color-muted-foreground)]">
-                                <div className="mb-1 flex items-center gap-1 text-xs uppercase tracking-wide">
+                                <div className="mb-1 flex items-center gap-1 text-sm uppercase tracking-wide">
                                     <User className="h-4 w-4" />
                                     {t.agent.detail.status.owner}
                                 </div>
-                                <div className="flex items-center font-mono text-xs text-[var(--color-foreground)]">
+                                <div className="flex items-center font-mono text-sm text-[var(--color-foreground)]">
                                     {ownerDisplay}
                                     {isValidOwner && <CopyButton text={agent.owner} />}
                                 </div>
                             </div>
                             <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)]/40 p-3 text-[var(--color-muted-foreground)]">
-                                <div className="mb-1 flex items-center gap-1 text-xs uppercase tracking-wide">
+                                <div className="mb-1 flex items-center gap-1 text-sm uppercase tracking-wide">
                                     <Clock className="h-4 w-4" />
                                     {minLeaseDisplay}
                                 </div>
                             </div>
                             <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)]/40 p-3 text-[var(--color-muted-foreground)]">
-                                <div className="mb-1 flex items-center gap-1 text-xs uppercase tracking-wide">
+                                <div className="mb-1 flex items-center gap-1 text-sm uppercase tracking-wide">
                                     <ShieldCheck className="h-4 w-4" />
                                     {t.agent.detail.status.policyActive}
                                 </div>
@@ -161,7 +161,7 @@ export default function AgentDetailPage() {
                                     <div className="text-sm font-semibold text-violet-900">
                                         {language === "zh" ? "打开控制台" : "Open Console"}
                                     </div>
-                                    <div className="text-xs text-violet-600">
+                                    <div className="text-sm text-violet-600">
                                         {language === "zh" ? "管理您的 Agent、发送指令、查看余额" : "Manage your agent, send instructions, view vault"}
                                     </div>
                                 </div>

@@ -81,15 +81,15 @@ export function StatusCard({
             <CardContent className="space-y-4 text-sm">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]/35 p-3">
-                        <div className="text-xs text-[var(--color-muted-foreground)]">{ui.tokenLabel}</div>
+                        <div className="text-sm text-[var(--color-muted-foreground)]">{ui.tokenLabel}</div>
                         <div className="font-semibold">#{tokenId}</div>
                     </div>
                     <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]/35 p-3">
-                        <div className="text-xs text-[var(--color-muted-foreground)]">{ui.leaseExpiresLabel}</div>
+                        <div className="text-sm text-[var(--color-muted-foreground)]">{ui.leaseExpiresLabel}</div>
                         <div className="font-semibold">{leaseExpiresText}</div>
                     </div>
                     <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]/35 p-3">
-                        <div className="text-xs text-[var(--color-muted-foreground)]">{ui.agentTypeLabel}</div>
+                        <div className="text-sm text-[var(--color-muted-foreground)]">{ui.agentTypeLabel}</div>
                         <div className="font-semibold">{agentType || "-"}</div>
                     </div>
                 </div>

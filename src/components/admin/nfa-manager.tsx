@@ -35,8 +35,8 @@ function RegisterTemplateForm() {
             </CardHeader>
             <CardContent className="grid gap-3">
                 <div className="grid grid-cols-2 gap-3">
-                    <div><Label className="text-xs">Token ID</Label><Input value={tokenId} onChange={e => setTokenId(e.target.value)} /></div>
-                    <div><Label className="text-xs">Policy ID (bytes32)</Label><Input value={policyId} onChange={e => setPolicyId(e.target.value)} className="font-mono text-xs" /></div>
+                    <div><Label className="text-sm">Token ID</Label><Input value={tokenId} onChange={e => setTokenId(e.target.value)} /></div>
+                    <div><Label className="text-sm">Policy ID (bytes32)</Label><Input value={policyId} onChange={e => setPolicyId(e.target.value)} className="font-mono text-sm" /></div>
                 </div>
                 <Button disabled={isPending} onClick={() => writeContract({
                     address: CONTRACTS.AgentNFA.address,
@@ -65,7 +65,7 @@ function PauseAgentForm() {
                 <CardTitle className="flex items-center gap-2 text-sm"><Pause className="h-4 w-4" /> Agent Pause Control</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3">
-                <div><Label className="text-xs">Token ID</Label><Input value={tokenId} onChange={e => setTokenId(e.target.value)} /></div>
+                <div><Label className="text-sm">Token ID</Label><Input value={tokenId} onChange={e => setTokenId(e.target.value)} /></div>
                 <div className="flex gap-2">
                     <Button variant="destructive" disabled={p1} onClick={() => write1({
                         address: CONTRACTS.AgentNFA.address,
@@ -98,7 +98,7 @@ function GlobalPauseForm() {
                 <CardTitle className="flex items-center gap-2 text-sm"><Play className="h-4 w-4" /> Global Pause</CardTitle>
             </CardHeader>
             <CardContent>
-                <p className="text-xs text-[var(--color-muted-foreground)] mb-3">Emergency pause/unpause all minting and transfers.</p>
+                <p className="text-sm text-[var(--color-muted-foreground)] mb-3">Emergency pause/unpause all minting and transfers.</p>
                 <div className="flex gap-2">
                     <Button variant="destructive" disabled={p1} onClick={() => write1({
                         address: CONTRACTS.AgentNFA.address,
@@ -129,7 +129,7 @@ function SetContractForm({ label, fnName }: { label: string; fnName: "setListing
                 <CardTitle className="flex items-center gap-2 text-sm"><Settings className="h-4 w-4" /> Set {label}</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3">
-                <div><Label className="text-xs">{label} Address</Label><Input value={addr} onChange={e => setAddr(e.target.value)} placeholder="0x..." /></div>
+                <div><Label className="text-sm">{label} Address</Label><Input value={addr} onChange={e => setAddr(e.target.value)} placeholder="0x..." /></div>
                 <Button disabled={isPending} onClick={() => writeContract({
                     address: CONTRACTS.AgentNFA.address,
                     abi: ADMIN_ABI.AgentNFA,
@@ -163,9 +163,9 @@ function NfaStats() {
             </CardHeader>
             <CardContent>
                 <div className="rounded-lg bg-[var(--color-muted)]/30 p-3 text-sm space-y-1 font-mono">
-                    <div>Owner: <span className="text-xs break-all">{owner as string ?? "—"}</span></div>
+                    <div>Owner: <span className="text-sm break-all">{owner as string ?? "—"}</span></div>
                     <div>Total Supply: {totalSupply != null ? totalSupply.toString() : "—"}</div>
-                    <div>Address: <span className="text-xs break-all">{CONTRACTS.AgentNFA.address}</span></div>
+                    <div>Address: <span className="text-sm break-all">{CONTRACTS.AgentNFA.address}</span></div>
                 </div>
             </CardContent>
         </Card>

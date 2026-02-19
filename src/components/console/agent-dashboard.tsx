@@ -158,7 +158,7 @@ export function AgentDashboard({ tokenId, refreshKey = 0, language = "en" }: Age
                         <div className="font-medium">{data.strategy.strategyType === "llm_trader" ? "LLM Trader" : data.strategy.strategyType === "llm_defi" ? "LLM DeFi" : data.strategy.strategyType}</div>
                         <div className="text-[var(--color-muted-foreground)]">Status</div>
                         <div>
-                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${data.strategy.enabled
+                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-sm font-medium ${data.strategy.enabled
                                 ? "bg-emerald-50 text-emerald-700"
                                 : "bg-red-50 text-red-700"
                                 }`}>
@@ -175,7 +175,7 @@ export function AgentDashboard({ tokenId, refreshKey = 0, language = "en" }: Age
                         )}
                         {/* Current Goal */}
                         <div className="col-span-2 mt-1 pt-2 border-t border-[var(--color-border)]">
-                            <div className="text-xs text-[var(--color-muted-foreground)] mb-1">{t.currentGoal}</div>
+                            <div className="text-sm text-[var(--color-muted-foreground)] mb-1">{t.currentGoal}</div>
                             {(data.strategy.strategyParams?.tradingGoal as string) ? (
                                 <div className="text-sm font-medium text-violet-700 bg-violet-50 rounded-lg px-3 py-1.5 line-clamp-2">
                                     {data.strategy.strategyParams.tradingGoal as string}
@@ -204,7 +204,7 @@ function StatCard({
 }) {
     return (
         <div className="rounded-xl border border-[var(--color-border)] bg-white/60 p-3">
-            <div className="flex items-center gap-1.5 text-xs text-[var(--color-muted-foreground)]">
+            <div className="flex items-center gap-1.5 text-sm text-[var(--color-muted-foreground)]">
                 <span className={color}>{icon}</span>
                 {label}
             </div>

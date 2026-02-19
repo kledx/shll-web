@@ -6,6 +6,7 @@ import {
     useSignTypedData,
     useWaitForTransactionReceipt,
     useWriteContract,
+    usePublicClient,
 } from "wagmi";
 import { Address } from "viem";
 import { CONTRACTS } from "@/config/contracts";
@@ -39,6 +40,7 @@ export function useAutopilot({ tokenId, renter, nfaAddress }: UseAutopilotOption
     const chainId = useChainId();
     const { signTypedDataAsync } = useSignTypedData();
     const { writeContractAsync } = useWriteContract();
+    const publicClient = usePublicClient();
     const resolvedNfaAddress = (nfaAddress || CONTRACTS.AgentNFA.address) as Address;
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -166,6 +168,19 @@ export function useAutopilot({ tokenId, renter, nfaAddress }: UseAutopilotOption
 
             setLastTxHash(body.txHash);
             setEnableState("ONCHAIN_PENDING");
+
+            if (publicClient && body.txHash) {
+                try {
+                    await publicClient.waitForTransactionReceipt({
+                        hash: body.txHash as `0x${string}`,
+                        confirmations: 1
+                    });
+                } catch (receiptError) {
+                    console.error("Failed to wait for tx receipt:", receiptError);
+                    // Continue anyway, it might have been confirmed but timed out locally
+                }
+            }
+
             await refetchOperator();
             await refetchOperatorExpires();
             setEnableState("ONCHAIN_CONFIRMED");

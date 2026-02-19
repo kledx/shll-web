@@ -78,15 +78,15 @@ export function AgentCard({ listing }: { listing: AgentListing }) {
             <CardHeader className="relative pb-3">
                 <div className="flex items-start justify-between gap-2 mb-3">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-semibold ${statusColor}`}>
+                        <span className={`inline-flex items-center rounded-md border px-2.5 py-1 text-sm font-semibold ${statusColor}`}>
                             {statusLabel}
                         </span>
-                        <span className="inline-flex items-center gap-1 rounded-md border border-sky-200 bg-sky-500/10 px-2.5 py-1 text-xs font-semibold text-sky-600 dark:border-sky-800 dark:text-sky-400">
+                        <span className="inline-flex items-center gap-1 rounded-md border border-sky-200 bg-sky-500/10 px-2.5 py-1 text-sm font-semibold text-sky-600 dark:border-sky-800 dark:text-sky-400">
                             <Bot className="h-3 w-3" />
                             {agentTypeDisplay}
                         </span>
                     </div>
-                    <span className="shrink-0 rounded-md bg-[var(--color-muted)]/50 px-2 py-1 text-xs font-mono text-[var(--color-muted-foreground)]">
+                    <span className="shrink-0 rounded-md bg-[var(--color-muted)]/50 px-2 py-1 text-sm font-mono text-[var(--color-muted-foreground)]">
                         #{listing.tokenId}
                     </span>
                 </div>
@@ -107,19 +107,19 @@ export function AgentCard({ listing }: { listing: AgentListing }) {
                 <div className="grid grid-cols-3 gap-2">
                     <div className="flex flex-col items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-2.5 text-center">
                         <ShieldCheck className="h-4 w-4 text-emerald-500" />
-                        <span className="text-xs font-medium leading-tight text-[var(--color-muted-foreground)]">
+                        <span className="text-sm font-medium leading-tight text-[var(--color-muted-foreground)]">
                             5-Layer Policy
                         </span>
                     </div>
                     <div className="flex flex-col items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-2.5 text-center">
                         <Wallet className="h-4 w-4 text-blue-500" />
-                        <span className="text-xs font-medium leading-tight text-[var(--color-muted-foreground)]">
+                        <span className="text-sm font-medium leading-tight text-[var(--color-muted-foreground)]">
                             Isolated Vault
                         </span>
                     </div>
                     <div className="flex flex-col items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/50 p-2.5 text-center">
                         <Clock className="h-4 w-4 text-violet-500" />
-                        <span className="text-xs font-medium leading-tight text-[var(--color-muted-foreground)]">
+                        <span className="text-sm font-medium leading-tight text-[var(--color-muted-foreground)]">
                             Auto-Expire
                         </span>
                     </div>
@@ -131,13 +131,13 @@ export function AgentCard({ listing }: { listing: AgentListing }) {
                         {listing.capabilities.map((cap) => (
                             <span
                                 key={cap}
-                                className="inline-flex items-center rounded-md border border-[var(--color-border)] bg-[var(--color-background)] px-2 py-0.5 text-xs font-medium text-[var(--color-secondary-foreground)]"
+                                className="inline-flex items-center rounded-md border border-[var(--color-border)] bg-[var(--color-background)] px-2 py-0.5 text-sm font-medium text-[var(--color-secondary-foreground)]"
                             >
                                 {cap}
                             </span>
                         ))}
                     </div>
-                    <span className="shrink-0 text-xs font-mono text-[var(--color-muted-foreground)]" title={listing.owner}>
+                    <span className="shrink-0 text-sm font-mono text-[var(--color-muted-foreground)]" title={listing.owner}>
                         {ownerDisplay}
                     </span>
                 </div>

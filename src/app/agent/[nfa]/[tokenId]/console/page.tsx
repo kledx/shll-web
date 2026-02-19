@@ -252,7 +252,7 @@ export default function ConsolePage() {
                     <p className="text-[var(--color-muted-foreground)]">
                         {ui.errorLoadAgent}
                     </p>
-                    <p className="break-all font-mono text-xs text-[var(--color-muted-foreground)]">
+                    <p className="break-all font-mono text-sm text-[var(--color-muted-foreground)]">
                         {agentError.message}
                     </p>
                     <div className="flex justify-center gap-2 pt-2">
@@ -290,7 +290,7 @@ export default function ConsolePage() {
                                 ? ui.consoleBlockedRentedByOther
                                 : ui.consoleBlockedNotRented}
                     </p>
-                    <PageSection tone="muted" className="text-left text-xs text-[var(--color-muted-foreground)]">
+                    <PageSection tone="muted" className="text-left text-sm text-[var(--color-muted-foreground)]">
                         <div className="font-medium text-[var(--color-foreground)]">{ui.nextStepTitle}</div>
                         <div className="pt-1">
                             {!address
@@ -325,7 +325,7 @@ export default function ConsolePage() {
     return (
         <AppShell fullWidth>
             <PageTransition className="space-y-6">
-                <nav className="flex items-center gap-1 text-xs text-[var(--color-muted-foreground)]">
+                <nav className="flex items-center gap-1 text-sm text-[var(--color-muted-foreground)]">
                     <Link href="/market" className="hover:text-[var(--color-primary)]">
                         {t.common.nav.market}
                     </Link>
@@ -342,14 +342,14 @@ export default function ConsolePage() {
                     rightSlot={
                         <>
                             <div className="text-sm font-medium">{t.agent.console.page.agentId}: #{tokenId}</div>
-                            <div className="font-mono text-xs text-[var(--color-muted-foreground)]">
+                            <div className="font-mono text-sm text-[var(--color-muted-foreground)]">
                                 {agentAccount || (isAccountLoading ? t.agent.detail.loading : t.agent.console.page.unknown)}
                             </div>
                         </>
                     }
                 />
 
-                <PageSection tone="muted" className="text-xs text-[var(--color-muted-foreground)]">
+                <PageSection tone="muted" className="text-sm text-[var(--color-muted-foreground)]">
                     <div>
                         <span className="font-medium text-[var(--color-foreground)]">{ui.currentRole}: </span>
                         {roleLabel}
@@ -499,7 +499,7 @@ export default function ConsolePage() {
                             </TabsContent>
 
                             <TabsContent value="status" className="mt-3 space-y-4">
-                                <p className="text-xs text-[var(--color-muted-foreground)]">{ui.sectionDesc.status}</p>
+                                <p className="text-sm text-[var(--color-muted-foreground)]">{ui.sectionDesc.status}</p>
                                 <StatusCard
                                     tokenId={tokenId}
                                     leaseStatus={leaseStatus}
@@ -510,7 +510,7 @@ export default function ConsolePage() {
                             </TabsContent>
 
                             <TabsContent value="vault" className="mt-3 space-y-4">
-                                <p className="text-xs text-[var(--color-muted-foreground)]">{ui.sectionDesc.vault}</p>
+                                <p className="text-sm text-[var(--color-muted-foreground)]">{ui.sectionDesc.vault}</p>
                                 <VaultPanel
                                     agentAccount={agentAccount}
                                     isRenter={isRenter}
@@ -523,7 +523,7 @@ export default function ConsolePage() {
                             </TabsContent>
 
                             <TabsContent value="history" className="mt-3 space-y-4">
-                                <p className="text-xs text-[var(--color-muted-foreground)]">{ui.sectionDesc.history}</p>
+                                <p className="text-sm text-[var(--color-muted-foreground)]">{ui.sectionDesc.history}</p>
                                 {/* AgentActivityFeed removed — chat UI already shows agent reasoning (P-2026-018) */}
                                 <TransactionHistory tokenId={tokenId} nfaAddress={nfaAddress} refreshKey={refreshKey} />
                             </TabsContent>
@@ -553,7 +553,7 @@ function SectionHeader({ title, desc }: { title: string; desc: string }) {
             <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
                 {title}
             </h3>
-            <p className="text-xs text-[var(--color-muted-foreground)]/70">{desc}</p>
+            <p className="text-sm text-[var(--color-muted-foreground)]/70">{desc}</p>
         </div>
     );
 }
@@ -582,7 +582,7 @@ function CollapsibleSection({
                     <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
                         {title}
                     </h3>
-                    <p className="text-xs text-[var(--color-muted-foreground)]/70 mt-0.5">{desc}</p>
+                    <p className="text-sm text-[var(--color-muted-foreground)]/70 mt-0.5">{desc}</p>
                 </div>
                 <ChevronDown
                     className={`h-4 w-4 shrink-0 text-[var(--color-muted-foreground)] transition-transform duration-200 ${open ? "rotate-180" : ""}`}

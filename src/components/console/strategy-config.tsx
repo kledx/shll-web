@@ -431,7 +431,7 @@ export function StrategyConfig({
                             return (
                                 <div className="flex items-center gap-1.5">
                                     <span className={`h-2 w-2 rounded-full ${dotColor}`} />
-                                    <span className="text-xs font-medium text-[var(--color-muted-foreground)]">
+                                    <span className="text-sm font-medium text-[var(--color-muted-foreground)]">
                                         {statusLabel}
                                     </span>
                                 </div>
@@ -467,7 +467,7 @@ export function StrategyConfig({
                                                 {entry.isActive ? (
                                                     <>
                                                         <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                                                        <span className="text-xs font-medium text-emerald-600">
+                                                        <span className="text-sm font-medium text-emerald-600">
                                                             {t.activeGoal}
                                                         </span>
                                                         {isInteractive && (
@@ -475,7 +475,7 @@ export function StrategyConfig({
                                                                 type="button"
                                                                 onClick={() => void handleCancelGoal()}
                                                                 disabled={isCancelling}
-                                                                className="ml-1 inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-medium text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors disabled:opacity-40"
+                                                                className="ml-1 inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-sm font-medium text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors disabled:opacity-40"
                                                                 title={t.cancelGoal}
                                                             >
                                                                 {isCancelling ? (
@@ -490,7 +490,7 @@ export function StrategyConfig({
                                                 ) : (
                                                     <>
                                                         <Clock className="h-3 w-3 text-slate-400" />
-                                                        <span className="text-xs text-slate-400">
+                                                        <span className="text-sm text-slate-400">
                                                             {formatRelative(new Date(entry.ts).toISOString(), language)}
                                                         </span>
                                                     </>
@@ -537,7 +537,7 @@ export function StrategyConfig({
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => toggleExpand(msgId)}
-                                                                        className="inline-flex items-center gap-0.5 text-xs font-medium text-violet-500 hover:text-violet-700 transition-colors"
+                                                                        className="inline-flex items-center gap-0.5 text-sm font-medium text-violet-500 hover:text-violet-700 transition-colors"
                                                                     >
                                                                         {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                                                                         {isExpanded
@@ -551,7 +551,7 @@ export function StrategyConfig({
                                                                         void navigator.clipboard.writeText(text);
                                                                         toast.success(language === "zh" ? "已复制" : "Copied");
                                                                     }}
-                                                                    className="inline-flex items-center gap-0.5 text-xs text-slate-400 hover:text-slate-600 transition-colors ml-auto"
+                                                                    className="inline-flex items-center gap-0.5 text-sm text-slate-400 hover:text-slate-600 transition-colors ml-auto"
                                                                     title={language === "zh" ? "复制" : "Copy"}
                                                                 >
                                                                     <Copy className="h-3 w-3" />
@@ -565,7 +565,7 @@ export function StrategyConfig({
                                                         href={`https://testnet.bscscan.com/tx/${a.txHash}`}
                                                         target="_blank"
                                                         rel="noreferrer"
-                                                        className="mt-1 inline-block text-xs text-[var(--color-sky)] hover:underline font-mono"
+                                                        className="mt-1 inline-block text-sm text-[var(--color-sky)] hover:underline font-mono"
                                                     >
                                                         tx: {a.txHash.slice(0, 10)}...
                                                     </a>
@@ -574,16 +574,16 @@ export function StrategyConfig({
                                         </div>
                                         <div className="flex items-center gap-1.5 pl-8">
                                             {decisionStyles.icon}
-                                            <span className="text-xs font-medium" style={{ color: "inherit" }}>
+                                            <span className="text-sm font-medium" style={{ color: "inherit" }}>
                                                 {decisionStyles.label}
                                             </span>
                                             {a.intentType && a.intentType !== "wait" && (
-                                                <span className="inline-flex items-center gap-0.5 text-xs text-slate-400">
+                                                <span className="inline-flex items-center gap-0.5 text-sm text-slate-400">
                                                     <Target className="h-3 w-3" />
                                                     {a.intentType}
                                                 </span>
                                             )}
-                                            <span className="text-xs text-slate-400 ml-auto">
+                                            <span className="text-sm text-slate-400 ml-auto">
                                                 {formatRelative(a.createdAt, language)}
                                             </span>
                                         </div>
@@ -649,7 +649,7 @@ export function StrategyConfig({
                                     )}
                                 </button>
                             </div>
-                            <p className="mt-1.5 text-xs text-[var(--color-muted-foreground)]">
+                            <p className="mt-1.5 text-sm text-[var(--color-muted-foreground)]">
                                 {t.inputHint} <span className="text-slate-400">· Enter ↵ · Shift+Enter {language === "zh" ? "换行" : "newline"}</span>
                             </p>
                         </div>

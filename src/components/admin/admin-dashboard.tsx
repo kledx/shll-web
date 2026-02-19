@@ -45,7 +45,7 @@ function TxStatus({ hash, label }: { hash?: `0x${string}`; label: string }) {
                 <span className="font-medium">{label}</span>
             </div>
             <a href={`${EXPLORER}/${hash}`} target="_blank" rel="noopener noreferrer"
-                className="mt-1 flex items-center gap-1 font-mono text-xs text-blue-500 hover:underline break-all">
+                className="mt-1 flex items-center gap-1 font-mono text-sm text-blue-500 hover:underline break-all">
                 {hash.slice(0, 10)}...{hash.slice(-8)} <ExternalLink className="h-3 w-3" />
             </a>
         </div>
@@ -299,11 +299,11 @@ function TemplateManager() {
                         <div key={i} className="flex items-center gap-1">
                             <button
                                 onClick={() => setStep(i)}
-                                className={`flex h-7 min-w-7 items-center justify-center rounded-full text-xs font-bold transition-all ${i === step ? "bg-blue-600 text-white shadow-md" : i < step ? "bg-green-600 text-white" : "bg-[var(--color-muted)]/50 text-[var(--color-muted-foreground)]"}`}
+                                className={`flex h-7 min-w-7 items-center justify-center rounded-full text-sm font-bold transition-all ${i === step ? "bg-blue-600 text-white shadow-md" : i < step ? "bg-green-600 text-white" : "bg-[var(--color-muted)]/50 text-[var(--color-muted-foreground)]"}`}
                             >
                                 {i < step ? <Check className="h-3 w-3" /> : s.icon}
                             </button>
-                            <span className={`hidden text-xs sm:inline ${i === step ? "font-semibold text-[var(--color-foreground)]" : "text-[var(--color-muted-foreground)]"}`}>{s.label}</span>
+                            <span className={`hidden text-sm sm:inline ${i === step ? "font-semibold text-[var(--color-foreground)]" : "text-[var(--color-muted-foreground)]"}`}>{s.label}</span>
                             {i < steps.length - 1 && <ChevronRight className="h-3 w-3 text-[var(--color-muted-foreground)]" />}
                         </div>
                     ))}
@@ -354,7 +354,7 @@ function TemplateManager() {
                 {step === 2 && (
                     <div className="grid gap-4">
                         <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]/20 p-3 text-sm">
-                            Token ID: <span className="font-mono font-semibold">{mintedTokenId}</span> | Template Key: <span className="font-mono text-xs">{selectedType.key}</span>
+                            Token ID: <span className="font-mono font-semibold">{mintedTokenId}</span> | Template Key: <span className="font-mono text-sm">{selectedType.key}</span>
                         </div>
                         <TxButton onClick={handleRegister} loading={isPending}>Register as Template</TxButton>
                         <TxStatus hash={txHash} label="Register Template" />
@@ -376,7 +376,7 @@ function TemplateManager() {
                         {policyAddresses.length > 0 && (
                             <div className="rounded-lg bg-[var(--color-muted)]/20 p-3 text-sm">
                                 <div className="font-medium mb-1">Attached ({policyAddresses.length}):</div>
-                                {policyAddresses.map((p, i) => <div key={i} className="font-mono text-xs text-[var(--color-muted-foreground)]">{p}</div>)}
+                                {policyAddresses.map((p, i) => <div key={i} className="font-mono text-sm text-[var(--color-muted-foreground)]">{p}</div>)}
                             </div>
                         )}
                         <TxStatus hash={txHash} label="Add Policy" />
@@ -417,7 +417,7 @@ function TemplateManager() {
                                     <Input value={newTokenAddr} onChange={(e) => setNewTokenAddr(e.target.value)} placeholder="Token address" className="font-mono text-sm" />
                                     <TxButton onClick={() => { handleAddToken(newTokenAddr); setNewTokenAddr(""); }} loading={isPending} disabled={!tokenWlAddr || !/^0x/.test(newTokenAddr)}>Add</TxButton>
                                 </div>
-                                {tokenAddresses.map((t, i) => <div key={i} className="font-mono text-xs text-[var(--color-muted-foreground)]">{t}</div>)}
+                                {tokenAddresses.map((t, i) => <div key={i} className="font-mono text-sm text-[var(--color-muted-foreground)]">{t}</div>)}
                             </div>
                             {/* DEX Whitelist */}
                             <div className="rounded-lg border border-[var(--color-border)] p-3">
@@ -427,7 +427,7 @@ function TemplateManager() {
                                     <Input value={newDexAddr} onChange={(e) => setNewDexAddr(e.target.value)} placeholder="DEX router address" className="font-mono text-sm" />
                                     <TxButton onClick={() => { handleAddDex(newDexAddr); setNewDexAddr(""); }} loading={isPending} disabled={!dexWlAddr || !/^0x/.test(newDexAddr)}>Add</TxButton>
                                 </div>
-                                {dexAddresses.map((d, i) => <div key={i} className="font-mono text-xs text-[var(--color-muted-foreground)]">{d}</div>)}
+                                {dexAddresses.map((d, i) => <div key={i} className="font-mono text-sm text-[var(--color-muted-foreground)]">{d}</div>)}
                             </div>
                         </div>
                         <TxStatus hash={txHash} label="Add Whitelist" />

@@ -38,7 +38,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
                     <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-red-500" />
                     <h2 className="text-xl font-bold text-red-700 mb-2">Configuration Error</h2>
                     <p className="text-sm text-[var(--color-muted-foreground)]">
-                        <code className="bg-[var(--color-muted)]/50 px-1.5 py-0.5 rounded text-xs">NEXT_PUBLIC_ADMIN_WALLET</code> is not configured.
+                        <code className="bg-[var(--color-muted)]/50 px-1.5 py-0.5 rounded text-sm">NEXT_PUBLIC_ADMIN_WALLET</code> is not configured.
                     </p>
                 </div>
             </div>
@@ -54,7 +54,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
                     <p className="text-sm text-[var(--color-muted-foreground)] mb-1">
                         Connected wallet is not authorized.
                     </p>
-                    <p className="font-mono text-xs text-red-400 break-all">
+                    <p className="font-mono text-sm text-red-400 break-all">
                         {address}
                     </p>
                 </div>

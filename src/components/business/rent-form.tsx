@@ -137,7 +137,7 @@ export function RentForm({
                             <ShieldAlert className="h-4 w-4 text-orange-500" />
                             {language === 'zh' ? '安全防护参数' : 'Security Parameters'}
                         </div>
-                        <p className="text-xs text-[var(--color-muted-foreground)] -mt-2">
+                        <p className="text-sm text-[var(--color-muted-foreground)] -mt-2">
                             {language === 'zh'
                                 ? '以下参数限制 Agent 的链上交易行为，保护你的资金安全'
                                 : 'These parameters limit what the Agent can do on-chain to protect your funds'}
@@ -146,7 +146,7 @@ export function RentForm({
                         <div className="grid grid-cols-2 gap-4">
                             {/* Slippage - now uses percentage input */}
                             <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-[var(--color-muted-foreground)]">
+                                <label className="text-sm font-semibold text-[var(--color-muted-foreground)]">
                                     {language === 'zh' ? '最大滑点 (%)' : 'Max Slippage (%)'}
                                 </label>
                                 <Input
@@ -159,7 +159,7 @@ export function RentForm({
                                         setParams({ ...params, slippageBps: Math.round(pct * 100) });
                                     }}
                                 />
-                                <p className="text-xs text-[var(--color-muted-foreground)]">
+                                <p className="text-sm text-[var(--color-muted-foreground)]">
                                     {language === 'zh'
                                         ? `Swap 价格偏差上限，最大 ${(schema.maxSlippageBps / 100).toFixed(1)}%`
                                         : `Max price deviation for swaps, up to ${(schema.maxSlippageBps / 100).toFixed(1)}%`}
@@ -168,7 +168,7 @@ export function RentForm({
 
                             {/* Trade Limit */}
                             <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-[var(--color-muted-foreground)]">
+                                <label className="text-sm font-semibold text-[var(--color-muted-foreground)]">
                                     {language === 'zh' ? '单笔上限 (BNB)' : 'Per-Trade Limit (BNB)'}
                                 </label>
                                 <Input
@@ -178,7 +178,7 @@ export function RentForm({
                                         try { setParams({ ...params, tradeLimit: parseEther(e.target.value || "0") }); } catch (e) { }
                                     }}
                                 />
-                                <p className="text-xs text-[var(--color-muted-foreground)]">
+                                <p className="text-sm text-[var(--color-muted-foreground)]">
                                     {language === 'zh'
                                         ? `Agent 每次 Swap 最多投入的金额，上限 ${formatEther(schema.maxTradeLimit)} BNB`
                                         : `Max amount per swap, up to ${formatEther(schema.maxTradeLimit)} BNB`}
@@ -187,7 +187,7 @@ export function RentForm({
 
                             {/* Daily Budget */}
                             <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-[var(--color-muted-foreground)]">
+                                <label className="text-sm font-semibold text-[var(--color-muted-foreground)]">
                                     {language === 'zh' ? '每日预算 (BNB)' : 'Daily Budget (BNB)'}
                                 </label>
                                 <Input
@@ -197,7 +197,7 @@ export function RentForm({
                                         try { setParams({ ...params, dailyLimit: parseEther(e.target.value || "0") }); } catch (e) { }
                                     }}
                                 />
-                                <p className="text-xs text-[var(--color-muted-foreground)]">
+                                <p className="text-sm text-[var(--color-muted-foreground)]">
                                     {language === 'zh'
                                         ? `Agent 当日累计交易上限，每天 UTC 0 点重置，上限 ${formatEther(schema.maxDailyLimit)} BNB`
                                         : `Total daily trading cap, resets at UTC midnight, up to ${formatEther(schema.maxDailyLimit)} BNB`}
@@ -206,7 +206,7 @@ export function RentForm({
 
                             {/* Risk Tier */}
                             <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-[var(--color-muted-foreground)]">
+                                <label className="text-sm font-semibold text-[var(--color-muted-foreground)]">
                                     {language === 'zh' ? '风险偏好' : 'Risk Preference'}
                                 </label>
                                 <select
@@ -218,7 +218,7 @@ export function RentForm({
                                     <option value={2}>{language === 'zh' ? '均衡 (Tier 2)' : 'Balanced (Tier 2)'}</option>
                                     <option value={3}>{language === 'zh' ? '积极 (Tier 3)' : 'Aggressive (Tier 3)'}</option>
                                 </select>
-                                <p className="text-xs text-[var(--color-muted-foreground)]">
+                                <p className="text-sm text-[var(--color-muted-foreground)]">
                                     {language === 'zh'
                                         ? 'Runner 策略决策时参考的风险偏好'
                                         : 'Risk appetite used by Runner strategy decisions'}
@@ -227,7 +227,7 @@ export function RentForm({
                         </div>
 
                         {(!isParamsValid) && (
-                            <p className="text-xs text-red-500 font-medium">
+                            <p className="text-sm text-red-500 font-medium">
                                 {language === 'zh' ? '⚠️ 参数超出了策略模板允许的最大限制' : '⚠️ Parameters exceed template maximums'}
                             </p>
                         )}

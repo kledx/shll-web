@@ -260,7 +260,7 @@ export function OperatorAuthDialog({
                 </DialogFooter>
 
                 {!isProcessing && !isSuccess && (
-                    <p className="text-center text-xs text-[var(--color-muted-foreground)]">
+                    <p className="text-center text-sm text-[var(--color-muted-foreground)]">
                         {t.skipHint}
                     </p>
                 )}

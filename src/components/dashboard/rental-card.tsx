@@ -105,7 +105,7 @@ export function RentalCard({ rental }: RentalCardProps) {
                 <div className="flex justify-between items-start">
                     <div>
                         <CardTitle className="text-lg">{t.dashboard.card.agentLabel} #{tokenId}</CardTitle>
-                        <CardDescription className="text-xs font-mono mt-1">
+                        <CardDescription className="text-sm font-mono mt-1">
                             {formatAddress(rental.agentAccount)}
                         </CardDescription>
                     </div>
@@ -153,7 +153,7 @@ export function RentalCard({ rental }: RentalCardProps) {
                                 <DialogDescription>
                                     {t.dashboard.card.depositDialog.desc}
                                     {agentAccount && (
-                                        <span className="block mt-1 font-mono text-xs">
+                                        <span className="block mt-1 font-mono text-sm">
                                             {t.dashboard.card.depositDialog.account}: {formatAddress(agentAccount)}
                                         </span>
                                     )}

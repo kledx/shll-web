@@ -73,22 +73,22 @@ function CreatePolicyForm() {
             </CardHeader>
             <CardContent className="grid gap-3">
                 <div className="grid grid-cols-3 gap-3">
-                    <div><Label className="text-xs">Policy ID</Label><Input value={policyId} onChange={e => setPolicyId(e.target.value)} /></div>
-                    <div><Label className="text-xs">Version</Label><Input value={version} onChange={e => setVersion(e.target.value)} /></div>
-                    <div><Label className="text-xs">Modules (bitmask)</Label><Input value={modules} onChange={e => setModules(e.target.value)} /></div>
+                    <div><Label className="text-sm">Policy ID</Label><Input value={policyId} onChange={e => setPolicyId(e.target.value)} /></div>
+                    <div><Label className="text-sm">Version</Label><Input value={version} onChange={e => setVersion(e.target.value)} /></div>
+                    <div><Label className="text-sm">Modules (bitmask)</Label><Input value={modules} onChange={e => setModules(e.target.value)} /></div>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
-                    <div><Label className="text-xs">Max Slippage (bps)</Label><Input value={maxSlippage} onChange={e => setMaxSlippage(e.target.value)} /></div>
-                    <div><Label className="text-xs">Max Trade (BNB)</Label><Input value={maxTrade} onChange={e => setMaxTrade(e.target.value)} /></div>
-                    <div><Label className="text-xs">Max Daily (BNB)</Label><Input value={maxDaily} onChange={e => setMaxDaily(e.target.value)} /></div>
+                    <div><Label className="text-sm">Max Slippage (bps)</Label><Input value={maxSlippage} onChange={e => setMaxSlippage(e.target.value)} /></div>
+                    <div><Label className="text-sm">Max Trade (BNB)</Label><Input value={maxTrade} onChange={e => setMaxTrade(e.target.value)} /></div>
+                    <div><Label className="text-sm">Max Daily (BNB)</Label><Input value={maxDaily} onChange={e => setMaxDaily(e.target.value)} /></div>
                 </div>
                 <div className="grid grid-cols-3 gap-3 items-end">
                     <label className="flex items-center gap-2 text-sm">
                         <input type="checkbox" checked={allowExplorer} onChange={e => setAllowExplorer(e.target.checked)} />
                         Explorer Mode
                     </label>
-                    <div><Label className="text-xs">Explorer Trade (BNB)</Label><Input value={explorerMaxTrade} onChange={e => setExplorerMaxTrade(e.target.value)} /></div>
-                    <div><Label className="text-xs">Explorer Daily (BNB)</Label><Input value={explorerMaxDaily} onChange={e => setExplorerMaxDaily(e.target.value)} /></div>
+                    <div><Label className="text-sm">Explorer Trade (BNB)</Label><Input value={explorerMaxTrade} onChange={e => setExplorerMaxTrade(e.target.value)} /></div>
+                    <div><Label className="text-sm">Explorer Daily (BNB)</Label><Input value={explorerMaxDaily} onChange={e => setExplorerMaxDaily(e.target.value)} /></div>
                 </div>
                 <label className="flex items-center gap-2 text-sm">
                     <input type="checkbox" checked={allowUpdate} onChange={e => setAllowUpdate(e.target.checked)} />
@@ -117,8 +117,8 @@ function FreezePolicyForm() {
             </CardHeader>
             <CardContent className="grid gap-3">
                 <div className="grid grid-cols-2 gap-3">
-                    <div><Label className="text-xs">Policy ID</Label><Input value={policyId} onChange={e => setPolicyId(e.target.value)} /></div>
-                    <div><Label className="text-xs">Version</Label><Input value={version} onChange={e => setVersion(e.target.value)} /></div>
+                    <div><Label className="text-sm">Policy ID</Label><Input value={policyId} onChange={e => setPolicyId(e.target.value)} /></div>
+                    <div><Label className="text-sm">Version</Label><Input value={version} onChange={e => setVersion(e.target.value)} /></div>
                 </div>
                 <Button variant="destructive" onClick={() => writeContract({
                     address: CONTRACTS.PolicyGuardV3.address,
@@ -160,14 +160,14 @@ function GroupMembersForm() {
             </CardHeader>
             <CardContent className="grid gap-3">
                 <div className="grid grid-cols-2 gap-3">
-                    <div><Label className="text-xs">Group ID</Label><Input value={groupId} onChange={e => setGroupId(e.target.value)} /></div>
+                    <div><Label className="text-sm">Group ID</Label><Input value={groupId} onChange={e => setGroupId(e.target.value)} /></div>
                     <div className="flex items-end gap-2">
                         <Button variant={adding ? "default" : "outline"} size="sm" onClick={() => setAdding(true)}>Add</Button>
                         <Button variant={!adding ? "destructive" : "outline"} size="sm" onClick={() => setAdding(false)}>Remove</Button>
                     </div>
                 </div>
                 <div>
-                    <Label className="text-xs">Addresses (one per line or comma-separated)</Label>
+                    <Label className="text-sm">Addresses (one per line or comma-separated)</Label>
                     <textarea
                         value={addresses}
                         onChange={e => setAddresses(e.target.value)}
@@ -198,7 +198,7 @@ function BlockTargetForm() {
                 <CardTitle className="flex items-center gap-2 text-sm"><Ban className="h-4 w-4" /> Block / Unblock Target</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3">
-                <div><Label className="text-xs">Target Address</Label><Input value={target} onChange={e => setTarget(e.target.value)} placeholder="0x..." /></div>
+                <div><Label className="text-sm">Target Address</Label><Input value={target} onChange={e => setTarget(e.target.value)} placeholder="0x..." /></div>
                 <div className="flex gap-2">
                     <Button variant="destructive" disabled={isPending} onClick={() => writeContract({
                         address: CONTRACTS.PolicyGuardV3.address,
@@ -231,7 +231,7 @@ function SetAddressForm({ label, fnName, icon: Icon }: { label: string; fnName: 
                 <CardTitle className="flex items-center gap-2 text-sm"><Icon className="h-4 w-4" /> {label}</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3">
-                <div><Label className="text-xs">Address</Label><Input value={addr} onChange={e => setAddr(e.target.value)} placeholder="0x..." /></div>
+                <div><Label className="text-sm">Address</Label><Input value={addr} onChange={e => setAddr(e.target.value)} placeholder="0x..." /></div>
                 <Button disabled={isPending} onClick={() => writeContract({
                     address: CONTRACTS.PolicyGuardV3.address,
                     abi: ADMIN_ABI.PolicyGuardV3,
@@ -278,14 +278,14 @@ function PolicyStatus() {
             </CardHeader>
             <CardContent className="grid gap-3">
                 <div className="grid grid-cols-2 gap-3">
-                    <div><Label className="text-xs">Policy ID</Label><Input value={policyId} onChange={e => setPolicyId(e.target.value)} /></div>
-                    <div><Label className="text-xs">Version</Label><Input value={version} onChange={e => setVersion(e.target.value)} /></div>
+                    <div><Label className="text-sm">Policy ID</Label><Input value={policyId} onChange={e => setPolicyId(e.target.value)} /></div>
+                    <div><Label className="text-sm">Version</Label><Input value={version} onChange={e => setVersion(e.target.value)} /></div>
                 </div>
                 <div className="rounded-lg bg-[var(--color-muted)]/30 p-3 text-sm space-y-1 font-mono">
                     <div>Exists: <span className={exists ? "text-green-600" : "text-red-500"}>{String(exists ?? "—")}</span></div>
                     <div>Frozen: <span className={frozen ? "text-amber-600" : "text-green-600"}>{String(frozen ?? "—")}</span></div>
                     {schema && typeof schema === "object" && (
-                        <pre className="mt-2 text-xs overflow-auto max-h-40 whitespace-pre-wrap">
+                        <pre className="mt-2 text-sm overflow-auto max-h-40 whitespace-pre-wrap">
                             {JSON.stringify(schema, (_, v) => typeof v === "bigint" ? v.toString() : v, 2)}
                         </pre>
                     )}

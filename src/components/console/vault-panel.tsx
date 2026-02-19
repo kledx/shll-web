@@ -144,17 +144,17 @@ export function VaultPanel({
                     <CardTitle className="text-xl font-serif">{t.agent.vault.title}</CardTitle>
                     <CardDescription>{t.agent.vault.desc}</CardDescription>
                     {readOnly && (
-                        <div className="text-xs text-amber-700">
+                        <div className="text-sm text-amber-700">
                             {ui.readOnlyHint}
                         </div>
                     )}
                     {!allowWithdraw && (
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-sm text-muted-foreground">
                             {ui.safeModeHint}
                         </div>
                     )}
                     {!readOnly && isOwner && !isRenter && (
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-sm text-muted-foreground">
                             Owner cannot operate vault directly; only active renter can deposit/withdraw.
                         </div>
                     )}
@@ -174,7 +174,7 @@ export function VaultPanel({
                                     <DialogDescription>
                                         {ui.depositDialogDesc}
                                         {agentAccount && (
-                                            <span className="block mt-1 font-mono text-xs">
+                                            <span className="block mt-1 font-mono text-sm">
                                                 {ui.accountLabel}: {agentAccount.slice(0, 8)}...{agentAccount.slice(-6)}
                                             </span>
                                         )}
@@ -314,11 +314,11 @@ export function VaultPanel({
                             <div key={i} className="flex items-center justify-between p-2 border rounded bg-muted/20">
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-full bg-[var(--color-burgundy)]/10 flex items-center justify-center">
-                                        <span className="text-xs font-bold text-[var(--color-burgundy)]">{asset.symbol[0]}</span>
+                                        <span className="text-sm font-bold text-[var(--color-burgundy)]">{asset.symbol[0]}</span>
                                     </div>
                                     <div>
                                         <div className="font-medium">{asset.symbol}</div>
-                                        <div className="text-xs text-muted-foreground">{asset.isNative ? t.agent.vault.assets.native : t.agent.vault.assets.erc20}</div>
+                                        <div className="text-sm text-muted-foreground">{asset.isNative ? t.agent.vault.assets.native : t.agent.vault.assets.erc20}</div>
                                     </div>
                                 </div>
                                 <div className="text-right">

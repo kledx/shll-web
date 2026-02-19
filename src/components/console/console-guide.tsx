@@ -66,7 +66,7 @@ export function ConsoleGuide({ guide, tokenId }: ConsoleGuideProps) {
                 </div>
                 <button
                     onClick={dismiss}
-                    className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-indigo-500 hover:bg-indigo-100 transition-colors"
+                    className="flex items-center gap-1 rounded-md px-2 py-1 text-sm font-medium text-indigo-500 hover:bg-indigo-100 transition-colors"
                 >
                     {guide.dismiss}
                     <X className="h-3 w-3" />
@@ -83,7 +83,7 @@ export function ConsoleGuide({ guide, tokenId }: ConsoleGuideProps) {
                         <div className="mt-0.5 flex-shrink-0">{step.icon}</div>
                         <div className="min-w-0">
                             <div className="text-sm font-semibold text-slate-800">{step.title}</div>
-                            <div className="text-xs text-slate-500 mt-0.5 leading-relaxed">{step.desc}</div>
+                            <div className="text-sm text-slate-500 mt-0.5 leading-relaxed">{step.desc}</div>
                         </div>
                     </div>
                 ))}
