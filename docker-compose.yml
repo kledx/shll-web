@@ -11,13 +11,17 @@ services:
       - PORT=3000
       - HOSTNAME=0.0.0.0
 
-      # ─── Backend Service URLs ───
-      - PONDER_URL=http://shll-indexer:42069
-      - RUNNER_URL=http://shll-agent-runner:8787
+      # ─── Backend Service URLs (Internal SSR) ───
+      - PONDER_URL=${PONDER_URL:-http://shll-indexer:42069}
+      - RUNNER_URL=${RUNNER_URL:-http://shll-agent-runner:8787}
       - RUNNER_API_KEY=${RUNNER_API_KEY:-}
       - API_KEY=${API_KEY:-}
 
-      # ─── Contract Addresses (V3.1 — BSC Testnet) ───
+      # ─── Public Facing URLs (Browser Clients) ───
+      - NEXT_PUBLIC_INDEXER_URL=${NEXT_PUBLIC_INDEXER_URL:-http://localhost:42069}
+      - NEXT_PUBLIC_RUNNER_URL=${NEXT_PUBLIC_RUNNER_URL:-http://localhost:8787}
+
+      # ─── Contract Addresses (V3.1) ───
       - NEXT_PUBLIC_AGENT_NFA=${NEXT_PUBLIC_AGENT_NFA:-0xbB5059ad07bBd2d10d2e67fF842ce2D5e55eCD82}
       - NEXT_PUBLIC_LISTING_MANAGER=${NEXT_PUBLIC_LISTING_MANAGER:-0x58edca3cd175a3e306e9b16125fec75483681cf6}
       - NEXT_PUBLIC_POLICY_GUARD_V3=${NEXT_PUBLIC_POLICY_GUARD_V3:-0x31Bd83f2C3A41154F88296c145E36A64E32729A5}
