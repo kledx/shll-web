@@ -88,7 +88,7 @@ export function MarketplaceList() {
                     {t.marketplace.noResults}
                 </div>
             ) : (
-                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     {filteredListings.map((listing) => (
                         <AgentCard
                             key={`${listing.nfaAddress}-${listing.tokenId}`}

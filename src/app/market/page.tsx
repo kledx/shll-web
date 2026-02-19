@@ -109,7 +109,7 @@ export default function MarketPage() {
 
                         {/* Grid */}
                         {filteredListings.length > 0 ? (
-                            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6 xl:grid-cols-3">
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                 {filteredListings.map((listing) => (
                                     <AgentCard
                                         key={`${listing.nfaAddress}-${listing.tokenId}`}

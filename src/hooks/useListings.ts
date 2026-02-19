@@ -152,12 +152,14 @@ export function useListings() {
     const isRented = effectiveRenter !== zeroAddress;
 
     let agentName = typeof item.agentName === "string" && item.agentName.trim() ? item.agentName : `Agent #${tokenId}`;
+    let agentDesc: string | undefined;
     try {
       if (readIndex !== undefined) {
         const metadata = metadataResults?.[readIndex]?.result as MetadataResult | undefined;
         if (metadata?.persona) {
-          const parsed = JSON.parse(metadata.persona) as { name?: string };
+          const parsed = JSON.parse(metadata.persona) as { name?: string; description?: string };
           if (parsed.name) agentName = parsed.name;
+          if (parsed.description) agentDesc = parsed.description;
         }
       }
     } catch {
@@ -177,7 +179,7 @@ export function useListings() {
       isTemplate: Boolean(item.isTemplate),
       agentType: decodeAgentType(typeof item.agentType === "string" ? item.agentType : undefined),
       capabilities: ["swap"], // Hardcoded for now
-      metadata: { name: agentName },
+      metadata: { name: agentName, description: agentDesc },
     };
   });
 

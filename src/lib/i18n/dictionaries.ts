@@ -278,7 +278,7 @@ export const en = {
             faq: "FAQ"
         },
         quickstart: {
-            intro: "New to SHLL? Follow this path once and you can run an agent safely end-to-end.",
+            intro: "New to SHLL? Follow this path once and you can run an AI agent safely end-to-end with on-chain policy enforcement.",
             prerequisitesTitle: "Before you start",
             prerequisites: [
                 "Use BSC Testnet and keep some tBNB for gas.",
@@ -293,206 +293,218 @@ export const en = {
                     url: "/market"
                 },
                 {
-                    title: "2. Rent an agent",
-                    desc: "Open an agent detail page and rent it. After success, the UserOf right is minted to your wallet for the lease window.",
+                    title: "2. Rent-to-Mint an agent",
+                    desc: "Pick an agent template from the marketplace and rent it. SHLL mints a new on-chain instance — you own the NFT, the AI operates within your policy guardrails.",
                     action: "Open My Dashboard",
                     url: "/me"
                 },
                 {
-                    title: "3. Open console and complete preflight",
-                    desc: "From My Dashboard, enter Agent Detail -> Console. Confirm renter status, strategy mode, and operator readiness before execution.",
+                    title: "3. Configure and launch from Console",
+                    desc: "Open the agent Console from My Dashboard. Configure your safety limits (they cannot exceed the template ceiling), deposit funds into the vault, and enable autopilot.",
                     action: "Open My Dashboard",
                     url: "/me"
                 },
                 {
-                    title: "4. Run safely with guardrails",
-                    desc: "Use strategy evaluation first, then execute only when simulation passes and policy constraints are satisfied.",
-                    action: "Read Runtime",
-                    url: "#runtime"
+                    title: "4. Monitor with full transparency",
+                    desc: "Watch the AI reasoning log in real time. Every decision, every trade, every policy check is recorded on-chain and displayed in the Console history.",
+                    action: "Read Security Model",
+                    url: "#security"
                 }
             ],
-            pathsTitle: "Recommended path",
+            pathsTitle: "Recommended paths",
             paths: [
-                "Marketplace: /market",
-                "My agents and rentals: /me",
-                "Agent detail: /agent/{nfa}/{tokenId}",
-                "Agent console: /agent/{nfa}/{tokenId}/console"
+                "Marketplace: /market — browse and rent agent templates",
+                "My Dashboard: /me — manage owned and rented agents",
+                "Agent Detail: /agent/{nfa}/{tokenId} — overview, vault, history",
+                "Agent Console: /agent/{nfa}/{tokenId}/console — configure, execute, monitor"
             ]
         },
         runtime: {
-            intro: "SHLL separates permission, execution, and operations so each layer has explicit boundaries.",
+            intro: "SHLL separates identity, policy, execution, and automation into distinct layers with explicit boundaries.",
             actorsTitle: "Who does what",
             actors: [
                 {
-                    name: "Owner",
-                    responsibility: "Lists an agent, defines policy/capability packs, and receives rent.",
+                    name: "Owner / Creator",
+                    responsibility: "Mints agent templates, defines policy ceilings and capability packs, lists on marketplace, and receives rent.",
                     boundary: "Cannot execute renter session actions unless owner is also the active renter."
                 },
                 {
                     name: "Renter",
-                    responsibility: "Gets temporary UserOf control and sends strategy or transaction intents.",
-                    boundary: "Cannot bypass policy checks or extract vault assets to arbitrary addresses."
+                    responsibility: "Rents an agent via Rent-to-Mint, configures safety limits within ceilings, deposits funds, and controls autopilot.",
+                    boundary: "Cannot bypass policy checks, exceed ceilings, or extract vault assets to arbitrary addresses."
                 },
                 {
-                    name: "Runner",
-                    responsibility: "Off-chain service that watches enabled tokens and submits execution requests.",
-                    boundary: "Runs with operator keys but is still constrained by on-chain policy and account binding."
+                    name: "Runner (AI Agent)",
+                    responsibility: "Off-chain service that autonomously monitors markets, reasons with LLM, and submits execution requests via tool calling.",
+                    boundary: "Runs with operator keys but is fully constrained by on-chain PolicyGuard — even if compromised, cannot bypass policy."
                 }
             ],
-            conceptsTitle: "Action and capability pack",
+            conceptsTitle: "Core concepts",
             concepts: [
                 {
-                    name: "Action",
-                    desc: "The smallest executable unit submitted by user or runner.",
-                    detail: "Contains target contract, value, calldata and execution intent metadata."
+                    name: "Autonomous AI Agent",
+                    desc: "Every SHLL agent is an autonomous AI — it observes markets, reasons about your strategy, and acts via tool calling. All decisions are self-directed within policy guardrails.",
+                    detail: "The AI brain receives market context, vault state, and your instructions, then independently decides what action to take and when."
                 },
                 {
-                    name: "Capability Pack",
-                    desc: "A per-agent function bundle that defines which action templates are available.",
-                    detail: "It constrains supported protocols, action schemas, and strategy-specific parameters."
+                    name: "Composable Policy",
+                    desc: "PolicyGuardV4 is a router that delegates validation to specialized policy contracts like DefiGuardPolicy.",
+                    detail: "Each policy contract enforces a specific domain (DeFi, NFT, etc.) with its own validation rules. New domains can be added without modifying the core."
                 },
                 {
-                    name: "Policy Bundle",
-                    desc: "Risk constraints enforced at execution time.",
-                    detail: "Even valid capability actions are blocked if whitelist, amount, slippage, or destination rules fail."
+                    name: "Ceiling vs User Config",
+                    desc: "Template owners set hard ceilings. Renters configure their own limits that cannot exceed those ceilings.",
+                    detail: "This two-layer design ensures renters are always within safe bounds set by the creator, even if they misconfigure."
                 }
             ],
-            actionFieldsTitle: "Typical action fields",
+            actionFieldsTitle: "How LLM agents make decisions",
             actionFields: [
-                "tokenId: which agent instance to execute",
-                "target: destination contract",
-                "value: native token amount",
-                "data: encoded calldata",
-                "intent: semantic type such as swap, repay, raw"
+                "LLM agent receives market data, vault balance, and strategy instructions as context.",
+                "It reasons through the situation and selects a tool (swap, wait, wrap, done).",
+                "The selected tool builds the on-chain action payload automatically.",
+                "Simulation runs before submission — if it would fail, the action is not sent.",
+                "PolicyGuard validates the action on-chain even after simulation passes."
             ],
-            mappingTitle: "How pack becomes action",
+            mappingTitle: "Adaptive Scheduler",
             mapping: [
-                "1) Console loads capability pack by tokenId.",
-                "2) UI renders allowed templates from that pack.",
-                "3) User fills parameters and builder creates action payload.",
-                "4) Preflight and simulation run before send.",
-                "5) Runner or user submits action for on-chain validation."
+                "1) Each agent token has its own check interval, dynamically suggested by the LLM.",
+                "2) Single-use tasks (e.g. 'buy 100 USDT of WBNB') complete and auto-disable autopilot.",
+                "3) Monitoring tasks (e.g. 'buy when price drops 5%') set longer intervals between checks.",
+                "4) The scheduler respects a minimum interval (minIntervalMs) as a safeguard.",
+                "5) Agent status is displayed in the Console: 'Task completed', 'Next check in Xm', etc."
             ],
             flowTitle: "Execution lifecycle",
             flow: [
-                "1) User or runner submits an intent for tokenId.",
-                "2) AgentNFA verifies caller role and lease validity.",
-                "3) AgentNFA routes action to PolicyGuard.validate(...).",
-                "4) PolicyGuard enforces whitelist, amount caps, slippage and destination constraints.",
-                "5) AgentAccount executes the call only when validated.",
-                "6) Result and status are indexed for console history and diagnostics.",
-                "7) Runner loop continues based on strategy interval and health status."
+                "1) Scheduler triggers the agent brain for a specific tokenId.",
+                "2) LLM agent receives market context, vault state, and strategy instructions.",
+                "3) LLM reasons and calls a tool (e.g. swap) with specific parameters.",
+                "4) Runner builds Action{target, value, data} from the tool call.",
+                "5) Simulation runs off-chain — if it reverts, execution stops and logs the reason.",
+                "6) AgentNFA verifies caller role and lease validity.",
+                "7) PolicyGuardV4 routes to DefiGuardPolicy for five-layer validation.",
+                "8) AgentAccount executes the call only when all policies pass.",
+                "9) Result is indexed for Console history, AI reasoning log, and diagnostics."
             ],
-            multiTenantTitle: "Single runner, multiple tokenIds",
+            multiTenantTitle: "Single runner, multiple agents",
             multiTenant: [
                 "One runner instance can manage many agents by ALLOWED_TOKEN_IDS filtering.",
-                "Per-token execution state is isolated in storage (locks, health, strategy status).",
-                "Different strategies are resolved per token using capability pack and policy bundle metadata.",
-                "Operationally this reduces deployment count, while keeping on-chain isolation unchanged."
+                "Per-token execution state is isolated in storage (locks, health, strategy, interval).",
+                "Each agent's AI brain is resolved per token — execution logic and strategy context are fully isolated.",
+                "This reduces deployment count while keeping on-chain fund isolation unchanged."
             ],
-            failureTitle: "If status is false",
+            failureTitle: "Troubleshooting",
             failures: [
                 "Check wallet role: current wallet must match active renter for the token.",
                 "Check operator authorization on-chain for your operator address.",
-                "Check runner health endpoint and market signal sync status.",
-                "Check DB and RPC connectivity before re-running strategy evaluation."
+                "Check runner health endpoint and AI reasoning log for error details.",
+                "Check vault balance: ensure sufficient funds for the intended trade.",
+                "Check policy configuration: your limits may be blocking the action."
             ]
         },
         security: {
-            intro: "Make DeFi agent rental auditable, reproducible, and safe-by-default instead of key handover.",
-            promise: "SHLL does not promise profit. We promise clear permissions, isolated funds, controllable execution, and auditable behavior.",
+            intro: "SHLL is an AI Agent Security Protocol — the AI decides what to do, PolicyGuard decides whether it is allowed, the smart contract executes or reverts.",
+            promise: "SHLL does not promise profit. We promise clear permissions, isolated funds, controllable execution, and auditable behavior. Trust is replaced by cryptographic enforcement.",
             diagramsTitle: "Security visual overview",
-            diagramsDesc: "Two diagrams summarize the non-bypassable execution path and four-layer isolation design.",
+            diagramsDesc: "Two diagrams summarize the non-bypassable execution path and the layered isolation design.",
             executionDiagramTitle: "Execution flow diagram",
             executionDiagramAlt: "SHLL security execution flow diagram",
             architectureDiagramTitle: "Layered architecture diagram",
-            architectureDiagramAlt: "SHLL four-layer security architecture diagram",
+            architectureDiagramAlt: "SHLL layered security architecture diagram",
             problemsTitle: "What security problems SHLL solves",
             problems: [
-                "Private-key custody risk: users should not hand over EOA private keys to bots.",
-                "Privilege escalation risk: agent must not have unrestricted arbitrary contract calls.",
-                "Opaque execution risk: users need readable policy and clear reject reasons."
+                "Private-key custody risk: users should not hand over EOA private keys to bots or platforms.",
+                "Unconstrained execution: AI agents must not have unrestricted arbitrary contract call capability.",
+                "Opaque decision-making: users need to see what the AI decided, why, and whether policy approved or rejected it."
             ],
             actorsTitle: "Participants and permission boundaries",
             actors: [
-                "Owner: mint/list agent, configure policy, reuse the agent after lease ends.",
-                "Renter: gets lease-time usage right and can submit controlled DeFi actions.",
-                "Policy Admin: maintains allowlist and limits through policy bundle release flow.",
-                "Runner/Operator: optional automation trigger service, not a privileged fund custodian."
+                "Owner: mints agent template, sets policy ceilings and capability packs, receives rent revenue.",
+                "Renter: rents via Rent-to-Mint, configures limits within ceilings, owns the instance NFT during lease.",
+                "PolicyGuard: on-chain firewall that validates every action against five security layers.",
+                "Runner/Operator: automation trigger with AI reasoning, not a privileged fund custodian."
             ],
-            architectureTitle: "Four-layer security architecture",
+            architectureTitle: "PolicyGuardV4 — Five security layers",
             architecture: [
                 {
-                    title: "1) AgentNFA (Identity Layer)",
+                    title: "1) Spending Limits",
                     points: [
-                        "Implements ERC-721 + ERC-4907 + BAP-578 agent identity semantics.",
-                        "Routes permissions and lifecycle (pause/terminate).",
-                        "Only current renter can execute during valid lease."
+                        "Maximum amount per single transaction.",
+                        "Maximum cumulative amount per day (24h rolling window).",
+                        "Maximum slippage tolerance enforced at the contract level."
                     ]
                 },
                 {
-                    title: "2) AgentAccount (Vault Layer)",
+                    title: "2) Token Whitelist",
                     points: [
-                        "One tokenId maps to one isolated vault contract.",
-                        "Accepts execution only from bound AgentNFA.",
-                        "Withdraw destination is restricted to caller self-address."
+                        "Agent can only trade pre-approved tokens.",
+                        "No rug pull tokens, no random memecoins.",
+                        "Both input and output tokens must be on the whitelist."
                     ]
                 },
                 {
-                    title: "3) PolicyGuard (On-chain Firewall)",
+                    title: "3) DEX Whitelist",
                     points: [
-                        "Validates target + selector + parameter-level constraints.",
-                        "Enforces allowlist and hard limits.",
-                        "Blocks unlimited approve and unsafe destination patterns."
+                        "Trades are restricted to approved DEX routers only.",
+                        "No interaction with malicious or unverified contracts.",
+                        "Function selectors are also validated per router."
                     ]
                 },
                 {
-                    title: "4) ListingManager (Market Layer)",
+                    title: "4) Cooldown",
                     points: [
-                        "Handles listing, rent, extension, and rental state transitions.",
-                        "Controls ERC-4907 userOf assignment.",
-                        "Prevents arbitrary external overwrite of renter role."
+                        "Minimum time enforced between consecutive actions.",
+                        "Prevents rapid-fire trading during flash crashes or exploits.",
+                        "Configurable per template by the owner."
+                    ]
+                },
+                {
+                    title: "5) Receiver Guard",
+                    points: [
+                        "Swap output and fund transfers can only go to the agent's own vault.",
+                        "The agent cannot drain funds to an unknown wallet.",
+                        "Withdraw destination is restricted to the renter's own address."
                     ]
                 }
             ],
-            bapTitle: "Why BAP-578 matters",
+            bapTitle: "Contract architecture layers",
             bap: [
-                "Standardized on-chain agent identity and metadata schema.",
-                "Consistent executeAction-style interface for ecosystem integrations.",
-                "Portable rental and status semantics across products and tooling.",
-                "Better composability: wallets, indexers, and strategy UIs can integrate once."
+                "AgentNFA: ERC-721 + ERC-4907 identity layer — manages ownership, rental rights, and lifecycle controls (pause/terminate).",
+                "AgentAccount: isolated vault per tokenId — accepts execution only from bound AgentNFA, one agent one vault.",
+                "PolicyGuardV4: composable policy router — delegates to domain-specific policies like DefiGuardPolicy.",
+                "ListingManager: marketplace layer — handles listing, Rent-to-Mint, extension, and ERC-4907 userOf assignment."
             ],
             invariantTitle: "Non-bypassable invariant",
-            invariant: "All renter execution must follow AgentNFA -> PolicyGuard.validate -> AgentAccount.executeCall.",
-            executionTitle: "Execution path (swap example)",
+            invariant: "All execution must follow: AgentNFA → PolicyGuardV4.validate → DefiGuardPolicy.check → AgentAccount.executeCall. No shortcut exists.",
+            executionTitle: "Execution path (with AI reasoning)",
             execution: [
-                "1) Renter fills swap parameters in Console.",
-                "2) Frontend builds Action{target,value,data}.",
-                "3) Simulate first to get PolicyViolation reason before send.",
-                "4) Execute calls AgentNFA.execute(tokenId, action).",
-                "5) PolicyGuard validates target, selector, path, deadline, amount, destination.",
-                "6) AgentAccount.executeCall runs external protocol interaction."
+                "1) LLM agent receives market data and reasons about the next action.",
+                "2) AI calls a tool (e.g. swap) — the tool builds Action{target, value, data}.",
+                "3) Runner simulates the action off-chain to catch policy violations early.",
+                "4) Execute calls AgentNFA.execute(tokenId, action) on-chain.",
+                "5) PolicyGuardV4 routes to DefiGuardPolicy — checks all five layers.",
+                "6) If all checks pass, AgentAccount.executeCall runs the DeFi interaction."
             ],
-            allowlistTitle: "PolicyGuard allowlist dimensions",
+            allowlistTitle: "Ceiling vs User Config (two-layer limits)",
             allowlist: [
-                "targetAllowed[target]: approved protocol contract addresses.",
-                "selectorAllowed[target][selector]: approved function selectors.",
-                "tokenAllowed[token]: approved tokens in swap/approve path.",
-                "spenderAllowed[token][spender]: approved spender contracts."
+                "Template ceiling: hard limits set by the agent creator, cannot be exceeded by anyone.",
+                "User config: renter's own limits, must be ≤ ceiling values.",
+                "If user sets maxAmountPerTx = 50 USDT but ceiling is 100 USDT, the effective limit is 50 USDT.",
+                "If user tries to set a limit above the ceiling, the system rejects the configuration."
             ],
-            constraintsTitle: "Parameter-level hard constraints",
+            constraintsTitle: "What each layer checks",
             constraints: [
-                "Swap recipient must equal AgentAccount vault address.",
-                "Deadline must be within maxDeadlineWindow.",
-                "Path length must be <= maxPathLength and tokens must be allowlisted.",
-                "Unlimited approve is blocked; approve amount must be capped.",
-                "repayBorrowBehalf borrower must equal current renter."
+                "Spending Limits: per-tx amount ≤ maxAmountPerTx, daily total ≤ maxAmountPerDay, slippage ≤ maxSlippage.",
+                "Token Whitelist: both tokenIn and tokenOut must be in the approved token list.",
+                "DEX Whitelist: target router must be approved, function selector must be allowed for that router.",
+                "Cooldown: block.timestamp - lastActionTime must be ≥ cooldownSeconds.",
+                "Receiver Guard: swap recipient / transfer destination must equal the agent vault address."
             ],
-            runnerTitle: "Why runner is not a custody service",
+            runnerTitle: "Why the AI agent is not a custody risk",
             runner: [
-                "Runner acts as trigger: Observe -> Decide -> Build Action -> Simulate -> Execute.",
-                "If simulate fails, execute is not sent.",
-                "Even compromised runner cannot bypass on-chain PolicyGuard validation."
+                "The AI decides what to trade — PolicyGuard decides whether it is allowed.",
+                "Even if the AI is compromised or hallucinating, on-chain policies cannot be bypassed.",
+                "All five policy layers are enforced at the smart contract level, not in the AI or backend.",
+                "Every AI decision is logged in the reasoning log for full auditability."
             ],
             comparisonTitle: "Security comparison with typical platforms",
             comparisonColumns: {
@@ -509,22 +521,22 @@ export const en = {
                 {
                     dimension: "Execution privilege",
                     baseline: "Often arbitrary contract call capability.",
-                    shll: "On-chain firewall checks target/selector/params."
+                    shll: "Five-layer on-chain firewall validates every action."
                 },
                 {
-                    dimension: "Auditability",
-                    baseline: "Hard to inspect what bot will do.",
-                    shll: "Readable action/policy and explicit reject reasons."
+                    dimension: "AI transparency",
+                    baseline: "Black box — hard to inspect what the bot will do.",
+                    shll: "Full AI reasoning log with intent, analysis, and outcome."
                 },
                 {
                     dimension: "Blast radius",
                     baseline: "Shared wallet or pooled exposure.",
-                    shll: "One tokenId one vault isolation."
+                    shll: "One tokenId, one vault — complete fund isolation."
                 },
                 {
-                    dimension: "Automation safety",
-                    baseline: "Blind auto-send is common.",
-                    shll: "Simulation-first and on-chain re-validation."
+                    dimension: "Rate limiting",
+                    baseline: "No limit on trade frequency.",
+                    shll: "On-chain cooldown prevents rapid-fire trading."
                 },
                 {
                     dimension: "Permission revoke",
@@ -532,59 +544,81 @@ export const en = {
                     shll: "Lease expiry via ERC-4907 plus pause/terminate controls."
                 }
             ],
-            defendTitle: "What SHLL can defend (MVP scope)",
+            defendTitle: "What SHLL defends against",
             defend: [
-                "Renter attempting to redirect vault assets to third-party addresses.",
-                "Unlimited-approve then drain pattern.",
-                "repayBorrowBehalf risk transfer abuse.",
-                "Compromised runner sending out-of-policy actions."
+                "AI agent attempting to drain vault to third-party addresses (Receiver Guard).",
+                "Excessive single-trade or daily spending (Spending Limits).",
+                "Trading rug-pull or unauthorized tokens (Token Whitelist).",
+                "Interaction with malicious smart contracts (DEX Whitelist).",
+                "Rapid-fire trading during market crashes (Cooldown).",
+                "Compromised runner sending out-of-policy actions (all five layers)."
             ],
             limitsTitle: "Known assumptions and external risk surfaces",
             limits: [
-                "Allowlist quality depends on operator governance and review discipline.",
-                "Allowlisted external protocols still carry their own protocol-level risk.",
-                "Market/MEV/slippage risk is managed and bounded, but not eliminable.",
-                "Post-lease owner actions follow asset ownership rules by design."
+                "Whitelist quality depends on operator governance and review discipline.",
+                "Whitelisted external protocols still carry their own protocol-level risk.",
+                "Market/MEV/slippage risk is bounded by policy but not eliminable.",
+                "AI reasoning quality depends on the underlying LLM model capability."
             ],
             userGuideTitle: "User safety guide",
             userGuide: [
-                "Review Policy Summary before renting.",
-                "Run Simulate before every execute.",
-                "Only deposit capital you are willing to risk.",
-                "Stop or pause quickly on abnormal behavior.",
-                "Use autopilot only with understood strategies."
+                "Review the five policy layers before renting — understand what the agent can and cannot do.",
+                "Configure your own safety limits within the template ceiling.",
+                "Only deposit capital you are willing to risk in the agent vault.",
+                "Monitor the AI reasoning log regularly for unexpected behavior.",
+                "Use pause or terminate immediately if you see abnormal activity."
             ],
-            developerGuideTitle: "Developer secure extension flow",
+            developerGuideTitle: "Developer: adding new policy domains",
             developerGuide: [
-                "Declare protocol target + selector explicitly.",
-                "Implement parameter-level validation in PolicyGuard.",
-                "Update allowlist bundle with limits and hashes.",
-                "Apply + check + audit policy updates with scripts.",
-                "Add tests for normal pass and adversarial parameters."
+                "Create a new policy contract implementing the IPolicy interface.",
+                "Register the policy with PolicyGuardV4 via the composable router.",
+                "Define domain-specific validation rules (e.g. NFT policies, lending policies).",
+                "Write tests for both valid and adversarial parameters.",
+                "Deploy and register via admin dashboard or Foundry scripts."
             ],
             warningTitle: "Security reminder",
-            warning: "Authorizing an operator allows action submission, not policy bypass."
+            warning: "Authorizing an operator allows action submission, not policy bypass. All five security layers are enforced at the smart contract level — not in the AI, not in the backend."
         },
         faq: {
             title: "Frequently Asked Questions",
             items: [
                 {
-                    q: "Do renters need to hand private keys to SHLL?",
-                    a: "No. Renters sign with their own wallet. On-chain contracts validate and execute actions."
+                    q: "Do I need to hand my private keys to SHLL?",
+                    a: "No. You sign with your own wallet. SHLL mints an isolated agent instance for you — your main wallet is never exposed to the AI."
                 },
                 {
-                    q: "Can runner steal funds from my vault?",
-                    a: "Runner cannot directly control the vault. It can only submit execute requests, and every request is checked by PolicyGuard."
+                    q: "Can the AI agent steal funds from my vault?",
+                    a: "No. Every action the AI takes is validated by five on-chain policy layers (PolicyGuardV4). Even if the AI is compromised, it cannot bypass smart contract enforcement."
                 },
                 {
-                    q: "Why use NFA (BAP-578)?",
-                    a: "NFA standardizes agent identity, rental rights, and execute interfaces, making integration and composability easier."
+                    q: "What is Rent-to-Mint?",
+                    a: "When you rent an agent, SHLL mints a new on-chain instance (NFA). You own the NFT, the AI operates it, but all actions are constrained by PolicyGuard. The agent gets its own isolated vault."
+                },
+                {
+                    q: "What is the difference between ceiling and user config?",
+                    a: "The template creator sets hard ceilings (maximum limits). As a renter, you configure your own limits that cannot exceed those ceilings. This ensures you are always within safe bounds."
+                },
+                {
+                    q: "How does the LLM agent make trading decisions?",
+                    a: "The LLM agent receives market data, vault balance, and your strategy instructions. It reasons through the situation and calls tools (swap, wait, done) to execute. Every decision is logged in the AI reasoning log."
+                },
+                {
+                    q: "What is Cooldown and why does it matter?",
+                    a: "Cooldown enforces a minimum time between consecutive actions at the contract level. This prevents the AI from rapid-fire trading during flash crashes or exploits."
+                },
+                {
+                    q: "How do I pause or stop my agent?",
+                    a: "You can disable autopilot from the Console at any time. You can also use the pause or terminate controls to immediately halt all agent execution on-chain."
+                },
+                {
+                    q: "What happens when my rental expires?",
+                    a: "When the lease ends, the ERC-4907 userOf right expires automatically. The agent can no longer execute actions on your behalf. You can withdraw remaining vault funds at any time."
                 }
             ]
         },
         cta: {
-            title: "Ready to run your first safe strategy?",
-            desc: "Start from Marketplace, rent an agent, then execute through Console with policy-aware preflight.",
+            title: "Ready to run your first AI agent safely?",
+            desc: "Start from Marketplace, rent an agent via Rent-to-Mint, configure your safety limits, and let the AI trade within your policy guardrails.",
             primaryAction: "Open Marketplace",
             primaryUrl: "/market",
             secondaryAction: "Open My Dashboard",
@@ -893,7 +927,7 @@ export const zh: Dictionary = {
             faq: "常见问题"
         },
         quickstart: {
-            intro: "第一次使用 SHLL，按下面路径走一遍即可完成从租赁到执行的闭环。",
+            intro: "第一次使用 SHLL？按下面路径走一遍，即可完成从租赁到链上策略托管的完整闭环。",
             prerequisitesTitle: "开始前准备",
             prerequisites: [
                 "钱包切到 BSC Testnet，并准备少量 tBNB 作为 gas。",
@@ -908,206 +942,218 @@ export const zh: Dictionary = {
                     url: "/market"
                 },
                 {
-                    title: "2. 租用 Agent",
-                    desc: "进入 Agent 详情页完成租赁。成功后，你的钱包会在租期内获得 UserOf 控制权。",
+                    title: "2. Rent-to-Mint 铸造 Agent",
+                    desc: "从市场选择 Agent 模板并租用。SHLL 会铸造一个新的链上实例 — 你拥有 NFT，AI 在你的策略护栏内运行。",
                     action: "打开我的页面",
                     url: "/me"
                 },
                 {
-                    title: "3. 进入控制台并完成预检",
-                    desc: "在我的页面进入 Agent 详情 -> Console。先确认租户身份、策略模式和 operator 状态，再执行。",
+                    title: "3. 在控制台配置并启动",
+                    desc: "从我的页面打开 Agent 控制台。配置你的安全限额（不能超过模板上限），向 Vault 充值，并启用自动驾驶。",
                     action: "打开我的页面",
                     url: "/me"
                 },
                 {
-                    title: "4. 在风控约束下执行",
-                    desc: "先做策略评估和模拟，通过后再发链上交易，避免直接盲发。",
-                    action: "查看运行机制",
-                    url: "#runtime"
+                    title: "4. 全程透明监控",
+                    desc: "实时查看 AI 推理日志。每一个决策、每一笔交易、每一次策略检查都会记录在链上，并在控制台历史中展示。",
+                    action: "查看安全模型",
+                    url: "#security"
                 }
             ],
             pathsTitle: "常用路径",
             paths: [
-                "市场首页: /market",
-                "我的 Agent 与租赁: /me",
-                "Agent 详情: /agent/{nfa}/{tokenId}",
-                "Agent 控制台: /agent/{nfa}/{tokenId}/console"
+                "市场首页: /market — 浏览和租用 Agent 模板",
+                "我的页面: /me — 管理拥有和租用的 Agent",
+                "Agent 详情: /agent/{nfa}/{tokenId} — 概览、Vault、历史",
+                "Agent 控制台: /agent/{nfa}/{tokenId}/console — 配置、执行、监控"
             ]
         },
         runtime: {
-            intro: "SHLL 把权限、执行、运营分层设计，每一层都有明确边界。",
+            intro: "SHLL 将身份、策略、执行和自动化分为不同层级，每层都有明确边界。",
             actorsTitle: "角色与职责",
             actors: [
                 {
-                    name: "Owner",
-                    responsibility: "上架 Agent，配置策略/能力包，收取租金。",
+                    name: "Owner / 创建者",
+                    responsibility: "铸造 Agent 模板，定义策略上限和能力包，上架到市场并收取租金。",
                     boundary: "除非 Owner 同时是当前租户，否则不能执行租户会话动作。"
                 },
                 {
-                    name: "Renter",
-                    responsibility: "在租期内获得 UserOf 控制权，提交策略或交易意图。",
-                    boundary: "不能绕过风控，也不能把金库资产随意转到外部地址。"
+                    name: "Renter / 租户",
+                    responsibility: "通过 Rent-to-Mint 租用 Agent，在上限内配置安全限额，充值并控制自动驾驶。",
+                    boundary: "不能绕过策略检查、超过上限或将 Vault 资产转到任意地址。"
                 },
                 {
-                    name: "Runner",
-                    responsibility: "链下服务，监听已启用 token 并发起自动执行请求。",
-                    boundary: "即使持有 operator key，仍受链上策略与账户绑定约束。"
+                    name: "Runner（AI Agent）",
+                    responsibility: "链下服务，自主监控市场、通过 LLM 推理、并通过工具调用提交执行请求。",
+                    boundary: "即使持有 operator key，仍完全受链上 PolicyGuard 约束 — 即使被入侵也无法绕过。"
                 }
             ],
-            conceptsTitle: "Action 与功能包",
+            conceptsTitle: "核心概念",
             concepts: [
                 {
-                    name: "Action",
-                    desc: "用户或 runner 提交的最小可执行单元。",
-                    detail: "通常包含目标合约、value、calldata 以及意图元数据。"
+                    name: "自主 AI Agent",
+                    desc: "每个 SHLL Agent 都是自主 AI — 它观察市场、推理你的策略、并通过工具调用执行。所有决策在策略护栏内自主完成。",
+                    detail: "AI brain 接收市场上下文、Vault 状态和你的指令，然后独立决定采取什么行动以及何时行动。"
                 },
                 {
-                    name: "Capability Pack（功能包）",
-                    desc: "按 Agent 生效的功能集合，决定可用的动作模板。",
-                    detail: "它约束支持哪些协议、动作结构、以及策略参数范围。"
+                    name: "可组合策略",
+                    desc: "PolicyGuardV4 是路由器，将验证委托给专门的策略合约（如 DefiGuardPolicy）。",
+                    detail: "每个策略合约负责一个特定领域（DeFi、NFT 等），有自己的验证规则。新领域可以无需修改核心即可添加。"
                 },
                 {
-                    name: "Policy Bundle",
-                    desc: "执行时生效的风控约束集合。",
-                    detail: "即使功能包允许，若白名单、额度、滑点或资金去向不合规，动作仍会被拒绝。"
+                    name: "上限 vs 用户配置",
+                    desc: "模板 Owner 设置硬性上限。租户配置自己的限额，不能超过上限。",
+                    detail: "这种双层设计确保租户始终在创建者设定的安全范围内，即使配置有误也不会突破上限。"
                 }
             ],
-            actionFieldsTitle: "Action 常见字段",
+            actionFieldsTitle: "LLM Agent 如何做决策",
             actionFields: [
-                "tokenId：要执行的 Agent 实例",
-                "target：目标合约地址",
-                "value：原生币数量",
-                "data：编码后的 calldata",
-                "intent：动作语义类型（如 swap、repay、raw）"
+                "LLM Agent 接收市场数据、Vault 余额和策略指令作为上下文。",
+                "它分析当前情况并选择工具（swap、wait、wrap、done）。",
+                "选定的工具自动构建链上 Action payload。",
+                "提交前先执行模拟 — 如果模拟失败则不发送。",
+                "即使模拟通过，PolicyGuard 仍会在链上再次验证。"
             ],
-            mappingTitle: "功能包如何变成 Action",
+            mappingTitle: "自适应调度器",
             mapping: [
-                "1) 控制台按 tokenId 加载 capability pack。",
-                "2) 前端按功能包渲染可用模板。",
-                "3) 用户填写参数后，构建器生成 action payload。",
-                "4) 发送前执行预检与模拟。",
-                "5) runner 或用户提交 action，链上继续校验与执行。"
+                "1) 每个 Agent token 有独立的检查间隔，由 LLM 动态建议。",
+                "2) 一次性任务（如 '用 100 USDT 买 WBNB'）完成后自动关闭自动驾驶。",
+                "3) 监控型任务（如 '价格下跌 5% 时买入'）设置更长的检查间隔。",
+                "4) 调度器遵守最小间隔（minIntervalMs）作为安全保障。",
+                "5) Agent 状态在控制台显示：'任务已完成'、'下次检查在 Xm 后' 等。"
             ],
-            flowTitle: "执行链路",
+            flowTitle: "执行生命周期",
             flow: [
-                "1) 用户或 runner 提交某个 tokenId 的执行意图。",
-                "2) AgentNFA 校验调用者角色和租期有效性。",
-                "3) AgentNFA 转发动作给 PolicyGuard.validate(... )。",
-                "4) PolicyGuard 校验白名单、额度、滑点、资金去向等约束。",
-                "5) 通过后 AgentAccount 才会真正执行外部调用。",
-                "6) 结果写入索引与活动记录，供控制台诊断和追踪。",
-                "7) runner 按策略间隔继续下一轮。"
+                "1) 调度器触发特定 tokenId 的 Agent brain。",
+                "2) LLM Agent 接收市场上下文、Vault 状态和策略指令。",
+                "3) LLM 进行推理并调用工具（如 swap）及其参数。",
+                "4) Runner 从工具调用构建 Action{target, value, data}。",
+                "5) 链下模拟执行 — 如果 revert 则停止并记录原因。",
+                "6) AgentNFA 校验调用者角色和租期有效性。",
+                "7) PolicyGuardV4 路由到 DefiGuardPolicy 进行五层验证。",
+                "8) 所有策略通过后 AgentAccount 才执行调用。",
+                "9) 结果写入索引，供控制台历史、AI 推理日志和诊断使用。"
             ],
-            multiTenantTitle: "单 runner 管多个 tokenId",
+            multiTenantTitle: "单 Runner 管理多个 Agent",
             multiTenant: [
-                "一个 runner 进程可通过 ALLOWED_TOKEN_IDS 管理多个 Agent。",
-                "每个 tokenId 的执行锁、健康状态、策略状态独立存储。",
-                "不同 Agent 的策略由 capability pack + policy bundle 元数据按 token 动态解析。",
-                "这样减少部署数量，但不改变链上资金隔离与风控隔离。"
+                "一个 Runner 实例可通过 ALLOWED_TOKEN_IDS 管理多个 Agent。",
+                "每个 token 的执行状态独立存储（锁、健康、策略、间隔）。",
+                "每个 Agent 的 AI brain 按 token 解析 — 执行逻辑和策略上下文完全隔离。",
+                "这减少了部署数量，同时保持链上资金隔离不变。"
             ],
-            failureTitle: "当 status=false 时",
+            failureTitle: "故障排查",
             failures: [
-                "先核对角色：当前钱包是否为该 token 的 active renter。",
-                "核对链上授权：operator 地址是否已完成授权。",
-                "核对 runner 健康：/status 与 market signal sync 是否正常。",
-                "核对基础设施：数据库、RPC、外部数据源是否可连通。"
+                "检查钱包角色：当前钱包是否为该 token 的 active renter。",
+                "检查链上授权：operator 地址是否已完成授权。",
+                "检查 Runner 健康状态和 AI 推理日志中的错误详情。",
+                "检查 Vault 余额：确保有足够资金执行预期交易。",
+                "检查策略配置：你的限额可能阻止了该操作。"
             ]
         },
         security: {
-            intro: "把“租一个可执行 DeFi 的 Agent”变成可审计、可复现、默认安全的流程，而不是交出私钥。",
-            promise: "SHLL 不承诺收益，我们承诺：权限清晰、资金隔离、执行可控、行为可审计。",
+            intro: "SHLL 是 AI Agent 安全协议 — AI 决定做什么，PolicyGuard 决定是否允许，智能合约执行或回退。",
+            promise: "SHLL 不承诺收益。我们承诺：权限清晰、资金隔离、执行可控、行为可审计。用密码学执行替代信任。",
             diagramsTitle: "安全图解总览",
-            diagramsDesc: "通过两张图快速理解不可绕过的执行路径与四层隔离架构。",
+            diagramsDesc: "通过两张图快速理解不可绕过的执行路径与分层隔离架构。",
             executionDiagramTitle: "执行链路图",
             executionDiagramAlt: "SHLL 安全执行链路图",
             architectureDiagramTitle: "分层架构图",
-            architectureDiagramAlt: "SHLL 四层安全架构图",
-            problemsTitle: "SHLL 重点解决的安全问题",
+            architectureDiagramAlt: "SHLL 分层安全架构图",
+            problemsTitle: "SHLL 解决的安全问题",
             problems: [
                 "私钥托管风险：用户不应把 EOA 私钥交给机器人或平台。",
-                "越权调用风险：Agent 不应具备任意合约调用能力。",
-                "不可审计风险：用户必须能看懂策略并看到明确失败原因。"
+                "无约束执行：AI Agent 不应具备无限制的任意合约调用能力。",
+                "不透明决策：用户需要能看到 AI 的决策内容、原因，以及策略是通过还是拒绝。"
             ],
             actorsTitle: "核心参与者与权限边界",
             actors: [
-                "Owner：铸造/上架 Agent，配置策略，租期结束后继续使用。",
-                "Renter：在租期内获得使用权，可提交受控 DeFi 动作。",
-                "Policy Admin：通过策略包发布流维护白名单与限额。",
-                "Runner/Operator：可选自动化触发服务，不是资金托管方。"
+                "Owner：铸造 Agent 模板，设置策略上限和能力包，收取租金收入。",
+                "Renter：通过 Rent-to-Mint 租用，在上限内配置限额，租期内拥有实例 NFT。",
+                "PolicyGuard：链上防火墙，针对五个安全层验证每一个动作。",
+                "Runner/Operator：带 AI 推理的自动化触发器，不是资金托管方。"
             ],
-            architectureTitle: "四层安全架构",
+            architectureTitle: "PolicyGuardV4 — 五层安全模型",
             architecture: [
                 {
-                    title: "1) AgentNFA（身份层）",
+                    title: "1) 消费限额（Spending Limits）",
                     points: [
-                        "实现 ERC-721 + ERC-4907 + BAP-578 的 Agent 身份语义。",
-                        "负责权限路由与生命周期（pause/terminate）。",
-                        "仅当前有效租户可在租期内执行。"
+                        "单笔交易最大金额限制。",
+                        "每日累计最大金额限制（24 小时滚动窗口）。",
+                        "合约级别强制执行的最大滑点容忍度。"
                     ]
                 },
                 {
-                    title: "2) AgentAccount（资金层）",
+                    title: "2) 代币白名单（Token Whitelist）",
                     points: [
-                        "一 tokenId 一独立 vault，资金隔离。",
-                        "仅接受绑定 AgentNFA 的执行调用。",
-                        "提现目的地址限制为调用者自身地址。"
+                        "Agent 只能交易预先批准的代币。",
+                        "杜绝 rug pull 代币和随机 memecoin。",
+                        "输入和输出代币都必须在白名单中。"
                     ]
                 },
                 {
-                    title: "3) PolicyGuard（链上防火墙）",
+                    title: "3) DEX 白名单（DEX Whitelist）",
                     points: [
-                        "校验 target + selector + 参数级约束。",
-                        "执行白名单与硬性限额策略。",
-                        "拦截无限授权与危险资金去向。"
+                        "交易仅限于已批准的 DEX 路由器。",
+                        "不与恶意或未验证的合约交互。",
+                        "每个路由器的函数选择器也需验证。"
                     ]
                 },
                 {
-                    title: "4) ListingManager（市场层）",
+                    title: "4) 冷却时间（Cooldown）",
                     points: [
-                        "管理上架、租赁、续租、状态流转。",
-                        "控制 ERC-4907 的 userOf 设置。",
-                        "防止外部任意改写租户身份。"
+                        "连续操作之间强制最少等待时间。",
+                        "防止闪崩或漏洞利用期间的高频交易。",
+                        "由 Owner 按模板可配置。"
+                    ]
+                },
+                {
+                    title: "5) 接收方守卫（Receiver Guard）",
+                    points: [
+                        "Swap 输出和资金转账只能发送到 Agent 自己的 Vault。",
+                        "Agent 无法将资金转移到未知钱包。",
+                        "提现目的地限制为租户自己的地址。"
                     ]
                 }
             ],
-            bapTitle: "为什么 BAP-578 重要",
+            bapTitle: "合约架构层级",
             bap: [
-                "统一 Agent 的链上身份与元数据结构。",
-                "提供标准化 executeAction 风格接口，便于生态集成。",
-                "让租赁权与状态语义可复用、可迁移。",
-                "提升可组合性：钱包、索引器、策略 UI 可一次接入多处复用。"
+                "AgentNFA：ERC-721 + ERC-4907 身份层 — 管理所有权、租赁权和生命周期控制（暂停/终止）。",
+                "AgentAccount：按 tokenId 隔离的 Vault — 仅接受绑定 AgentNFA 的执行，一 Agent 一 Vault。",
+                "PolicyGuardV4：可组合策略路由器 — 委托给领域专用策略（如 DefiGuardPolicy）。",
+                "ListingManager：市场层 — 管理上架、Rent-to-Mint、续租和 ERC-4907 userOf 分配。"
             ],
             invariantTitle: "不可绕过的不变量",
-            invariant: "所有租户执行都必须经过：AgentNFA -> PolicyGuard.validate -> AgentAccount.executeCall。",
-            executionTitle: "执行链路（以 Swap 为例）",
+            invariant: "所有执行必须经过：AgentNFA → PolicyGuardV4.validate → DefiGuardPolicy.check → AgentAccount.executeCall。没有捷径。",
+            executionTitle: "执行链路（含 AI 推理）",
             execution: [
-                "1) 租户在 Console 填写交易参数。",
-                "2) 前端构建 Action{target,value,data}。",
-                "3) 先 simulate，提前看到 PolicyViolation 原因。",
-                "4) Execute 调用 AgentNFA.execute(tokenId, action)。",
-                "5) PolicyGuard 校验目标、函数、路径、deadline、额度、资金去向。",
-                "6) 通过后由 AgentAccount.executeCall 执行外部协议。"
+                "1) LLM Agent 接收市场数据并推理下一步动作。",
+                "2) AI 调用工具（如 swap）— 工具自动构建 Action{target, value, data}。",
+                "3) Runner 在链下模拟以提前捕获策略违规。",
+                "4) Execute 调用 AgentNFA.execute(tokenId, action) 上链。",
+                "5) PolicyGuardV4 路由到 DefiGuardPolicy — 检查所有五层。",
+                "6) 所有检查通过后，AgentAccount.executeCall 执行 DeFi 交互。"
             ],
-            allowlistTitle: "PolicyGuard 白名单维度",
+            allowlistTitle: "上限 vs 用户配置（双层限额）",
             allowlist: [
-                "targetAllowed[target]：允许调用的协议合约地址。",
-                "selectorAllowed[target][selector]：允许调用的函数选择器。",
-                "tokenAllowed[token]：允许出现的代币。",
-                "spenderAllowed[token][spender]：允许被授权的 spender。"
+                "模板上限：由 Agent 创建者设定的硬性限制，任何人都不能超过。",
+                "用户配置：租户自己的限额，必须 ≤ 上限值。",
+                "如果用户设置 maxAmountPerTx = 50 USDT 而上限是 100 USDT，有效限额为 50 USDT。",
+                "如果用户尝试设置超过上限的限额，系统会拒绝该配置。"
             ],
-            constraintsTitle: "参数级硬约束",
+            constraintsTitle: "各层检查内容",
             constraints: [
-                "Swap 的 to 必须等于 AgentAccount vault 地址。",
-                "deadline 必须在 maxDeadlineWindow 内。",
-                "path 长度必须 <= maxPathLength 且代币均在白名单。",
-                "禁止无限 approve，approve 金额必须受限。",
-                "repayBorrowBehalf 的 borrower 必须是当前 renter。"
+                "消费限额：单笔金额 ≤ maxAmountPerTx，日累计 ≤ maxAmountPerDay，滑点 ≤ maxSlippage。",
+                "代币白名单：tokenIn 和 tokenOut 都必须在批准列表中。",
+                "DEX 白名单：目标路由器必须已批准，函数选择器必须对该路由器有效。",
+                "冷却时间：block.timestamp - lastActionTime 必须 ≥ cooldownSeconds。",
+                "接收方守卫：swap 接收方 / 转账目的地必须等于 Agent Vault 地址。"
             ],
-            runnerTitle: "为什么 Runner 不是托管服务",
+            runnerTitle: "为什么 AI Agent 不是托管风险",
             runner: [
-                "Runner 是触发器：Observe -> Decide -> Build Action -> Simulate -> Execute。",
-                "simulate 失败不会继续 execute。",
-                "即使 runner 被劫持，也无法绕过链上 PolicyGuard。"
+                "AI 决定交易什么 — PolicyGuard 决定是否允许。",
+                "即使 AI 被入侵或产生幻觉，链上策略也无法被绕过。",
+                "所有五层策略都在智能合约级别强制执行，不在 AI 或后端。",
+                "每个 AI 决策都记录在推理日志中，完全可审计。"
             ],
             comparisonTitle: "与常见 Agent 平台的安全对比",
             comparisonColumns: {
@@ -1119,87 +1165,109 @@ export const zh: Dictionary = {
                 {
                     dimension: "资金托管",
                     baseline: "交私钥或把资金转到 bot 热钱包。",
-                    shll: "无需交私钥，按 Agent 独立 vault 隔离。"
+                    shll: "无需交私钥，按 Agent 独立 Vault 隔离。"
                 },
                 {
                     dimension: "执行权限",
                     baseline: "常见为任意合约调用能力。",
-                    shll: "链上防火墙校验目标、函数和参数。"
+                    shll: "五层链上防火墙验证每一个动作。"
                 },
                 {
-                    dimension: "可审计性",
-                    baseline: "用户难知道机器人将做什么。",
-                    shll: "Action/Policy 可读，拒绝原因可追踪。"
+                    dimension: "AI 透明度",
+                    baseline: "黑箱 — 难以检查机器人将做什么。",
+                    shll: "完整 AI 推理日志，包含意图、分析和结果。"
                 },
                 {
                     dimension: "风险隔离",
                     baseline: "常见共用钱包或资金池。",
-                    shll: "一 tokenId 一 vault，不串仓。"
+                    shll: "一 tokenId 一 Vault — 完全资金隔离。"
                 },
                 {
-                    dimension: "自动化安全",
-                    baseline: "可能盲发交易。",
-                    shll: "先模拟再执行，链上再校验。"
+                    dimension: "频率限制",
+                    baseline: "交易频率无限制。",
+                    shll: "链上冷却时间防止高频交易。"
                 },
                 {
                     dimension: "权限撤销",
                     baseline: "撤销成本高且不彻底。",
-                    shll: "ERC-4907 到期自动失效 + pause/terminate。"
+                    shll: "ERC-4907 到期自动失效 + 暂停/终止控制。"
                 }
             ],
-            defendTitle: "当前可防（MVP）",
+            defendTitle: "SHLL 防御的攻击向量",
             defend: [
-                "租户将 vault 资产导向第三方地址。",
-                "无限授权后转走全部 token 的路径。",
-                "repayBorrowBehalf 的风险转嫁滥用。",
-                "runner 被劫持后发起越权交易。"
+                "AI Agent 试图将 Vault 资产转移到第三方地址（接收方守卫）。",
+                "单笔或每日过度消费（消费限额）。",
+                "交易 rug pull 或未授权代币（代币白名单）。",
+                "与恶意智能合约交互（DEX 白名单）。",
+                "市场崩盘期间的高频交易（冷却时间）。",
+                "被入侵的 Runner 发送超出策略的动作（五层全检）。"
             ],
             limitsTitle: "已知前提与外部风险面",
             limits: [
-                "白名单质量依赖运营治理与配置审核流程。",
+                "白名单质量依赖运营治理与审核流程。",
                 "被允许的外部协议仍有其自身协议风险。",
-                "价格/滑点/MEV 风险可被约束和降低，但无法完全消除。",
-                "租期结束后的 Owner 行为遵循资产所有权规则。"
+                "市场/MEV/滑点风险可被策略约束但无法完全消除。",
+                "AI 推理质量取决于底层 LLM 模型的能力。"
             ],
             userGuideTitle: "用户安全使用指南",
             userGuide: [
-                "租前先看 Policy Summary。",
-                "每次执行前先 Simulate。",
-                "只放入可承受风险的资金。",
-                "发现异常立即停止或请求 pause。",
-                "仅在理解策略时启用 autopilot。"
+                "租前先了解五层策略 — 明确 Agent 能做和不能做什么。",
+                "在模板上限范围内配置你自己的安全限额。",
+                "只向 Agent Vault 充入你愿意承担风险的资金。",
+                "定期查看 AI 推理日志，关注异常行为。",
+                "发现异常立即使用暂停或终止。"
             ],
-            developerGuideTitle: "开发者安全扩展流程",
+            developerGuideTitle: "开发者：添加新策略域",
             developerGuide: [
-                "先明确协议 target 与 selector。",
-                "在 PolicyGuard 中实现参数级校验。",
-                "更新 allowlist 策略包并附带限额。",
-                "通过脚本 apply/check/audit 完成变更。",
-                "补齐正常与攻击参数测试用例。"
+                "创建实现 IPolicy 接口的新策略合约。",
+                "通过可组合路由器将策略注册到 PolicyGuardV4。",
+                "定义领域特定的验证规则（如 NFT 策略、借贷策略）。",
+                "编写正常和对抗性参数的测试用例。",
+                "通过管理面板或 Foundry 脚本部署和注册。"
             ],
             warningTitle: "安全提醒",
-            warning: "给 operator 授权只是允许提交动作，不是允许绕过策略。"
+            warning: "给 operator 授权只是允许提交动作，不是允许绕过策略。所有五个安全层都在智能合约级别强制执行 — 不在 AI 中，不在后端。"
         },
         faq: {
             title: "常见问题解答",
             items: [
                 {
-                    q: "租户需要把私钥交给 SHLL 吗？",
-                    a: "不需要。租户只用自己的钱包签名，链上合约负责校验与执行。"
+                    q: "我需要把私钥交给 SHLL 吗？",
+                    a: "不需要。你用自己的钱包签名。SHLL 为你铸造一个隔离的 Agent 实例 — 你的主钱包永远不会暴露给 AI。"
                 },
                 {
-                    q: "Runner 会不会偷 vault 里的钱？",
-                    a: "Runner 不能直接操作 vault。它只能提交 execute 请求，且每次都会被 PolicyGuard 校验。"
+                    q: "AI Agent 会偷走我 Vault 里的资金吗？",
+                    a: "不会。AI 的每一个动作都经过五层链上策略验证（PolicyGuardV4）。即使 AI 被入侵，也无法绕过智能合约的强制执行。"
                 },
                 {
-                    q: "为什么要用 NFA（BAP-578）？",
-                    a: "NFA 把 Agent 身份、租赁权和执行接口标准化，便于生态集成与可组合。"
+                    q: "什么是 Rent-to-Mint？",
+                    a: "当你租用 Agent 时，SHLL 铸造一个新的链上实例（NFA）。你拥有 NFT，AI 操作它，但所有动作都受 PolicyGuard 约束。Agent 拥有自己的隔离 Vault。"
+                },
+                {
+                    q: "上限和用户配置有什么区别？",
+                    a: "模板创建者设置硬性上限（最大限额）。作为租户，你配置自己的限额，不能超过上限。这确保你始终在安全范围内。"
+                },
+                {
+                    q: "LLM Agent 如何做出交易决策？",
+                    a: "LLM Agent 接收市场数据、Vault 余额和你的策略指令。它分析情况并调用工具（swap、wait、done）来执行。每个决策都记录在 AI 推理日志中。"
+                },
+                {
+                    q: "什么是冷却时间，为什么重要？",
+                    a: "冷却时间在合约级别强制连续操作之间的最少等待时间。这可以防止 AI 在闪崩或漏洞利用期间进行高频交易。"
+                },
+                {
+                    q: "如何暂停或停止我的 Agent？",
+                    a: "你可以随时在控制台关闭自动驾驶。也可以使用暂停或终止控制来立即停止所有链上 Agent 执行。"
+                },
+                {
+                    q: "租期到期后会怎样？",
+                    a: "租期结束时，ERC-4907 的 userOf 权限自动过期。Agent 再也无法代表你执行动作。你可以随时提取剩余 Vault 资金。"
                 }
             ]
         },
         cta: {
-            title: "准备好跑第一条安全策略了吗？",
-            desc: "从市场租用 Agent，在 Console 里按预检流程执行策略。",
+            title: "准备好安全运行你的第一个 AI Agent 了吗？",
+            desc: "从市场租用 Agent，通过 Rent-to-Mint 铸造，配置你的安全限额，让 AI 在你的策略护栏内交易。",
             primaryAction: "前往市场",
             primaryUrl: "/market",
             secondaryAction: "打开我的页面",
