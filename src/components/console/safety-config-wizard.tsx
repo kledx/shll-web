@@ -17,7 +17,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import {
     Shield, ChevronDown, ChevronRight, Loader2, Plus, X, Save,
-    RotateCcw, Coins, Timer, ArrowLeftRight, Check, AlertCircle,
+    RotateCcw, Coins, Timer, ArrowLeftRight, Check, AlertCircle, Ban,
 } from "lucide-react";
 import { useSafetyConfig, type SafetyConfig } from "@/hooks/useSafetyConfig";
 import { useState, useCallback, useEffect, useMemo } from "react";
@@ -69,13 +69,16 @@ export function SafetyConfigWizard({ tokenId, language = "en" }: SafetyConfigWiz
     const [isDirty, setIsDirty] = useState(false);
     const [sections, setSections] = useState({
         tokens: true,
+        blocked: false,
         limits: false,
         frequency: false,
         dex: false,
     });
     const [addTokenInput, setAddTokenInput] = useState("");
+    const [addBlockedInput, setAddBlockedInput] = useState("");
     const [addDexInput, setAddDexInput] = useState("");
     const [showTokenPicker, setShowTokenPicker] = useState(false);
+    const [showBlockedPicker, setShowBlockedPicker] = useState(false);
     const [showDexPicker, setShowDexPicker] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
 
@@ -123,6 +126,7 @@ export function SafetyConfigWizard({ tokenId, language = "en" }: SafetyConfigWiz
 
     // ── Token helpers ──
     const allowedTokens = useMemo(() => draft.allowedTokens ?? [], [draft.allowedTokens]);
+    const blockedTokens = useMemo(() => draft.blockedTokens ?? [], [draft.blockedTokens]);
     const allowedDexes = useMemo(() => draft.allowedDexes ?? [], [draft.allowedDexes]);
 
     const resolveTokenSymbol = (addr: string): string => {
@@ -145,6 +149,18 @@ export function SafetyConfigWizard({ tokenId, language = "en" }: SafetyConfigWiz
 
     const removeToken = (address: string) => {
         updateDraft("allowedTokens", allowedTokens.filter((t) => t.toLowerCase() !== address.toLowerCase()));
+    };
+
+    const addBlockedToken = (address: string) => {
+        const normalized = address.trim();
+        if (!normalized || blockedTokens.some((t) => t.toLowerCase() === normalized.toLowerCase())) return;
+        updateDraft("blockedTokens", [...blockedTokens, normalized]);
+        setAddBlockedInput("");
+        setShowBlockedPicker(false);
+    };
+
+    const removeBlockedToken = (address: string) => {
+        updateDraft("blockedTokens", blockedTokens.filter((t) => t.toLowerCase() !== address.toLowerCase()));
     };
 
     const addDex = (address: string) => {
@@ -303,6 +319,87 @@ export function SafetyConfigWizard({ tokenId, language = "en" }: SafetyConfigWiz
                                         onClick={() => addToken(addTokenInput)}
                                         disabled={!addTokenInput.startsWith("0x") || addTokenInput.length < 42}
                                         className="px-2 py-1 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        {isZh ? "添加" : "Add"}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ═══ Section: Token Blacklist ═══ */}
+                <SectionHeader
+                    icon={<Ban className="h-3.5 w-3.5" />}
+                    title={isZh ? "代币黑名单" : "Token Blacklist"}
+                    subtitle={isZh
+                        ? `${blockedTokens.length} 个代币`
+                        : `${blockedTokens.length} token${blockedTokens.length !== 1 ? "s" : ""}`
+                    }
+                    isOpen={sections.blocked}
+                    onToggle={() => toggleSection("blocked")}
+                />
+                {sections.blocked && (
+                    <div className="px-4 pb-3 space-y-2">
+                        <p className="text-sm text-slate-500">
+                            {isZh
+                                ? "禁止 Agent 交易以下代币。留空则不限制。"
+                                : "Agent cannot trade these tokens. Leave empty for no restriction."}
+                        </p>
+                        {/* Blocked token chips */}
+                        <div className="flex flex-wrap gap-1.5">
+                            {blockedTokens.map((addr) => (
+                                <span
+                                    key={addr}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-50 border border-red-200 text-sm font-medium text-red-800"
+                                >
+                                    {resolveTokenSymbol(addr)}
+                                    <button onClick={() => removeBlockedToken(addr)} className="hover:text-red-600 transition-colors">
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                </span>
+                            ))}
+                            <button
+                                onClick={() => setShowBlockedPicker(!showBlockedPicker)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-dashed border-slate-300 text-sm text-slate-500 hover:border-red-400 hover:text-red-600 transition-colors"
+                            >
+                                <Plus className="h-3 w-3" />
+                                {isZh ? "添加" : "Add"}
+                            </button>
+                        </div>
+                        {/* Blocked token picker */}
+                        {showBlockedPicker && (
+                            <div className="rounded-lg border border-slate-200 bg-white p-2 space-y-1.5">
+                                {KNOWN_TOKENS.filter(
+                                    (t) => !blockedTokens.some((a) => a.toLowerCase() === t.address.toLowerCase())
+                                ).map((token) => (
+                                    <button
+                                        key={token.address}
+                                        onClick={() => addBlockedToken(token.address)}
+                                        className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md hover:bg-red-50 transition-colors text-left"
+                                    >
+                                        <div className="h-6 w-6 rounded-full bg-red-100 flex items-center justify-center text-[11px] font-bold text-red-700">
+                                            {token.symbol.charAt(0)}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <span className="text-sm font-semibold text-slate-800">{token.symbol}</span>
+                                            <span className="text-sm text-slate-400 ml-1.5">{token.name}</span>
+                                        </div>
+                                    </button>
+                                ))}
+                                {/* Custom address input */}
+                                <div className="flex gap-1.5 pt-1 border-t border-slate-100">
+                                    <input
+                                        type="text"
+                                        value={addBlockedInput}
+                                        onChange={(e) => setAddBlockedInput(e.target.value)}
+                                        placeholder={isZh ? "自定义地址 0x..." : "Custom address 0x..."}
+                                        className="flex-1 text-sm border border-slate-200 rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-red-300"
+                                    />
+                                    <button
+                                        onClick={() => addBlockedToken(addBlockedInput)}
+                                        disabled={!addBlockedInput.startsWith("0x") || addBlockedInput.length < 42}
+                                        className="px-2 py-1 text-sm font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                                     >
                                         {isZh ? "添加" : "Add"}
                                     </button>
