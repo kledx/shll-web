@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { WagmiProvider, type Config } from 'wagmi';
+import { WagmiProvider, type Config, type State } from 'wagmi';
 import { createAppKit } from '@reown/appkit/react';
 import { bsc, bscTestnet } from '@reown/appkit/networks';
 import { config, wagmiAdapter, projectId, IS_MAINNET } from '@/config/wagmi';
@@ -28,9 +28,9 @@ const appKit = createAppKit({
 
 const queryClient = new QueryClient();
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({ children, initialState }: { children: React.ReactNode; initialState?: State }) {
     return (
-        <WagmiProvider config={config as Config}>
+        <WagmiProvider config={config as Config} initialState={initialState}>
             <QueryClientProvider client={queryClient}>
                 {children}
                 <Toaster

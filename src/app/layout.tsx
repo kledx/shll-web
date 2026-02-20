@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Script from "next/script";
+import { cookieToInitialState } from "wagmi";
 import { Providers } from "./providers";
+import { config } from "@/config/wagmi";
 import { LanguageProvider } from "@/components/providers/language-provider";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import "./globals.css";
@@ -15,11 +18,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headersList = await headers();
+  const cookies = headersList.get('cookie') ?? '';
+  const initialState = cookieToInitialState(config, cookies);
   const runtimeEnv = {
     NEXT_PUBLIC_AGENT_NFA: process.env.NEXT_PUBLIC_AGENT_NFA || "",
     NEXT_PUBLIC_LISTING_MANAGER: process.env.NEXT_PUBLIC_LISTING_MANAGER || "",
@@ -38,7 +44,7 @@ export default function RootLayout({
         <Script id="shll-runtime-env" strategy="beforeInteractive">
           {runtimeEnvScript}
         </Script>
-        <Providers>
+        <Providers initialState={initialState}>
           <LanguageProvider>
             <ErrorBoundary>
               {children}
