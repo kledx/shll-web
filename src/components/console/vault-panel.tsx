@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowDownToLine, ArrowUpFromLine, Loader2 } from "lucide-react";
-import { Address } from "viem";
+import { Address, parseUnits } from "viem";
 import { useVaultBalances } from "@/hooks/useVaultBalances";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -121,7 +121,7 @@ export function VaultPanel({
         const asset = assets.find(a => a.name === effectiveSelectedAsset);
         if (!asset) return;
 
-        const amountBigInt = BigInt(Math.floor(parseFloat(withdrawAmount || "0") * 1e18));
+        const amountBigInt = parseUnits(withdrawAmount || "0", asset.decimals);
 
         if (asset.isNative) {
             // Contract requires to == msg.sender (user's wallet)
