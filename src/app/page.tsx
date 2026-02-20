@@ -6,6 +6,7 @@ import { StatsSection } from "@/components/home/stats-section";
 import { WhySection } from "@/components/home/why-section";
 import { WorkflowSection } from "@/components/home/workflow-section";
 import { FeaturedAgents } from "@/components/home/featured-agents";
+import { ContractAddresses } from "@/components/home/contract-addresses";
 
 export default function Home() {
   return (
@@ -15,6 +16,7 @@ export default function Home() {
         <StatsSection />
         <WhySection />
         <WorkflowSection />
+        <ContractAddresses />
         <FeaturedAgents />
       </div>
     </AppShell>
