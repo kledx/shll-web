@@ -3,8 +3,8 @@
 version: "3.8"
 services:
   shll-web-mainnet:
+    container_name: shll-web-mainnet
     image: ghcr.io/kledx/shll-web:latest
-    pull_policy: always
     restart: unless-stopped
     environment:
       - NODE_ENV=production
