@@ -283,13 +283,25 @@ export function VaultPanel({
                                     </div>
                                     <div className="grid grid-cols-4 items-center gap-4">
                                         <Label className="text-right">{t.agent.vault.dialog.amountLabel}</Label>
-                                        <Input
-                                            type="number"
-                                            value={withdrawAmount}
-                                            onChange={e => setWithdrawAmount(e.target.value)}
-                                            className="col-span-3"
-                                            placeholder="0.0"
-                                        />
+                                        <div className="col-span-3 flex gap-2">
+                                            <Input
+                                                type="number"
+                                                value={withdrawAmount}
+                                                onChange={e => setWithdrawAmount(e.target.value)}
+                                                placeholder="0.0"
+                                                className="flex-1"
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() => {
+                                                    const asset = assets.find(a => a.name === effectiveSelectedAsset);
+                                                    if (asset) setWithdrawAmount(asset.balance);
+                                                }}
+                                            >
+                                                Max
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
 
