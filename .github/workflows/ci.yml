@@ -49,6 +49,7 @@ jobs:
             explorer: "https://testnet.bscscan.com/tx"
             indexer_url: "https://indexer.shll.run"
             runner_url: "https://runner.shll.run"
+            runner_operator: "0x65F8Ec8429184ad672eAcD32249e54CE1817A1eC"
           - tag: mainnet
             chain_id: "56"
             rpc_url: "https://bsc-dataseed1.binance.org"
@@ -60,6 +61,7 @@ jobs:
             explorer: "https://bscscan.com/tx"
             indexer_url: "https://indexer-mainnet.shll.run"
             runner_url: "https://runner-mainnet.shll.run"
+            runner_operator: "0x65F8Ec8429184ad672eAcD32249e54CE1817A1eC"
     steps:
       - uses: actions/checkout@v4
 
@@ -88,3 +90,4 @@ jobs:
             NEXT_PUBLIC_EXPLORER_TX_BASE_URL=${{ matrix.explorer }}
             NEXT_PUBLIC_INDEXER_URL=${{ matrix.indexer_url }}
             NEXT_PUBLIC_RUNNER_URL=${{ matrix.runner_url }}
+            NEXT_PUBLIC_RUNNER_OPERATOR=${{ matrix.runner_operator }}
