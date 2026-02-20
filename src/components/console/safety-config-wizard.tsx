@@ -22,28 +22,36 @@ import {
 import { useSafetyConfig, type SafetyConfig } from "@/hooks/useSafetyConfig";
 import { useState, useCallback, useEffect, useMemo } from "react";
 
+import { KNOWN_TOKENS as TOKEN_REGISTRY, ROUTER_ADDRESS } from "@/config/tokens";
+
 interface SafetyConfigWizardProps {
     tokenId: string;
     language?: "zh" | "en";
 }
 
 // ═══════════════════════════════════════════════════════
-//           Well-known tokens & DEXes (BSC Testnet)
+//           Well-known tokens & DEXes (chain-aware)
 // ═══════════════════════════════════════════════════════
 
-const KNOWN_TOKENS: { address: string; symbol: string; name: string }[] = [
-    { address: "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd", symbol: "WBNB", name: "Wrapped BNB" },
-    { address: "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd", symbol: "USDT", name: "Tether USD" },
-    { address: "0x64544969ed7EBf5f083679233325356EbE738930", symbol: "USDC", name: "USD Coin" },
-    { address: "0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee", symbol: "BUSD", name: "Binance USD" },
-    { address: "0x8babBb98678facC7342735486C851ABD7A0d17Ca", symbol: "ETH", name: "Ethereum" },
-];
+const KNOWN_TOKENS = TOKEN_REGISTRY.map((t) => ({
+    address: t.address,
+    symbol: t.symbol,
+    name: t.name,
+}));
 
-const KNOWN_DEXES: { address: string; name: string }[] = [
-    { address: "0xD99D1c33F9fC3444f8101754aBC46c52416550D1", name: "PancakeSwap V2" },
-    { address: "0x1b81D678ffb9C0263b24A97847620C99d213eB14", name: "PancakeSwap V3" },
-    { address: "0x3380aE82e39E42Ca34EbEd69aF67fAa0683Bb5c1", name: "BiSwap" },
-];
+const chainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID || "97");
+const isMainnet = chainId === 56;
+
+const KNOWN_DEXES: { address: string; name: string }[] = isMainnet
+    ? [
+        { address: "0x10ED43C718714eb63d5aA57B78B54704E256024E", name: "PancakeSwap V2" },
+        { address: "0x13f4EA83D0bd40E75C8222255bc855a974568Dd4", name: "PancakeSwap V3" },
+    ]
+    : [
+        { address: "0xD99D1c33F9fC3444f8101754aBC46c52416550D1", name: "PancakeSwap V2" },
+        { address: "0x1b81D678ffb9C0263b24A97847620C99d213eB14", name: "PancakeSwap V3" },
+        { address: "0x3380aE82e39E42Ca34EbEd69aF67fAa0683Bb5c1", name: "BiSwap" },
+    ];
 
 // ═══════════════════════════════════════════════════════
 //                   Main Component
