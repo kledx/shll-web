@@ -22,6 +22,10 @@ const appKit = createAppKit({
     },
     features: {
         analytics: false,
+        swaps: false,
+        onramp: false,
+        email: false,
+        socials: false,
     },
     themeMode: 'light',
 });

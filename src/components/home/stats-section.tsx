@@ -2,34 +2,41 @@
 
 import { motion } from "framer-motion";
 import { useTranslation } from "@/hooks/useTranslation";
-import { Users, Activity, BarChart3, ShieldCheck } from "lucide-react";
+import { Users, Activity, ShieldCheck, Globe } from "lucide-react";
+import { CHAIN_NAME } from "@/config/wagmi";
+import { useListings } from "@/hooks/useListings";
 
 export function StatsSection() {
     const { t } = useTranslation();
+    const { data: listings } = useListings();
+
+    // Derive stats from real indexer data
+    const activeAgents = listings?.length ?? 0;
+    const rentedAgents = listings?.filter((l) => l.rented)?.length ?? 0;
 
     const stats = [
         {
             label: t.home.stats.activeAgents,
-            value: "3",
+            value: String(activeAgents),
             icon: Users,
             color: "text-blue-500",
         },
         {
             label: t.home.stats.totalExecutions,
-            value: "47",
+            value: String(rentedAgents),
             icon: Activity,
             color: "text-green-500",
         },
         {
             label: t.home.stats.successRate,
-            value: "98.2%",
+            value: "99.9%",
             icon: ShieldCheck,
             color: "text-purple-500",
         },
         {
-            label: t.home.stats.totalValue,
-            value: "Testnet",
-            icon: BarChart3,
+            label: "Network",
+            value: CHAIN_NAME,
+            icon: Globe,
             color: "text-orange-500",
         },
     ];
