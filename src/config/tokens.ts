@@ -1,5 +1,5 @@
-﻿// Centralized token registry for BSC Testnet
-// All addresses must match PolicyGuard allowlist configuration
+﻿// Centralized token registry — chain-agnostic
+// Addresses are selected based on NEXT_PUBLIC_CHAIN_ID at build time
 // To add a new token:
 //   Option A: append to DEFAULT_TOKENS below and re-apply PolicyGuard config on-chain
 //   Option B: set NEXT_PUBLIC_EXTRA_TOKENS env var (format: SYMBOL:Name:0xAddr:decimals;...)
@@ -15,25 +15,33 @@ export interface TokenConfig {
     isNative: boolean;
 }
 
-// BSC Testnet token addresses 鈥?single source of truth
-export const WBNB_ADDRESS =
-    "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd" as const;
-export const USDT_ADDRESS =
-    "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd" as const;
+const chainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID || "97");
+const isMainnet = chainId === 56;
 
-// PancakeRouter V2 (BSC Testnet)
-export const ROUTER_ADDRESS =
-    "0xD99D1c33F9fC3444f8101754aBC46c52416550D1" as const;
+// Token addresses per chain
+export const WBNB_ADDRESS: Address = isMainnet
+    ? "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
+    : "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd";
+
+export const USDT_ADDRESS: Address = isMainnet
+    ? "0x55d398326f99059fF775485246999027B3197955"
+    : "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd";
+
+// PancakeRouter V2 — read from env or fallback per chain
+export const ROUTER_ADDRESS: Address = (
+    process.env.NEXT_PUBLIC_ROUTER_ADDRESS ||
+    (isMainnet
+        ? "0x10ED43C718714eb63d5aA57B78B54704E256024E"
+        : "0xD99D1c33F9fC3444f8101754aBC46c52416550D1")
+) as Address;
 
 /**
  * Built-in token list. Native first, then ERC-20 alphabetically.
- * TODO(mainnet): Replace with mainstream tokens (WBNB, USDT, USDC, BUSD, ETH, BTCB, etc.)
  */
 const DEFAULT_TOKENS: TokenConfig[] = [
     {
         symbol: "BNB",
         name: "BNB",
-        // Use wrapped native address as canonical underlying for routing/comparisons.
         address: WBNB_ADDRESS as Address,
         decimals: 18,
         isNative: true,
@@ -42,7 +50,7 @@ const DEFAULT_TOKENS: TokenConfig[] = [
         symbol: "USDT",
         name: "USDT",
         address: USDT_ADDRESS,
-        decimals: 18,
+        decimals: isMainnet ? 18 : 18,
         isNative: false,
     },
     {

@@ -7,10 +7,7 @@ import { useListings } from "@/hooks/useListings";
 import { Loader2, AlertTriangle } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useAccount } from "wagmi";
-import { bscTestnet } from "viem/chains";
-
-// Chain ID where contracts are deployed
-const SUPPORTED_CHAIN_ID = bscTestnet.id; // 97
+import { SUPPORTED_CHAIN_ID, CHAIN_NAME } from "@/config/wagmi";
 
 export function MarketplaceList() {
     const { data: listings, isLoading } = useListings();
@@ -53,7 +50,7 @@ export function MarketplaceList() {
                     {t.marketplace.wrongChain}
                 </p>
                 <p className="text-sm text-amber-700/80">
-                    Current: <strong>{chain.name}</strong> → Required: <strong>BSC Testnet</strong>
+                    Current: <strong>{chain.name}</strong> → Required: <strong>{CHAIN_NAME}</strong>
                 </p>
             </div>
         );
