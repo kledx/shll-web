@@ -5,6 +5,7 @@ services:
   shll-web-mainnet:
     container_name: shll-web-mainnet
     image: ghcr.io/kledx/shll-web:mainnet
+    pull_policy: always
     restart: unless-stopped
     environment:
       - NODE_ENV=production
