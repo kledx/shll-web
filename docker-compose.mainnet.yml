@@ -1,0 +1,48 @@
+# docker-compose.mainnet.yml for Dokploy deployment (BSC Mainnet)
+# Service names use -mainnet suffix to avoid DNS conflicts with testnet on dokploy-network
+version: "3.8"
+services:
+  shll-web-mainnet:
+    image: ghcr.io/kledx/shll-web:latest
+    pull_policy: always
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+
+      # ─── Backend Service URLs (Internal SSR) ───
+      - PONDER_URL=${PONDER_URL:-http://shll-indexer-mainnet:42070}
+      - RUNNER_URL=${RUNNER_URL:-http://agent-runner-mainnet:8788}
+      - RUNNER_API_KEY=${RUNNER_API_KEY:-}
+      - API_KEY=${API_KEY:-}
+
+      # ─── Public Facing URLs (Browser Clients) ───
+      - NEXT_PUBLIC_INDEXER_URL=${NEXT_PUBLIC_INDEXER_URL:-http://localhost:42070}
+      - NEXT_PUBLIC_RUNNER_URL=${NEXT_PUBLIC_RUNNER_URL:-http://localhost:8788}
+
+      # ─── Contract Addresses ───
+      - NEXT_PUBLIC_AGENT_NFA=${NEXT_PUBLIC_AGENT_NFA}
+      - NEXT_PUBLIC_LISTING_MANAGER=${NEXT_PUBLIC_LISTING_MANAGER}
+      - NEXT_PUBLIC_POLICY_GUARD_V3=${NEXT_PUBLIC_POLICY_GUARD_V3}
+      - NEXT_PUBLIC_DEPLOY_BLOCK=${NEXT_PUBLIC_DEPLOY_BLOCK}
+
+      # ─── Chain ───
+      - NEXT_PUBLIC_CHAIN_ID=${NEXT_PUBLIC_CHAIN_ID:-56}
+      - NEXT_PUBLIC_RPC_URL=${NEXT_PUBLIC_RPC_URL:-https://bsc-dataseed1.binance.org}
+      - NEXT_PUBLIC_ROUTER_ADDRESS=${NEXT_PUBLIC_ROUTER_ADDRESS:-0x10ED43C718714eb63d5aA57B78B54704E256024E}
+
+      # ─── UI Config ───
+      - NEXT_PUBLIC_POLICYGUARD_VERSION=${NEXT_PUBLIC_POLICYGUARD_VERSION:-v4}
+      - NEXT_PUBLIC_EXPLORER_TX_BASE_URL=${NEXT_PUBLIC_EXPLORER_TX_BASE_URL:-https://bscscan.com/tx}
+      - NEXT_PUBLIC_RUNNER_OPERATOR=${NEXT_PUBLIC_RUNNER_OPERATOR:-}
+      - NEXT_PUBLIC_ADMIN_WALLET=${NEXT_PUBLIC_ADMIN_WALLET:-}
+      - NEXT_PUBLIC_OWNER_ADDRESS=${NEXT_PUBLIC_OWNER_ADDRESS:-}
+      - NEXT_PUBLIC_EXTRA_TOKENS=${NEXT_PUBLIC_EXTRA_TOKENS:-}
+
+    networks:
+      - dokploy-network
+
+networks:
+  dokploy-network:
+    external: true
