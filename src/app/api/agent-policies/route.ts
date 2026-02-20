@@ -35,13 +35,13 @@ const policyGuardV4Abi = [
     },
 ] as const;
 
-// Known policy contract names (deployed by SetupV30Templates)
+// Known policy contract names
 const KNOWN_POLICIES: Record<string, string> = {
-    "0xc2f3c29ae106658b3b00adfd4193c9f3d2e11bc0": "ReceiverGuardPolicy",
-    "0xe8dd89d1f3ba8cb098e5b423632b9d8d8cf51207": "SpendingLimitPolicy",
-    "0x7a7c3e33062bd782e43aa731b1219996c34f607c": "TokenWhitelistPolicy",
-    "0x8403a16ea036239aef00eabcd11f7cfa755ea87aa": "DexWhitelistPolicy",
-    "0xc62dfc3304b15e6c7907fed0893c5288d2173770": "CooldownPolicy",
+    [(process.env.RECEIVER_GUARD_ADDRESS || "0xc2f3c29ae106658b3b00adfd4193c9f3d2e11bc0").toLowerCase()]: "ReceiverGuardPolicy",
+    [(process.env.SPENDING_LIMIT_ADDRESS || "0xe8dd89d1f3ba8cb098e5b423632b9d8d8cf51207").toLowerCase()]: "SpendingLimitPolicy",
+    [(process.env.TOKEN_WL_ADDRESS || "0x7a7c3e33062bd782e43aa731b1219996c34f607c").toLowerCase()]: "TokenWhitelistPolicy",
+    [(process.env.DEX_WL_ADDRESS || "0xca225Ac06fDC05eD1d05f17D1D6f7A4C07c85C65").toLowerCase()]: "DexWhitelistPolicy",
+    [(process.env.COOLDOWN_ADDRESS || "0xc62dfc3304b15e6c7907fed0893c5288d2173770").toLowerCase()]: "CooldownPolicy",
 };
 
 export async function GET(req: NextRequest) {

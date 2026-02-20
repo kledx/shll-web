@@ -142,21 +142,21 @@ function TemplateManager() {
     const [maxPerTx, setMaxPerTx] = useState("10");
     const [maxPerDay, setMaxPerDay] = useState("50");
     const [maxSlippage, setMaxSlippage] = useState("500");
-    const [spendingLimitAddr, setSpendingLimitAddr] = useState("");
+    const [spendingLimitAddr, setSpendingLimitAddr] = useState(process.env.NEXT_PUBLIC_SPENDING_LIMIT_ADDRESS || "0xe8dd89d1f3ba8cb098e5b423632b9d8d8cf51207");
 
     // Token whitelist
     const [tokenAddresses, setTokenAddresses] = useState<string[]>([]);
     const [newTokenAddr, setNewTokenAddr] = useState("");
-    const [tokenWlAddr, setTokenWlAddr] = useState("");
+    const [tokenWlAddr, setTokenWlAddr] = useState(process.env.NEXT_PUBLIC_TOKEN_WL_ADDRESS || "0x7a7c3e33062bd782e43aa731b1219996c34f607c");
 
     // DEX whitelist
     const [dexAddresses, setDexAddresses] = useState<string[]>([]);
     const [newDexAddr, setNewDexAddr] = useState("");
-    const [dexWlAddr, setDexWlAddr] = useState("");
+    const [dexWlAddr, setDexWlAddr] = useState(process.env.NEXT_PUBLIC_DEX_WL_ADDRESS || "0xca225Ac06fDC05eD1d05f17D1D6f7A4C07c85C65");
 
     // Cooldown
     const [cooldownSecs, setCooldownSecs] = useState("60");
-    const [cooldownAddr, setCooldownAddr] = useState("");
+    const [cooldownAddr, setCooldownAddr] = useState(process.env.NEXT_PUBLIC_COOLDOWN_ADDRESS || "0xc62dfc3304b15e6c7907fed0893c5288d2173770");
 
     // Listing
     const [listingPrice, setListingPrice] = useState("0.005");
