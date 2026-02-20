@@ -3,6 +3,7 @@
 import { useReadContract, useWriteContract, useAccount, useWaitForTransactionReceipt } from "wagmi";
 import { CONTRACTS, V4_ABI } from "@/config/contracts";
 import { getRuntimeEnv } from "@/lib/runtime-env";
+import { IS_MAINNET } from "@/config/wagmi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +17,7 @@ import { formatEther, parseEther, keccak256, toHex, encodePacked } from "viem";
 // ─── Shared helpers ────────────────────────────────────────
 
 const POLICY_GUARD_V4 = getRuntimeEnv("NEXT_PUBLIC_POLICY_GUARD_V3", "") as `0x${string}`;
-const EXPLORER = getRuntimeEnv("NEXT_PUBLIC_EXPLORER_TX_BASE_URL", "https://testnet.bscscan.com/tx");
+const EXPLORER = getRuntimeEnv("NEXT_PUBLIC_EXPLORER_TX_BASE_URL", IS_MAINNET ? "https://bscscan.com/tx" : "https://testnet.bscscan.com/tx");
 
 function TxButton({ onClick, disabled, loading, children }: {
     onClick: () => void; disabled?: boolean; loading?: boolean; children: React.ReactNode;

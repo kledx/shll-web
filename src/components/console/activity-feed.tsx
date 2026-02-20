@@ -12,6 +12,11 @@ import {
     Target,
     Clock,
 } from "lucide-react";
+import { IS_MAINNET } from "@/config/wagmi";
+
+const explorerTxBase = IS_MAINNET
+    ? "https://bscscan.com/tx"
+    : "https://testnet.bscscan.com/tx";
 
 // ═══════════════════════════════════════════════════════
 //                      Types
@@ -309,7 +314,7 @@ export function AgentActivityFeed({
                                     {/* TX hash */}
                                     {item.txHash && (
                                         <a
-                                            href={`https://testnet.bscscan.com/tx/${item.txHash}`}
+                                            href={`${explorerTxBase}/${item.txHash}`}
                                             target="_blank"
                                             rel="noreferrer"
                                             className="mt-1 inline-block text-sm text-[var(--color-sky)] hover:underline font-mono"

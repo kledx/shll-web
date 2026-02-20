@@ -6,6 +6,7 @@ import { Loader2, CheckCircle2, XCircle, Activity } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { getConsoleCopy } from "@/lib/console/console-copy";
 import { getRuntimeEnv } from "@/lib/runtime-env";
+import { IS_MAINNET } from "@/config/wagmi";
 
 interface ActivityItem {
     id: string;
@@ -112,7 +113,7 @@ export function TransactionHistory({
     const [isLoading, setIsLoading] = useState(true);
     const [degraded, setDegraded] = useState(false);
     const [degradedReason, setDegradedReason] = useState<string | null>(null);
-    const txExplorerBaseUrl = getRuntimeEnv("NEXT_PUBLIC_EXPLORER_TX_BASE_URL", "https://testnet.bscscan.com/tx").replace(/\/$/, "");
+    const txExplorerBaseUrl = getRuntimeEnv("NEXT_PUBLIC_EXPLORER_TX_BASE_URL", IS_MAINNET ? "https://bscscan.com/tx" : "https://testnet.bscscan.com/tx").replace(/\/$/, "");
 
     const formatTime = (ts: string) => {
         const value = Number(ts);

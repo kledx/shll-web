@@ -7,6 +7,11 @@ import {
 } from "lucide-react";
 import { Chip } from "@/components/ui/chip";
 import { toast } from "sonner";
+import { IS_MAINNET } from "@/config/wagmi";
+
+const explorerTxBase = IS_MAINNET
+    ? "https://bscscan.com/tx"
+    : "https://testnet.bscscan.com/tx";
 
 interface StrategyConfigProps {
     tokenId: string;
@@ -562,7 +567,7 @@ export function StrategyConfig({
                                                 })()}
                                                 {a.txHash && (
                                                     <a
-                                                        href={`https://testnet.bscscan.com/tx/${a.txHash}`}
+                                                        href={`${explorerTxBase}/${a.txHash}`}
                                                         target="_blank"
                                                         rel="noreferrer"
                                                         className="mt-1 inline-block text-sm text-[var(--color-sky)] hover:underline font-mono"
