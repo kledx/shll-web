@@ -1,6 +1,5 @@
 ﻿"use client";
 
-import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Menu, Globe } from "lucide-react";
@@ -40,14 +39,8 @@ export function Header({ onMenuClick, isMobile }: HeaderProps) {
                         <span className="sr-only">{t.common.language}</span>
                     </Button>
 
-                    <ConnectButton
-                        showBalance={false}
-                        accountStatus={{
-                            smallScreen: 'avatar',
-                            largeScreen: 'full',
-                        }}
-                        chainStatus="icon"
-                    />
+                    {/* AppKit wallet button — renders as a web component */}
+                    <appkit-button size="sm" />
                 </div>
             </div>
         </header>

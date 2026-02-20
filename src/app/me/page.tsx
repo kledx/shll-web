@@ -6,7 +6,6 @@ import { MyRentalsList } from "@/components/dashboard/my-rentals-list";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useAccount } from "wagmi";
 import { Wallet } from "lucide-react";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 export default function MePage() {
     const { t, language } = useTranslation();
@@ -28,7 +27,7 @@ export default function MePage() {
                         <p className="text-sm text-[var(--color-muted-foreground)] mb-5">
                             {language === "zh" ? "连接钱包后即可查看您的 Agent" : "Connect to view your agents and rentals"}
                         </p>
-                        <ConnectButton />
+                        <appkit-button />
                     </div>
                 )}
             </div>

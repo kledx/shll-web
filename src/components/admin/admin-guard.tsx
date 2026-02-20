@@ -1,7 +1,6 @@
 "use client";
 
 import { useAccount } from "wagmi";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { getRuntimeEnv } from "@/lib/runtime-env";
 import { Shield, AlertTriangle } from "lucide-react";
 
@@ -25,7 +24,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
                     <p className="text-sm text-[var(--color-muted-foreground)] mb-6">
                         Connect your wallet to access the admin panel.
                     </p>
-                    <ConnectButton />
+                    <appkit-button />
                 </div>
             </div>
         );
