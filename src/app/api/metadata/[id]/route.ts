@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPublicClient, http, Address } from 'viem';
-import { bscTestnet } from 'viem/chains';
+import { bsc, bscTestnet } from 'viem/chains';
 import { CONTRACTS } from '@/config/contracts';
 
 interface AgentMetadataResult {
@@ -17,10 +17,15 @@ interface PersonaJson {
     description?: string;
 }
 
-// Using a reliable public RPC for the backend API
+const chainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID || '97');
+const selectedChain = chainId === 56 ? bsc : bscTestnet;
+const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || (chainId === 56
+    ? 'https://bsc-dataseed1.binance.org'
+    : 'https://bsc-testnet.publicnode.com');
+
 const client = createPublicClient({
-    chain: bscTestnet,
-    transport: http('https://bsc-testnet.publicnode.com'),
+    chain: selectedChain,
+    transport: http(rpcUrl),
 });
 
 function parsePersona(personaRaw: string | undefined, tokenId: string): PersonaJson {

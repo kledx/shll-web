@@ -1,7 +1,7 @@
 import { useReadContract } from "wagmi";
 import { CONTRACTS } from "@/config/contracts";
 import { Address } from "viem";
-import { bscTestnet } from "wagmi/chains";
+import { SUPPORTED_CHAIN_ID } from "@/config/wagmi";
 
 export function useAgentAccount(tokenId: string, nfaAddress?: string) {
     const resolvedNfaAddress = (nfaAddress || CONTRACTS.AgentNFA.address) as Address;
@@ -10,7 +10,7 @@ export function useAgentAccount(tokenId: string, nfaAddress?: string) {
         abi: CONTRACTS.AgentNFA.abi,
         functionName: "accountOf",
         args: [BigInt(tokenId)],
-        chainId: bscTestnet.id,
+        chainId: SUPPORTED_CHAIN_ID,
     });
 
     return {

@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { createPublicClient, http, getAddress, type Address } from "viem";
-import { bscTestnet } from "viem/chains";
+import { bsc, bscTestnet } from "viem/chains";
 
 /**
  * /api/agent-policies — Read active policies directly from PolicyGuardV4 on-chain.
@@ -13,10 +13,14 @@ import { bscTestnet } from "viem/chains";
 const POLICY_GUARD_V4 = (process.env.NEXT_PUBLIC_POLICY_GUARD_V4 ??
     "0x1ad3e0a263Ec11Cd4729a968031c47E6affA3476") as Address;
 
-const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL ?? "https://data-seed-prebsc-1-s1.bnbchain.org:8545";
+const chainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID || "97");
+const selectedChain = chainId === 56 ? bsc : bscTestnet;
+const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL ?? (chainId === 56
+    ? "https://bsc-dataseed1.binance.org"
+    : "https://data-seed-prebsc-1-s1.bnbchain.org:8545");
 
 const client = createPublicClient({
-    chain: bscTestnet,
+    chain: selectedChain,
     transport: http(RPC_URL),
 });
 

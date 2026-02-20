@@ -12,12 +12,12 @@ import { useState } from "react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useAccount } from "wagmi";
-import { bscTestnet } from "viem/chains";
+import { SUPPORTED_CHAIN_ID, CHAIN_NAME } from "@/config/wagmi";
 import { PageTransition } from "@/components/layout/page-transition";
 import { PageHeader } from "@/components/layout/page-header";
 import { PageSection } from "@/components/layout/page-section";
 
-const SUPPORTED_CHAIN_ID = bscTestnet.id;
+
 
 export default function MarketPage() {
     const { t } = useTranslation();

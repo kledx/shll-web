@@ -2,10 +2,10 @@
 
 import { useReadContracts, useReadContract } from "wagmi";
 import { Address, formatEther, keccak256, toBytes, Hex, hexToString } from "viem";
-import { bscTestnet } from "wagmi/chains";
+import { SUPPORTED_CHAIN_ID } from "@/config/wagmi";
 import { CONTRACTS } from "../config/contracts";
 
-const TARGET_CHAIN_ID = bscTestnet.id;
+const TARGET_CHAIN_ID = SUPPORTED_CHAIN_ID;
 
 export interface AgentData {
     tokenId: string;
