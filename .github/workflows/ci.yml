@@ -35,6 +35,31 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+    strategy:
+      matrix:
+        include:
+          - tag: latest
+            chain_id: "97"
+            rpc_url: "https://data-seed-prebsc-1-s1.bnbchain.org:8545"
+            agent_nfa: "0xbB5059ad07bBd2d10d2e67fF842ce2D5e55eCD82"
+            listing_manager: "0x58edca3cd175a3e306e9b16125fec75483681cf6"
+            policy_guard: "0x31Bd83f2C3A41154F88296c145E36A64E32729A5"
+            deploy_block: "91078300"
+            router: "0xD99D1c33F9fC3444f8101754aBC46c52416550D1"
+            explorer: "https://testnet.bscscan.com/tx"
+            indexer_url: "https://indexer.shll.run"
+            runner_url: "https://runner.shll.run"
+          - tag: mainnet
+            chain_id: "56"
+            rpc_url: "https://bsc-dataseed1.binance.org"
+            agent_nfa: "0x327ec0BEa2c632A7978e9735272edE710B0F9791"
+            listing_manager: "0x322E7b1DaefE32E3D25defEA731C6384425E5A9f"
+            policy_guard: "0xe8828aB104a24114A8fB3AfA5BcfCc09a069B427"
+            deploy_block: "82217001"
+            router: "0x10ED43C718714eb63d5aA57B78B54704E256024E"
+            explorer: "https://bscscan.com/tx"
+            indexer_url: "https://indexer-mainnet.shll.run"
+            runner_url: "https://runner-mainnet.shll.run"
     steps:
       - uses: actions/checkout@v4
 
@@ -45,16 +70,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/kledx/shll-web
-
-      - name: Build and push Docker image
+      - name: Build and push Docker image (${{ matrix.tag }})
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ghcr.io/kledx/shll-web:latest
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ghcr.io/kledx/shll-web:${{ matrix.tag }}
+          build-args: |
+            NEXT_PUBLIC_CHAIN_ID=${{ matrix.chain_id }}
+            NEXT_PUBLIC_RPC_URL=${{ matrix.rpc_url }}
+            NEXT_PUBLIC_AGENT_NFA=${{ matrix.agent_nfa }}
+            NEXT_PUBLIC_LISTING_MANAGER=${{ matrix.listing_manager }}
+            NEXT_PUBLIC_POLICY_GUARD_V3=${{ matrix.policy_guard }}
+            NEXT_PUBLIC_DEPLOY_BLOCK=${{ matrix.deploy_block }}
+            NEXT_PUBLIC_ROUTER_ADDRESS=${{ matrix.router }}
+            NEXT_PUBLIC_POLICYGUARD_VERSION=v4
+            NEXT_PUBLIC_EXPLORER_TX_BASE_URL=${{ matrix.explorer }}
+            NEXT_PUBLIC_INDEXER_URL=${{ matrix.indexer_url }}
+            NEXT_PUBLIC_RUNNER_URL=${{ matrix.runner_url }}
