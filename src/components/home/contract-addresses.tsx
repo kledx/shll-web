@@ -73,11 +73,11 @@ export function ContractAddresses() {
                         <Shield className="w-4 h-4" />
                         Verified Smart Contracts
                     </div>
-                    <h2 className="text-2xl font-bold !text-[#201a16]">
+                    <h2 className="text-2xl font-bold !text-[#201a16]" style={{ color: "#201a16" }}>
                         On-Chain Transparency
                     </h2>
-                    <p className="!text-[#74685d] mt-2 text-sm">
-                        All contracts are verified and deployed on <strong className="!text-[#201a16]">{CHAIN_NAME}</strong>
+                    <p className="!text-[#74685d] mt-2 text-sm" style={{ color: "#74685d" }}>
+                        All contracts are verified and deployed on <strong className="!text-[#201a16]" style={{ color: "#201a16" }}>{CHAIN_NAME}</strong>
                     </p>
                 </div>
 
@@ -88,14 +88,14 @@ export function ContractAddresses() {
                             key={c.label}
                             className="rounded-xl border border-[#e1d3c0] bg-[#fffdf9] backdrop-blur-sm p-5 hover:border-[#7a1f37]/35 transition-colors"
                         >
-                            <div className="text-sm font-semibold !text-[#201a16] mb-1">
+                            <div className="text-sm font-semibold !text-[#201a16] mb-1" style={{ color: "#201a16" }}>
                                 {c.label}
                             </div>
-                            <div className="text-xs !text-[#74685d] mb-3">
+                            <div className="text-xs !text-[#74685d] mb-3" style={{ color: "#74685d" }}>
                                 {c.desc}
                             </div>
                             <div className="flex items-center gap-1">
-                                <code className="text-xs !text-[#7a1f37] font-mono truncate flex-1">
+                                <code className="text-xs !text-[#7a1f37] font-mono truncate flex-1" style={{ color: "#7a1f37" }}>
                                     {c.address}
                                 </code>
                                 <CopyButton text={c.address} />
