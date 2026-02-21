@@ -7,6 +7,7 @@ import { Loader2, ArrowRight, Bot } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { ClaimIncomeCard } from "./claim-income-card";
 
 export function MyRentalsList() {
     const { rentals, isLoading } = useMyRentals();
@@ -21,14 +22,17 @@ export function MyRentalsList() {
     const instanceHistory = rentals.filter(r => r.isOwner && r.isInstance && !r.isActive);
 
     return (
-        <Tabs defaultValue="instances" className="w-full">
-            <TabsList className="mb-6">
+        <div className="space-y-6">
+            <ClaimIncomeCard />
+
+            <Tabs defaultValue="instances" className="w-full">
+                <TabsList className="mb-6">
                 <TabsTrigger value="instances">{t.dashboard.tabs.instances} ({myInstances.length})</TabsTrigger>
                 <TabsTrigger value="owned">{t.dashboard.tabs.owned} ({myAgents.length})</TabsTrigger>
                 <TabsTrigger value="history">{t.dashboard.tabs.history} ({instanceHistory.length})</TabsTrigger>
-            </TabsList>
+                </TabsList>
 
-            <TabsContent value="instances">
+                <TabsContent value="instances">
                 {myInstances.length === 0 ? (
                     <div className="text-center py-16 border-2 border-dashed rounded-xl">
                         <Bot className="mx-auto h-10 w-10 text-[var(--color-muted-foreground)] opacity-40 mb-3" />
@@ -47,9 +51,9 @@ export function MyRentalsList() {
                         ))}
                     </div>
                 )}
-            </TabsContent>
+                </TabsContent>
 
-            <TabsContent value="owned">
+                <TabsContent value="owned">
                 {myAgents.length === 0 ? (
                     <div className="text-center py-16 border-2 border-dashed rounded-xl">
                         <Bot className="mx-auto h-10 w-10 text-[var(--color-muted-foreground)] opacity-40 mb-3" />
@@ -62,9 +66,9 @@ export function MyRentalsList() {
                         ))}
                     </div>
                 )}
-            </TabsContent>
+                </TabsContent>
 
-            <TabsContent value="history">
+                <TabsContent value="history">
                 {instanceHistory.length === 0 ? (
                     <div className="text-center py-12 border-2 border-dashed rounded-xl">
                         <p className="text-[var(--color-muted-foreground)]">{t.dashboard.empty.history}</p>
@@ -76,7 +80,8 @@ export function MyRentalsList() {
                         ))}
                     </div>
                 )}
-            </TabsContent>
-        </Tabs>
+                </TabsContent>
+            </Tabs>
+        </div>
     );
 }
