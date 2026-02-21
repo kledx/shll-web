@@ -540,6 +540,7 @@ export default function ConsolePage() {
                 nfaAddress={nfaAddress}
                 renter={address ?? ""}
                 rentalExpiresAt={agent?.expires ? BigInt(agent.expires) : undefined}
+                runnerOperator={runnerOperatorLocked}
                 onComplete={handleAuthDialogComplete}
             />
         </AppShell>

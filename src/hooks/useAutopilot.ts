@@ -162,7 +162,16 @@ export function useAutopilot({ tokenId, renter, nfaAddress }: UseAutopilotOption
                             : typeof details?.raw === "string"
                                 ? details.raw
                                 : "";
-                const message = [body?.error, detailError].filter(Boolean).join(" | ");
+                const primaryError =
+                    typeof body?.error === "string" ? body.error : "";
+                const messageParts = [primaryError];
+                if (
+                    detailError &&
+                    detailError.toLowerCase() !== primaryError.toLowerCase()
+                ) {
+                    messageParts.push(detailError);
+                }
+                const message = messageParts.filter(Boolean).join(" | ");
                 throw new Error(message || "Autopilot enable failed");
             }
 

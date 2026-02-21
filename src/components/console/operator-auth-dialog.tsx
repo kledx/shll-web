@@ -14,7 +14,7 @@ import { Loader2, ShieldCheck, ShieldX, Info } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useAutopilot, EnableState } from "@/hooks/useAutopilot";
 import { getRuntimeEnv } from "@/lib/runtime-env";
-import { Address } from "viem";
+import { Address, getAddress } from "viem";
 import { toast } from "sonner";
 
 interface OperatorAuthDialogProps {
@@ -28,6 +28,8 @@ interface OperatorAuthDialogProps {
     rentalExpiresAt?: bigint;
     /** Called after successful authorization or skip */
     onComplete?: (authorized: boolean) => void;
+    /** Preferred operator from runner status endpoint */
+    runnerOperator?: string;
 }
 
 // Inline bilingual copy for the authorization dialog
@@ -114,6 +116,7 @@ export function OperatorAuthDialog({
     renter,
     rentalExpiresAt,
     onComplete,
+    runnerOperator,
 }: OperatorAuthDialogProps) {
     const { language } = useTranslation();
     const t = language === "zh" ? copy.zh : copy.en;
@@ -126,7 +129,15 @@ export function OperatorAuthDialog({
     });
 
     const handleAuthorize = useCallback(async () => {
-        const operatorAddr = getRuntimeEnv("NEXT_PUBLIC_RUNNER_OPERATOR", "");
+        const preferredOperator =
+            (runnerOperator || "").trim() ||
+            getRuntimeEnv("NEXT_PUBLIC_RUNNER_OPERATOR", "").trim();
+        let operatorAddr = "";
+        try {
+            operatorAddr = preferredOperator ? getAddress(preferredOperator) : "";
+        } catch {
+            operatorAddr = "";
+        }
         if (!operatorAddr) {
             toast.error(language === "zh"
                 ? "未配置 Runner Operator 地址"
@@ -153,7 +164,7 @@ export function OperatorAuthDialog({
         } finally {
             setBusy(false);
         }
-    }, [enableAutopilot, rentalExpiresAt, onComplete]);
+    }, [enableAutopilot, rentalExpiresAt, onComplete, runnerOperator, language]);
 
     const handleSkip = useCallback(() => {
         onOpenChange(false);
